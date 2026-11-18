@@ -1,18 +1,22 @@
 "use client";
 
-import { useMemo } from "react";
-import { useReadContracts } from "wagmi";
-import { contracts } from "@/lib/config";
-import { streakVaultAbi } from "@/lib/abis";
+import { useMemo, useState } from "react";
+import { useAccount, useReadContracts } from "wagmi";
+import { contracts, isConfigured } from "@/lib/config";
+import { streakVaultAbi, streakGroupsAbi, freezeGiftAbi } from "@/lib/abis";
 import { fmt, shortAddr } from "@/lib/format";
 import { IdentityAvatar, identityOf } from "@/lib/identity";
+import { TxFeedback, useTx } from "@/components/useTx";
 import type { VaultData } from "@/lib/useVaultData";
 
 const FLOOR_COLORS = ["#ffd9a8", "#ffc9d4", "#c9bdf5", "#bfe8c9", "#fde9a9", "#bfe3f2"];
 
-/** Tab Nhóm: tòa nhà chung — mỗi thành viên chiếm một tầng, cùng giữ nhịp gửi tiền. */
+/** Tab Nhóm: tòa nhà chung + nhóm bạn bè on-chain (StreakGroups) + tặng Streak Freeze. */
 export function GroupTab({ data }: { data: VaultData }) {
   const participants = data.participants;
+  const { address } = useAccount();
+  const groupsLive = isConfigured(contracts.groups);
+  const giftLive = isConfigured(contracts.freezeGift);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const calls: any[] = useMemo(
@@ -97,19 +101,227 @@ export function GroupTab({ data }: { data: VaultData }) {
                     <div className="font-cozy text-sm font-extrabold text-blush-500">🔥 {m.streak.toString()}</div>
                     <div className="text-[10px] font-bold uppercase text-cocoa-500">tuần</div>
                   </div>
+                  {giftLive && address && m.address !== address && <FreezeGiftButton to={m.address} />}
                 </div>
               );
             })}
           </div>
         )}
+        {giftLive && (
+          <p className="mt-2 text-[11px] font-semibold text-cocoa-500">
+            ❄️ Nút bên cạnh là tặng Streak Freeze kỳ này cho cư dân (phí bạn trả thay).
+          </p>
+        )}
       </div>
 
-      <div className="card-cream border-dashed p-4 text-center">
-        <div className="text-2xl">🚧</div>
-        <p className="mt-1 text-xs font-semibold text-cocoa-500">
-          Nhắc hạn cho bạn bè, tặng Streak Freeze và thử thách nhóm đang trong lộ trình — sắp ra mắt.
-        </p>
+      {groupsLive ? (
+        <GroupsPanel />
+      ) : (
+        <div className="card-cream border-dashed p-4 text-center">
+          <div className="text-2xl">🚧</div>
+          <p className="mt-1 text-xs font-semibold text-cocoa-500">
+            Nhóm bạn bè on-chain chưa được cấu hình cho chain này.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Nút tặng freeze kỳ hiện tại cho một ví (FreezeGift). */
+function FreezeGiftButton({ to }: { to: string }) {
+  const tx = useTx();
+  async function gift() {
+    await tx.run("Tặng Streak Freeze", [
+      {
+        label: `Đang tặng freeze cho ${shortAddr(to)}…`,
+        call: {
+          address: contracts.freezeGift,
+          abi: freezeGiftAbi,
+          functionName: "giftFreeze",
+          args: [to as `0x${string}`],
+        },
+      },
+    ]);
+  }
+  return (
+    <div className="shrink-0">
+      <button
+        className="rounded-xl border-2 border-sky-400/60 bg-sky-200/60 px-2 py-1 text-xs font-extrabold text-sky-700 active:translate-y-0.5"
+        disabled={tx.step !== null}
+        title="Tặng Streak Freeze kỳ này"
+        onClick={gift}
+      >
+        {tx.step ? "…" : "❄️ Tặng"}
+      </button>
+      <TxFeedback state={{ step: tx.step, hash: tx.hash, error: tx.error }} />
+    </div>
+  );
+}
+
+/** Panel nhóm bạn bè on-chain: tạo nhóm / tham gia bằng mã mờ / xem tiến độ thành viên. */
+function GroupsPanel() {
+  const { address } = useAccount();
+  const createTx = useTx();
+  const joinTx = useTx();
+  const [name, setName] = useState("");
+  const [invite, setInvite] = useState("");
+  const [joinId, setJoinId] = useState("");
+  const [joinCode, setJoinCode] = useState("");
+  const [viewId, setViewId] = useState<bigint | null>(null);
+
+  async function createGroup() {
+    if (!name || !invite) return;
+    const ok = await createTx.run("Tạo nhóm", [
+      {
+        label: "Đang tạo nhóm on-chain…",
+        call: {
+          address: contracts.groups,
+          abi: streakGroupsAbi,
+          functionName: "createGroup",
+          args: [name, invite],
+        },
+      },
+    ]);
+    if (ok) {
+      setName("");
+      setInvite("");
+    }
+  }
+
+  async function joinGroup() {
+    if (!joinId || !joinCode) return;
+    const id = BigInt(joinId);
+    const ok = await joinTx.run("Tham gia nhóm", [
+      {
+        label: `Đang tham gia nhóm #${joinId}…`,
+        call: {
+          address: contracts.groups,
+          abi: streakGroupsAbi,
+          functionName: "joinGroup",
+          args: [id, joinCode],
+        },
+      },
+    ]);
+    if (ok) setViewId(id);
+  }
+
+  return (
+    <div className="card-cream p-4">
+      <h4 className="font-cozy font-bold">🫂 Nhóm bạn bè (on-chain)</h4>
+      <p className="mt-0.5 text-xs font-semibold text-cocoa-500">
+        Tạo nhóm bằng mã mờ, rủ bạn vào, cùng theo dõi ai đạt mục tiêu tuần này. Streak nhóm = số kỳ liên tiếp cả
+        nhóm đều đạt.
+      </p>
+
+      <div className="mt-3 grid grid-cols-1 gap-2">
+        <div className="flex gap-2">
+          <input
+            className="input-cozy flex-1"
+            placeholder="Tên nhóm (VD: Lớp 12A)"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <input
+            className="input-cozy w-24"
+            placeholder="Mã mờ"
+            value={invite}
+            onChange={(e) => setInvite(e.target.value)}
+          />
+          <button
+            className="btn-cozy shrink-0"
+            disabled={!address || !name || !invite || createTx.step !== null}
+            onClick={createGroup}
+          >
+            Tạo
+          </button>
+        </div>
+        <TxFeedback state={{ step: createTx.step, hash: createTx.hash, error: createTx.error }} />
+
+        <div className="flex gap-2">
+          <input
+            className="input-cozy w-24"
+            inputMode="numeric"
+            placeholder="ID nhóm"
+            value={joinId}
+            onChange={(e) => setJoinId(e.target.value)}
+          />
+          <input
+            className="input-cozy flex-1"
+            placeholder="Mã mờ"
+            value={joinCode}
+            onChange={(e) => setJoinCode(e.target.value)}
+          />
+          <button
+            className="btn-cozy shrink-0"
+            disabled={!address || !joinId || !joinCode || joinTx.step !== null}
+            onClick={joinGroup}
+          >
+            Tham gia
+          </button>
+        </div>
+        <TxFeedback state={{ step: joinTx.step, hash: joinTx.hash, error: joinTx.error }} />
+
+        <div className="flex gap-2">
+          <input
+            className="input-cozy flex-1"
+            inputMode="numeric"
+            placeholder="Xem nhóm theo ID…"
+            value={viewId !== null ? viewId.toString() : ""}
+            onChange={(e) => setViewId(e.target.value ? BigInt(e.target.value) : null)}
+          />
+        </div>
       </div>
+
+      {viewId !== null && <GroupView groupId={viewId} />}
+    </div>
+  );
+}
+
+function GroupView({ groupId }: { groupId: bigint }) {
+  const { data } = useReadContracts({
+    contracts: [
+      { address: contracts.groups, abi: streakGroupsAbi, functionName: "getGroup", args: [groupId] },
+      { address: contracts.groups, abi: streakGroupsAbi, functionName: "groupStreak", args: [groupId] },
+      { address: contracts.groups, abi: streakGroupsAbi, functionName: "memberProgress", args: [groupId] },
+    ],
+    query: { refetchInterval: 10_000 },
+  });
+
+  const g = data?.[0]?.result as
+    | { id: bigint; name: string; creator: string; createdAtEpoch: bigint; members: string[] }
+    | undefined;
+  const groupStreak = (data?.[1]?.result as bigint | undefined) ?? 0n;
+  const progress = data?.[2]?.result as
+    | { members: string[]; progresses: bigint[]; targets: bigint[] }
+    | undefined;
+
+  if (!g || g.id === 0n)
+    return <p className="mt-3 text-xs font-semibold text-cocoa-500">Không tìm thấy nhóm #{groupId.toString()}.</p>;
+
+  return (
+    <div className="mt-3 rounded-xl border-2 border-leaf-500/40 bg-white/70 p-3">
+      <div className="flex items-center justify-between">
+        <div className="font-cozy font-bold text-cocoa-700">
+          {g.name} <span className="text-xs text-cocoa-500">#{g.id.toString()}</span>
+        </div>
+        <div className="font-cozy text-sm font-extrabold text-blush-500">🔥 nhóm {groupStreak.toString()} kỳ</div>
+      </div>
+      <ul className="mt-2 space-y-1.5">
+        {g.members.map((m, i) => {
+          const p = progress?.progresses?.[i] ?? 0n;
+          const t = progress?.targets?.[i] ?? 0n;
+          const done = t > 0n && p >= t;
+          return (
+            <li key={m} className="flex items-center justify-between text-sm">
+              <span className="font-semibold text-cocoa-600">{shortAddr(m)}</span>
+              <span className={done ? "font-bold text-leaf-600" : "font-semibold text-cocoa-500"}>
+                {done ? "✅ đạt" : `${fmt(p)}/${fmt(t)} mUSDC`}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

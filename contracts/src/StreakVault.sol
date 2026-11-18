@@ -35,6 +35,8 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
     address public distributor;
     address public treasury;
     address public boostProvider; // hook boost multiplier (0 = tắt)
+    /// @notice Ví được ủy quyền đặt mục tiêu hộ (BatchHelper, relayer...).
+    mapping(address => bool) public operators;
     uint256 public override totalPrincipal;
     /// @notice Kỳ kế tiếp cần chốt (phòng thủ thêm, distributor cũng kiểm tra thứ tự).
     uint256 public nextEpochToSettle;
@@ -77,6 +79,10 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
     mapping(address => mapping(uint256 => EpochFlow)) internal _flows;
     mapping(address => mapping(uint256 => EpochResult)) internal _results;
 
+    event OperatorSet(address indexed operator, bool enabled);
+
+    error NotOperator();
+
     // ---------------- streak bảo vệ ----------------
     mapping(address => uint256) public override frozenUntilEpoch; // kỳ cuối freeze còn hiệu lực
     mapping(address => bool) public override hasInsurance; // bảo hiểm cho kỳ hiện tại
@@ -88,6 +94,11 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
 
     modifier onlyDistributor() {
         if (msg.sender != distributor) revert NotDistributor();
+        _;
+    }
+
+    modifier onlyOperator() {
+        if (!operators[msg.sender]) revert NotOperator();
         _;
     }
 
@@ -119,6 +130,13 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
         if (treasury_ == address(0)) revert ZeroAddress();
         treasury = treasury_;
         emit TreasurySet(treasury_);
+    }
+
+    /// @notice Gắn/thu hồi quyền đặt mục tiêu hộ cho ví khác (BatchHelper, relayer).
+    function setOperator(address operator, bool enabled) external onlyOwner {
+        if (operator == address(0)) revert ZeroAddress();
+        operators[operator] = enabled;
+        emit OperatorSet(operator, enabled);
     }
 
     function setMinDeposit(uint256 amount) external onlyOwner {
@@ -201,17 +219,28 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
 
     /// @notice Đặt mục tiêu tuần. Lần đầu có hiệu lực ngay kỳ hiện tại; các lần sau áp dụng từ kỳ kế tiếp.
     function setWeeklyTarget(uint256 amount) external override whenNotPaused {
+        _setTarget(msg.sender, amount);
+    }
+
+    /// @notice Đặt mục tiêu hộ cho `wallet`. Chỉ operator (BatchHelper, relayer) gọi.
+    /// @dev Dùng cho batch "đặt mục tiêu + gửi tiền" trong một giao dịch.
+    function setWeeklyTargetFor(address wallet, uint256 amount) external onlyOperator whenNotPaused {
+        if (wallet == address(0)) revert ZeroAddress();
+        _setTarget(wallet, amount);
+    }
+
+    function _setTarget(address wallet, uint256 amount) internal {
         if (amount == 0) revert ZeroAmount();
         uint256 epoch = _requireStartedEpoch();
-        Account storage acc = _accounts[msg.sender];
-        TargetCheckpoint[] storage cps = _targets[msg.sender];
+        Account storage acc = _accounts[wallet];
+        TargetCheckpoint[] storage cps = _targets[wallet];
 
         uint256 effectiveEpoch;
         if (!acc.activated) {
             if (_participants.length >= MAX_PARTICIPANTS) revert MaxParticipantsReached();
             acc.activated = true;
             acc.activationEpoch = epoch;
-            _participants.push(msg.sender);
+            _participants.push(wallet);
             effectiveEpoch = epoch;
             cps.push(TargetCheckpoint({fromEpoch: SafeCast.toUint64(epoch), amount: SafeCast.toUint192(amount)}));
         } else {
@@ -226,7 +255,7 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
                 );
             }
         }
-        emit TargetScheduled(msg.sender, amount, effectiveEpoch);
+        emit TargetScheduled(wallet, amount, effectiveEpoch);
     }
 
     /// @notice Gửi token vào vault cho chính msg.sender. Cần approve trước.
@@ -316,12 +345,13 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
 
     /// @notice Đóng băng kỳ hiện tại: nếu thiếu target lúc chốt, streak giữ nguyên (không +1).
     /// @dev Mỗi kỳ chỉ freeze một lần; phí về treasury.
+    ///      frozenUntilEpoch lưu kỳ đã freeze + 1 (0 = chưa từng) để phân biệt kỳ 0.
     function freezeCurrentEpoch() external override whenNotPaused {
         uint256 epoch = _requireStartedEpoch();
         if (!_accounts[msg.sender].activated) revert NotActivated();
-        if (frozenUntilEpoch[msg.sender] >= epoch) revert AlreadyFrozen(epoch);
+        if (frozenUntilEpoch[msg.sender] == epoch + 1) revert AlreadyFrozen(epoch);
         _payFee(freezeFee);
-        frozenUntilEpoch[msg.sender] = epoch;
+        frozenUntilEpoch[msg.sender] = epoch + 1;
         emit Frozen(msg.sender, epoch, freezeFee);
     }
 
@@ -335,6 +365,28 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
         hasInsurance[msg.sender] = true;
         _insuredEpoch[msg.sender] = epoch;
         emit Insured(msg.sender, epoch, insurancePremium);
+    }
+
+    /// @notice Đóng băng kỳ hiện tại cho `wallet` (tặng freeze). Chỉ operator (FreezeGift) gọi, operator trả phí.
+    /// @dev frozenUntilEpoch lưu epoch + 1; chỉ được tặng một lần cho cùng kỳ.
+    function freezeFor(address wallet) external onlyOperator whenNotPaused {
+        uint256 epoch = _requireStartedEpoch();
+        if (!_accounts[wallet].activated) revert NotActivated();
+        if (frozenUntilEpoch[wallet] == epoch + 1) revert AlreadyFrozen(epoch);
+        _payFee(freezeFee);
+        frozenUntilEpoch[wallet] = epoch + 1;
+        emit Frozen(wallet, epoch, freezeFee);
+    }
+
+    /// @notice Mua bảo hiểm kỳ hiện tại cho `wallet` (tặng insurance). Chỉ operator gọi, operator trả phí.
+    function insureFor(address wallet) external onlyOperator whenNotPaused {
+        uint256 epoch = _requireStartedEpoch();
+        if (!_accounts[wallet].activated) revert NotActivated();
+        if (hasInsurance[wallet] && _insuredEpoch[wallet] == epoch) revert AlreadyInsured(epoch);
+        _payFee(insurancePremium);
+        hasInsurance[wallet] = true;
+        _insuredEpoch[wallet] = epoch;
+        emit Insured(wallet, epoch, insurancePremium);
     }
 
     function _payFee(uint256 fee) internal {
@@ -406,7 +458,7 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
         uint256 prevStreak = acc.streak;
         if (qualified) {
             newStreak = prevStreak + 1;
-        } else if (epoch <= frozenUntilEpoch[w] || (hasInsurance[w] && _insuredEpoch[w] == epoch)) {
+        } else if (frozenUntilEpoch[w] == epoch + 1 || (hasInsurance[w] && _insuredEpoch[w] == epoch)) {
             // Freeze / bảo hiểm: giữ streak cũ, tiêu hao hiệu lực.
             newStreak = prevStreak;
             frozenUntilEpoch[w] = 0;

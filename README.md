@@ -6,6 +6,14 @@
 
 ## 0. Trạng thái triển khai của IT1 (cập nhật 2026-11-18)
 
+### Cập nhật 2026-11-19 — lô 3: 80 tính năng mới + sửa lỗi cốt lõi
+
+- **27 contract mới** (Tính năng 51–130) ở `contracts/src/`: xã hội (`FreezeGift`, `SavingCircle`, `MentorHub`, `CelebrationPool`, `Web3Mail`, `GuildWars`), tài chính (`PrizeLinkedSavings`, `SavingsBond`, `PaycheckSplitter`, `TermLock`, `VaultCredit`), game hoá (`PredictionBox`, `DailyCheckIn`, `PetCompanion`, `KingOfTheHill`, `StampsCollection`), an toàn (`TimeCapsule`, `GuardianRecovery`, `EmergencyHatch`, `SpendingLimit`), quản trị (`GemStaking`, `TreasuryDividend`, `FeeRebate`, `CharityPot`), UX (`GoalTemplates`, `FaucetDrip`, `SavingsJournal`). Danh sách đầy đủ ở `contracts/FEATURES3.md`.
+- **136 test Foundry pass** (thêm 29 test trong `test/Extensions3.t.sol`).
+- **Sửa lỗi spec**: `BatchHelper.batchDepositWithTarget` giờ thực sự đặt mục tiêu (cơ chế operator mới `setWeeklyTargetFor`); fix lỗi kép của `frozenUntilEpoch` ở kỳ 0; `SavingCircle` tính phí đóng muộn đúng vòng; `KingOfTheHill` chỉ thưởng khi lật đổ thật; `GuildWars.sync()` không revert khi chưa có kỳ mới.
+- **Frontend nối backend**: vòng quay may mắn quay thật on-chain (`LuckyWheel`), tab Nhóm có tạo/tham gia nhóm bằng mã mờ (`StreakGroups`) + nút tặng Streak Freeze (`FreezeGift`), điểm danh hằng ngày nhận Gems (`DailyCheckIn`), faucet cho ví mới (`FaucetDrip`). Biến môi trường mới trong `web/.env.example`.
+- Deploy lô 3: `forge script script/DeployExtensions.s.sol:DeployExtensions --rpc-url ... --broadcast` (đọc/gộp `deployments/<chainId>.json`, tự cấp quyền operator + minter).
+
 ### Contract (hoàn tất)
 
 - **49 contract** ở `contracts/src/`: 4 contract lõi (vault/distributor/mock) + 42 contract mở rộng (nhóm, NFT, lucky wheel, challenges, boost yield, v.v. của teammate) + **3 contract vòng lặp tiền tệ trong game do IT1 bổ sung**:

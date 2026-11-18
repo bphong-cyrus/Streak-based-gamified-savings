@@ -72,6 +72,7 @@ interface IStreakVault {
     function epochEnd(uint256 epoch) external view returns (uint256);
 
     function setWeeklyTarget(uint256 amount) external;
+    function setWeeklyTargetFor(address wallet, uint256 amount) external;
     function deposit(uint256 amount) external;
     function depositFor(address wallet, uint256 amount) external;
     function withdraw(uint256 amount) external;
@@ -93,6 +94,10 @@ interface IStreakVault {
     function depositCount(address wallet) external view returns (uint256);
     function frozenUntilEpoch(address wallet) external view returns (uint256);
     function hasInsurance(address wallet) external view returns (bool);
+    function freezeFee() external view returns (uint256);
+    function insurancePremium() external view returns (uint256);
+    function freezeFor(address wallet) external;
+    function insureFor(address wallet) external;
 
     /// @notice Chỉ distributor gọi. Chốt streak cho mọi ví đã kích hoạt tại `epoch`.
     /// @return wallets Danh sách ví được xét

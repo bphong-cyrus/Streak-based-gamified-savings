@@ -117,6 +117,7 @@ contract Extensions2Test is BaseTest {
         roundUp = new RoundUpVault(token, vault);
         portfolio = new PortfolioView(vault, distributor);
         batchHelper = new BatchHelper(vault, distributor);
+        vault.setOperator(address(batchHelper), true); // batch cần quyền đặt mục tiêu hộ
         council = new CouncilMultisig(an, binh, chi);
         timelock = new Timelock(1 hours);
         watchtower = new Watchtower(vault, distributor);
@@ -684,6 +685,8 @@ contract Extensions2Test is BaseTest {
         IStreakVault.AccountView memory a = vault.getAccount(an);
         assertEq(a.principal, 5 * ONE);
         assertEq(a.currentProgress, 5 * ONE);
+        // Bugfix: batch phải thực sự đặt mục tiêu (không bỏ qua tham số target).
+        assertEq(a.currentTarget, 5 * ONE, "target chua duoc dat qua batch");
     }
 
     function test_BatchHelperRateLimit() public {

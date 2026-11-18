@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { contracts } from "@/lib/config";
-import { yieldDistributorAbi } from "@/lib/abis";
+import { useAccount, useReadContracts } from "wagmi";
+import { contracts, isConfigured } from "@/lib/config";
+import { yieldDistributorAbi, luckyWheelAbi, dailyCheckInAbi } from "@/lib/abis";
 import { fmt } from "@/lib/format";
 import { TxFeedback, useTx } from "@/components/useTx";
 import { MissionsCard } from "@/components/cozy/MissionsCard";
@@ -26,13 +27,50 @@ const WHEEL_REWARDS = [
   { icon: "🎨", label: "Theme độc quyền" },
 ];
 
-/** Tab Rewards: nhiệm vụ Paws, nhận thưởng on-chain, chốt kỳ, vòng quay may mắn (demo). */
+/** Tab Rewards: nhiệm vụ, nhận thưởng on-chain, chốt kỳ, vòng quay may mắn on-chain, điểm danh. */
 export function RewardsTab({ data, missions, gemsBalance }: RewardsProps) {
   const claim = useTx();
   const finalize = useTx();
+  const spin = useTx();
+  const checkInTx = useTx();
   const [spinning, setSpinning] = useState(false);
   const [won, setWon] = useState<number | null>(null);
-  const { claimable, claimed, canFinalize, nextEpochToFinalize, rollover, currentBudget } = data;
+  const { address } = useAccount();
+  const { claimable, claimed, canFinalize, nextEpochToFinalize, rollover, currentBudget, account } = data;
+  const epoch = account?.currentEpoch;
+
+  const wheelLive = isConfigured(contracts.wheel);
+  const checkInLive = isConfigured(contracts.dailyCheckIn);
+
+  // Vòng quay on-chain: 1 lượt mỗi kỳ, pool do owner nạp
+  const wheelState = useReadContracts({
+    contracts:
+      wheelLive && address && epoch !== undefined
+        ? [
+            { address: contracts.wheel, abi: luckyWheelAbi, functionName: "canSpin", args: [address, epoch] },
+            { address: contracts.wheel, abi: luckyWheelAbi, functionName: "lastSpunEpoch", args: [address] },
+          ]
+        : [],
+    query: { refetchInterval: 8_000, enabled: wheelLive && !!address && epoch !== undefined },
+  });
+  const canSpin = wheelState.data?.[0]?.result as boolean | undefined;
+
+  // Điểm danh: 1 lần/ngày
+  const checkInState = useReadContracts({
+    contracts:
+      checkInLive && address
+        ? [
+            { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "today", args: [] },
+            { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "lastCheckInDay", args: [address] },
+            { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "checkInStreakDays", args: [address] },
+          ]
+        : [],
+    query: { refetchInterval: 30_000, enabled: checkInLive && !!address },
+  });
+  const todayDay = checkInState.data?.[0]?.result as bigint | undefined;
+  const lastDay = checkInState.data?.[1]?.result as bigint | undefined;
+  const canCheckIn = todayDay !== undefined && lastDay !== todayDay;
+  const checkInStreak = (checkInState.data?.[2]?.result as bigint | undefined) ?? 0n;
 
   async function claimYield() {
     await claim.run("Nhận thưởng", [
@@ -58,17 +96,38 @@ export function RewardsTab({ data, missions, gemsBalance }: RewardsProps) {
     ]);
   }
 
-  function spin() {
-    if (spinning) return;
+  async function spinWheel() {
+    if (spinning || epoch === undefined) return;
     setWon(null);
     setSpinning(true);
+    if (wheelLive) {
+      // On-chain: quay thật trên LuckyWheel (kết quả ghi trong tx)
+      await spin.run("Vòng quay may mắn", [
+        {
+          label: "Đang quay trên blockchain…",
+          call: { address: contracts.wheel, abi: luckyWheelAbi, functionName: "spin", args: [epoch] },
+        },
+      ]);
+      setSpinning(false);
+      setWon(Math.floor(Math.random() * WHEEL_REWARDS.length)); // hiệu ứng minh họa phần thưởng
+      return;
+    }
     setTimeout(() => {
       setSpinning(false);
       setWon(Math.floor(Math.random() * WHEEL_REWARDS.length));
     }, 3300);
   }
 
-  const busy = claim.step !== null || finalize.step !== null;
+  async function doCheckIn() {
+    await checkInTx.run("Điểm danh", [
+      {
+        label: "Đang nhận Gems điểm danh…",
+        call: { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "checkIn" },
+      },
+    ]);
+  }
+
+  const busy = claim.step !== null || finalize.step !== null || spin.step !== null || checkInTx.step !== null;
 
   return (
     <div className="space-y-3 px-4 pb-28 pt-2">
@@ -114,7 +173,11 @@ export function RewardsTab({ data, missions, gemsBalance }: RewardsProps) {
       {/* vòng quay may mắn */}
       <div className="card-cream p-4 text-center">
         <h3 className="font-cozy text-lg font-bold">🎡 Vòng quay may mắn</h3>
-        <p className="text-xs font-semibold text-cocoa-500">Demo giao diện — phần thưởng ngẫu nhiên, chưa ghi on-chain</p>
+        <p className="text-xs font-semibold text-cocoa-500">
+          {wheelLive
+            ? "Quay thật trên blockchain — mỗi ví một lượt mỗi kỳ, giải thưởng từ prize pool."
+            : "Demo giao diện — phần thưởng ngẫu nhiên, chưa ghi on-chain"}
+        </p>
 
         <div className="relative mx-auto mt-3 h-52 w-52">
           {/* kim chỉ */}
@@ -143,15 +206,38 @@ export function RewardsTab({ data, missions, gemsBalance }: RewardsProps) {
           </div>
         </div>
 
-        <button className="btn-cozy mt-4" disabled={spinning} onClick={spin}>
-          {spinning ? "Đang quay…" : "🎲 Quay miễn phí"}
+        <button
+          className="btn-cozy mt-4"
+          disabled={spinning || busy || (wheelLive && (!!address ? canSpin === false : true))}
+          onClick={spinWheel}
+        >
+          {spinning ? "Đang quay…" : wheelLive ? (canSpin === false ? "Đã quay kỳ này 🔒" : "🎲 Quay ngay") : "🎲 Quay miễn phí"}
         </button>
         {won !== null && (
           <div className="mx-auto mt-3 w-fit rounded-xl border-2 border-leaf-500/60 bg-leaf-300/40 px-4 py-2 font-cozy font-bold text-leaf-600">
             🎉 Bạn nhận được: {WHEEL_REWARDS[won].label}!
           </div>
         )}
+        <TxFeedback state={{ step: spin.step, hash: spin.hash, error: spin.error }} />
       </div>
+
+      {/* điểm danh hằng ngày */}
+      {checkInLive && (
+        <div className="card-cream p-4">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="font-cozy text-lg font-bold">📅 Điểm danh mỗi ngày</h3>
+              <p className="text-xs font-semibold text-cocoa-500">
+                Chuỗi {checkInStreak.toString()} ngày · thưởng Gems tăng dần theo chuỗi.
+              </p>
+            </div>
+            <button className="btn-cozy shrink-0" disabled={busy || !address || !canCheckIn} onClick={doCheckIn}>
+              {canCheckIn ? "✅ Điểm danh" : "Đã điểm danh hôm nay"}
+            </button>
+          </div>
+          <TxFeedback state={{ step: checkInTx.step, hash: checkInTx.hash, error: checkInTx.error }} />
+        </div>
+      )}
     </div>
   );
 }

@@ -20,6 +20,12 @@ const CONTRACTS = [
   "RoundUpVault", "PortfolioView", "BatchHelper", "CouncilMultisig",
   "Timelock", "Watchtower", "AuditExporter", "VaultMigrator", "GasSponsor",
   "Gems", "Missions", "GemShop",
+  "FreezeGift", "SavingCircle", "MentorHub", "CelebrationPool", "Web3Mail",
+  "GuildWars", "PrizeLinkedSavings", "SavingsBond", "PaycheckSplitter", "TermLock",
+  "PredictionBox", "DailyCheckIn", "PetCompanion", "KingOfTheHill", "TimeCapsule",
+  "GuardianRecovery", "GemStaking", "TreasuryDividend", "EmergencyHatch",
+  "StampsCollection", "VaultCredit", "GoalTemplates", "FaucetDrip", "SavingsJournal",
+  "FeeRebate", "CharityPot", "SpendingLimit",
 ];
 
 mkdirSync(outDir, { recursive: true });

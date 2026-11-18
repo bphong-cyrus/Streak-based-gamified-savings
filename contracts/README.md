@@ -14,6 +14,8 @@ contracts/
     interfaces/               IStreakVault (struct trả về + events + errors), IMockYieldSource
   script/
     Deploy.s.sol              Deploy + nối distributor, ghi deployments/<chainId>.json
+    DeployAll.s.sol           Deploy toàn bộ hệ thống lõi + mở rộng lô 1
+    DeployExtensions.s.sol    Deploy lô 3 (Tính năng 51-130), gộp địa chỉ vào json
     Seed.s.sol                Mint ví demo + fundEpoch(0, 2), fundEpoch(1, 3)
     export-abi.mjs            Xuất ABI JSON + abis.ts (as const) + deployments.json
     local.ps1                 Anvil: deploy + seed + export (Windows)

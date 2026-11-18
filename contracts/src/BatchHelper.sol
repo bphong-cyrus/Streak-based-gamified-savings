@@ -64,13 +64,14 @@ contract BatchHelper is ReentrancyGuard {
         if (_batchCount[msg.sender] > maxBatchesPerEpoch) revert BatchLimitReached();
     }
 
-    /// @notice Tính năng 36: gửi tiền cho chính msg.sender trong một tx batch.
+    /// @notice Tính năng 36: gửi tiền + đặt mục tiêu cho chính msg.sender trong một tx batch.
     /// @dev Ví cần approve token cho BatchHelper (batch kéo token rồi gửi hộ).
-    ///      Target vẫn do user tự đặt trực tiếp trên vault (1 tx riêng).
+    ///      Vault phải cấp quyền operator cho BatchHelper để đặt mục tiêu hộ.
     function batchDepositWithTarget(uint256 depositAmount, uint256 target) external gated nonReentrant {
         _consumeBatch();
         IERC20 token = IERC20(vault.token());
         token.safeTransferFrom(msg.sender, address(this), depositAmount);
+        if (target > 0) vault.setWeeklyTargetFor(msg.sender, target);
         token.approve(address(vault), depositAmount);
         vault.depositFor(msg.sender, depositAmount);
     }

@@ -34,7 +34,18 @@ export const contracts = {
   missions: (process.env.NEXT_PUBLIC_MISSIONS_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
   gemShop: (process.env.NEXT_PUBLIC_GEMSHOP_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
   autoSaver: (process.env.NEXT_PUBLIC_AUTOSAVER_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
+  wheel: (process.env.NEXT_PUBLIC_WHEEL_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
+  groups: (process.env.NEXT_PUBLIC_GROUPS_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
+  freezeGift: (process.env.NEXT_PUBLIC_FREEZEGIFT_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
+  dailyCheckIn: (process.env.NEXT_PUBLIC_DAILYCHECKIN_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
+  faucetDrip: (process.env.NEXT_PUBLIC_FAUCET_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
 };
+
+const ZERO = "0x0000000000000000000000000000000000000000" as const;
+
+export function isConfigured(address: `0x${string}` | undefined): boolean {
+  return !!address && address !== ZERO;
+}
 
 export function explorerTx(hash: string) {
   return `https://testnet.snowtrace.io/tx/${hash}`;

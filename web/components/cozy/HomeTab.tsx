@@ -5,7 +5,37 @@ import { Building } from "@/components/cozy/Building";
 import { DepositSheet } from "@/components/cozy/DepositSheet";
 import { fmt } from "@/lib/format";
 import { fmtGems } from "@/lib/useGemsData";
+import { contracts, isConfigured } from "@/lib/config";
+import { faucetDripAbi } from "@/lib/abis";
+import { TxFeedback, useTx } from "@/components/useTx";
 import type { VaultData } from "@/lib/useVaultData";
+
+/** Nút nhận mUSDC miễn phí cho ví mới — gọi FaucetDrip (tự đặt mục tiêu đầu luôn). */
+function FaucetButton() {
+  const tx = useTx();
+  const [done, setDone] = useState(false);
+
+  if (!isConfigured(contracts.faucetDrip) || done) return null;
+
+  async function drip() {
+    const ok = await tx.run("Vòi nước ngườ mới", [
+      {
+        label: "Đang nhận 5 mUSDC miễn phí…",
+        call: { address: contracts.faucetDrip, abi: faucetDripAbi, functionName: "drip" },
+      },
+    ]);
+    if (ok) setDone(true);
+  }
+
+  return (
+    <div className="mt-2">
+      <button className="btn-cream w-full" disabled={tx.step !== null} onClick={drip}>
+        🚰 Nhận 5 mUSDC miễn phí (ví mới)
+      </button>
+      <TxFeedback state={{ step: tx.step, hash: tx.hash, error: tx.error }} />
+    </div>
+  );
+}
 
 interface Props {
   data: VaultData;
@@ -160,6 +190,12 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
         <button className="btn-cozy mt-3 w-full text-lg" onClick={() => setSheetOpen(true)}>
           {goalDone ? "💰 Gửi thêm" : `🏗️ Gửi ${fmt(remaining)} mUSDC hoàn thành tầng`}
         </button>
+        {!account.activated && (
+          <>
+            <FaucetButton />
+            <p className="mt-2 text-xs font-semibold text-cocoa-500">Đặt mục tiêu ở tab Goals để bắt đầu xây nhà nhé!</p>
+          </>
+        )}
       </div>
 
       {/* băng tin thị trường */}
