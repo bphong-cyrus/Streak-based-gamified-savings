@@ -4,6 +4,37 @@
 
 **Bản nộp** chạy trên Avalanche Fuji C-Chain với token `mUSDC` và nguồn yield mô phỏng được nạp sẵn. Mọi thay đổi về tiền gốc, streak, phân bổ và nhận thưởng đều phát sinh từ giao dịch on-chain. README mô tả đặc tả triển khai cho team. Các lệnh chạy dự án áp dụng sau khi hai bạn IT tạo các file và script tương ứng.
 
+## 0. Trạng thái triển khai của IT1 (cập nhật 2026-11-18)
+
+### Contract (hoàn tất)
+
+- Bốn contract ở `contracts/src/` đã viết xong và **38 test Foundry pass** (`forge test -vv`), gồm unit test, kịch bản demo 3 ví, invariant kiểm chứng solvency vault/distributor và giới hạn 20 ví.
+- Đã **deploy lên Avalanche Fuji C-Chain** (Demo mode: `epochDuration = 180s`):
+
+| Hợp đồng | Địa chỉ |
+| --- | --- |
+| `MockUSDC` (token) | `0x0EB42B93A431a4E29D3D95aa662A38FC2fee7fee` |
+| `StreakVault` | `0x99d22D21a86fc5497E3d4525b001c65f31cEd779` |
+| `MockYieldSource` | `0xE3E2B5643B2A9240a57612Fc014E3A4916DfD089` |
+| `YieldDistributor` | `0x1db1DBc14678E374bc35943CA27fBB367E7de399` |
+
+- Deployer: `0xBc4c717B826c9E18682D1A0A02D9Dc83EAC69440` · `startAt = 1794980242` · chi tiết trong `contracts/deployments/43113.json`. ABI bàn giao ở `contracts/abi/abis.ts` (đã gồm cả chain 43113 và 31337).
+- Seed demo đã nạp: ngân sách kỳ 0 = 2 mUSDC, kỳ 1 = 3 mUSDC. Riêng ví An (deployer) đã chạy thật toàn bộ vòng lặp trên Fuji: đặt mục tiêu 5 → approve + gửi 5 → chờ hết kỳ → chốt kỳ 0–4 (rollover 2+3 mUSDC chuyển đúng về kỳ 4) → nhận đủ 5 mUSDC theo trọng số streak → rút/gửi lại gốc. Mọi giao dịch đối chiếu được trên [Snowtrace](https://testnet.snowtrace.io/address/0x99d22D21a86fc5497E3d4525b001c65f31cEd779). Verify source trên Snowtrace còn treo do giới hạn API key, có thể submit lại sau.
+- Ví demo Bình/Chi: cần xin test AVAX ở faucet, sau đó deployer chạy `Seed.s.sol` với `DEMO_WALLETS=<địa chỉ>` để mint mUSDC.
+
+### Frontend `web/` (hoàn tất, IT1 phụ trách UI/UX)
+
+Mobile web Next.js 14 + Wagmi/Viem + Tailwind. Chạy local:
+
+```bash
+cd web
+npm ci
+cp .env.example .env.local   # đã có sẵn .env.local trỏ đúng địa chỉ Fuji
+npm run dev                  # http://localhost:3000
+```
+
+Dashboard gồm: kết nối ví (injected) + tự chuyển mạng Fuji, streak hero với đếm ngược hạn kỳ, thanh tiến độ kỳ hiện tại, thẻ gốc/số dư/thưởng chờ nhận/ngân sách kỳ, form đặt mục tiêu — gửi (approve tự động khi thiếu allowance) — rút gốc, nút nhận thưởng và nút chốt kỳ (public), lịch sử 8 kỳ gần nhất kèm trạng thái đạt/thiếu và thưởng từng kỳ. Mọi giao dịch hiện trạng thái chờ ký/chờ xác nhận/lỗi kèm link Snowtrace. `npm run build` pass.
+
 ## 1. Phạm vi đã chốt
 
 | Tính năng | Bản nộp | Tiêu chí nghiệm thu |
