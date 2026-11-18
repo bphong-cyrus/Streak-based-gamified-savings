@@ -2020,5 +2020,16 @@ export const deployments = {
     "token": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
     "vault": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
     "yieldSource": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
+  },
+  "43113": {
+    "chainId": 43113,
+    "deployBlock": 61268499,
+    "deployer": "0xBc4c717B826c9E18682D1A0A02D9Dc83EAC69440",
+    "distributor": "0xb06CE2c26E532697EdA3EB9146aE254d85Eae45a",
+    "epochSeconds": 180,
+    "startAt": 1794978484,
+    "token": "0x2581418fD1Dc2aF720A9c9d0850814Bacf7480aB",
+    "vault": "0x68D7559b2f8f4025FaF518f95eB9C40A0F410fFA",
+    "yieldSource": "0x45E09331CAb549f121F7CC284656e69edF5fbfC5"
   }
 } as const;
