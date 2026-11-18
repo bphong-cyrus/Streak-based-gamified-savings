@@ -4,9 +4,8 @@ import { useDisconnect } from "wagmi";
 import { contracts } from "@/lib/config";
 import { fmt, shortAddr } from "@/lib/format";
 import { mascotOf } from "@/components/cozy/Building";
+import type { ThemeMode } from "@/components/cozy/useThemeLanding";
 import type { VaultData } from "@/lib/useVaultData";
-
-export type ThemeMode = "day" | "night";
 
 interface Props {
   data: VaultData;

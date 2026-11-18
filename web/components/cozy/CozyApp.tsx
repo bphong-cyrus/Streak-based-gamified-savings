@@ -8,11 +8,12 @@ import { HomeTab } from "@/components/cozy/HomeTab";
 import { GoalsTab } from "@/components/cozy/GoalsTab";
 import { RewardsTab } from "@/components/cozy/RewardsTab";
 import { GroupTab } from "@/components/cozy/GroupTab";
-import { MeTab, type ThemeMode } from "@/components/cozy/MeTab";
+import { MeTab } from "@/components/cozy/MeTab";
 import { mascotOf } from "@/components/cozy/Building";
-import { useVaultData } from "@/lib/useVaultData";
+import { useVaultData, type VaultData } from "@/lib/useVaultData";
 import { shortAddr } from "@/lib/format";
 import { targetChainId } from "@/lib/config";
+import type { ThemeMode } from "@/components/cozy/useThemeLanding";
 
 type TabKey = "home" | "goals" | "group" | "rewards" | "me";
 
@@ -24,32 +25,22 @@ const TABS: Array<{ key: TabKey; icon: string; label: string }> = [
   { key: "me", icon: "😺", label: "Tôi" },
 ];
 
-function useTheme(): [ThemeMode, (t: ThemeMode) => void] {
-  const [theme, setTheme] = useState<ThemeMode>("day");
-  useEffect(() => {
-    const saved = localStorage.getItem("cozy-theme");
-    if (saved === "day" || saved === "night") {
-      setTheme(saved);
-    } else {
-      const h = new Date().getHours();
-      setTheme(h >= 18 || h < 6 ? "night" : "day");
-    }
-  }, []);
-  const change = (t: ThemeMode) => {
-    setTheme(t);
-    localStorage.setItem("cozy-theme", t);
-  };
-  return [theme, change];
+interface CozyAppProps {
+  theme: ThemeMode;
+  onThemeChange: (t: ThemeMode) => void;
+  /** Dữ liệu mẫu khi xem demo không cần ví. */
+  demoData?: VaultData;
+  onExitDemo?: () => void;
 }
 
-/** Vỏ app: bầu trờ, header, tab content, bottom nav, animation xây tầng. */
-export function CozyApp() {
-  const data = useVaultData();
+/** Vỏ app: header, tab content, bottom nav, animation xây tầng. Bầu trờ do page.tsx render theo theme. */
+export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppProps) {
+  const live = useVaultData();
+  const data = demoData ?? live;
   const chainId = useChainId();
   const [tab, setTab] = useState<TabKey>("home");
-  const [theme, setTheme] = useTheme();
   const night = theme === "night";
-  const wrongChain = chainId !== targetChainId;
+  const wrongChain = !demoData && chainId !== targetChainId;
 
   // animation xây tầng: building → celebrate
   const [building, setBuilding] = useState(false);
@@ -107,14 +98,30 @@ export function CozyApp() {
         <div className="flex items-center gap-2">
           <button
             className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-cocoa-700/50 bg-cream-100 text-lg shadow-chunkySm active:translate-y-0.5"
-            onClick={() => setTheme(night ? "day" : "night")}
+            onClick={() => onThemeChange(night ? "day" : "night")}
             title={night ? "Chuyển ban ngày" : "Chuyển ban đêm"}
           >
             {night ? "☀️" : "🌙"}
           </button>
-          <ConnectButton />
+          {demoData ? (
+            <span className="rounded-full border-2 border-cocoa-700/50 bg-cream-100 px-3 py-1.5 font-cozy text-xs font-extrabold text-cocoa-600 shadow-chunkySm">
+              🎀 Demo
+            </span>
+          ) : (
+            <ConnectButton />
+          )}
         </div>
       </header>
+
+      {demoData && (
+        <button
+          className="mx-4 mt-1 flex w-[calc(100%-2rem)] items-center justify-between rounded-xl border-2 border-dashed border-cocoa-700/40 bg-cream-100/90 px-3 py-1.5 text-left text-xs font-bold text-cocoa-600"
+          onClick={onExitDemo}
+        >
+          <span>👀 Demo với dữ liệu mẫu — giao dịch sẽ không thực hiện được</span>
+          <span className="pl-2 underline">Thoát</span>
+        </button>
+      )}
 
       {/* nội dung tab */}
       <main className="pt-1">
@@ -130,7 +137,7 @@ export function CozyApp() {
         {tab === "goals" && <GoalsTab data={data} />}
         {tab === "group" && <GroupTab data={data} />}
         {tab === "rewards" && <RewardsTab data={data} />}
-        {tab === "me" && <MeTab data={data} theme={theme} onThemeChange={setTheme} />}
+        {tab === "me" && <MeTab data={data} theme={theme} onThemeChange={onThemeChange} />}
       </main>
 
       {/* bottom nav */}
