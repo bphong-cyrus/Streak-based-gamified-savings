@@ -49,3 +49,18 @@ seed-fuji:
 	  --account fuji-deployer \
 	  --sender $(DEPLOYER_ADDRESS) \
 	  --broadcast
+
+# ------------------------------------------------------------------
+# Deploy toàn bộ hệ thống (lõi + mở rộng)
+# ------------------------------------------------------------------
+deploy-all-local:
+	forge script script/DeployAll.s.sol:DeployAll \
+	  --rpc-url http://127.0.0.1:8545 \
+	  --broadcast
+
+deploy-all-fuji:
+	forge script script/DeployAll.s.sol:DeployAll \
+	  --rpc-url $(FUJI_RPC_URL) \
+	  --account fuji-deployer \
+	  --sender $(DEPLOYER_ADDRESS) \
+	  --broadcast

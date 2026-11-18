@@ -17,6 +17,7 @@ interface IStreakVault {
         uint256 currentDeposited; // Tổng gửi trong kỳ hiện tại
         uint256 currentWithdrawn; // Tổng rút gốc trong kỳ hiện tại
         uint256 currentProgress; // max(0, gửi - rút) trong kỳ hiện tại
+        uint256 depositCount; // Tổng số lần gửi qua vault (mọi kỳ)
     }
 
     /// @notice Trạng thái của một ví trong một kỳ.
@@ -35,6 +36,13 @@ interface IStreakVault {
     event Withdrawn(address indexed wallet, uint256 indexed epoch, uint256 amount, uint256 newPrincipal);
     event AccountEpochSettled(address indexed wallet, uint256 indexed epoch, bool qualified, uint256 streak);
     event DistributorSet(address indexed distributor);
+    event DepositedFor(address indexed operator, address indexed wallet, uint256 indexed epoch, uint256 amount);
+    event Frozen(address indexed wallet, uint256 indexed epoch, uint256 fee);
+    event Insured(address indexed wallet, uint256 indexed epoch, uint256 premium);
+    event Revived(address indexed wallet, uint256 indexed failedEpoch, uint256 restoredStreak, uint256 fee);
+    event WithdrawFeeCharged(address indexed wallet, uint256 amount, uint256 fee);
+    event EmergencyWithdrawn(address indexed wallet, uint256 principal, uint256 penalty);
+    event TreasurySet(address indexed treasury);
 
     error ZeroAmount();
     error ZeroAddress();
@@ -46,6 +54,13 @@ interface IStreakVault {
     error DistributorAlreadySet();
     error EpochNotEnded(uint256 epoch, uint256 endsAt);
     error EpochOutOfOrder(uint256 expected, uint256 got);
+    error DepositBelowMinimum(uint256 amount, uint256 minDeposit);
+    error DepositOverEpochLimit(uint256 amount, uint256 limit);
+    error NotActivated();
+    error AlreadyFrozen(uint256 epoch);
+    error AlreadyInsured(uint256 epoch);
+    error NothingToRevive();
+    error ReviveWindowClosed(uint256 failedEpoch, uint256 deadlineEpoch);
 
     function startAt() external view returns (uint256);
     function epochDuration() external view returns (uint256);
@@ -56,19 +71,30 @@ interface IStreakVault {
 
     function setWeeklyTarget(uint256 amount) external;
     function deposit(uint256 amount) external;
+    function depositFor(address wallet, uint256 amount) external;
     function withdraw(uint256 amount) external;
+    function emergencyWithdraw() external;
+
+    function freezeCurrentEpoch() external;
+    function insureCurrentEpoch() external;
+    function revive() external;
 
     function getAccount(address wallet) external view returns (AccountView memory);
     function getEpochStatus(address wallet, uint256 epoch) external view returns (EpochStatus memory);
     function targetAt(address wallet, uint256 epoch) external view returns (uint256);
     function getParticipants() external view returns (address[] memory);
     function totalPrincipal() external view returns (uint256);
+    function nextEpochToSettle() external view returns (uint256);
+    function depositCount(address wallet) external view returns (uint256);
+    function frozenUntilEpoch(address wallet) external view returns (uint256);
+    function hasInsurance(address wallet) external view returns (bool);
 
     /// @notice Chỉ distributor gọi. Chốt streak cho mọi ví đã kích hoạt tại `epoch`.
     /// @return wallets Danh sách ví được xét
-    /// @return weights Trọng số tương ứng (= streak nếu đạt, 0 nếu không)
+    /// @return weights Trọng số tương ứng (= streak nếu đạt/giữ, 0 nếu không)
+    /// @return principals Gốc của ví tại thởi điểm chốt (dùng cho lãi cơ bản)
     /// @return totalWeight Tổng trọng số
     function settleEpoch(uint256 epoch)
         external
-        returns (address[] memory wallets, uint256[] memory weights, uint256 totalWeight);
+        returns (address[] memory wallets, uint256[] memory weights, uint256[] memory principals, uint256 totalWeight);
 }

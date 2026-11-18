@@ -8,7 +8,11 @@ import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const outDir = resolve(process.cwd(), process.argv[2] ?? join(root, "abi"));
-const CONTRACTS = ["MockUSDC", "StreakVault", "MockYieldSource", "YieldDistributor"];
+const CONTRACTS = [
+  "MockUSDC", "StreakVault", "MockYieldSource", "YieldDistributor",
+  "Treasury", "AutoSaver", "StreakGroups", "StreakNFT", "Challenges",
+  "LuckyWheel", "SavingsGoal", "Leaderboard", "ReminderCenter",
+];
 
 mkdirSync(outDir, { recursive: true });
 

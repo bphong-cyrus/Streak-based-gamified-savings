@@ -146,3 +146,53 @@ ERC-20 chuẩn + `mint(to, amount)` (MINTER_ROLE), `decimals() = 6`.
 - `token.balanceOf(vault) >= totalPrincipal` và `Σ principal == totalPrincipal`.
 - `token.balanceOf(distributor) >= totalClaimable + rollover`.
 - Gas `finalizeEpoch` với 20 ví: ~2.24M (test), dưới giới hạn block Fuji.
+
+---
+
+## Tính năng mở rộng (25 chức năng, đợt 2)
+
+Mặc định mọi phí/tỷ lệ = 0 (tương thích ngược MVP). Owner cấu hình qua setter từng contract.
+
+### StreakVault — bảo vệ streak & giới hạn
+| # | Tính năng | Hàm / view |
+| --- | --- | --- |
+| 1 | Đóng băng streak (miss kỳ hiện tại không mất streak, trả phí) | `freezeCurrentEpoch()`, `frozenUntilEpoch(w)` |
+| 2 | Hồi sinh streak sau khi bị reset (trong 2 kỳ, trả phí) | `revive()`, `lastFailedEpoch(w)`, `streakBeforeFail(w)` |
+| 3 | Bảo hiểm streak kỳ hiện tại (tự tiêu hao khi miss) | `insureCurrentEpoch()`, `hasInsurance(w)` |
+| 6 | Gửi hộ (nền auto-save / gasless) | `depositFor(wallet, amount)` |
+| 19 | Rút khẩn cấp toàn bộ gốc với phạt | `emergencyWithdraw()` |
+| 20 | Giới hạn gửi min/max mỗi kỳ | `setMinDeposit`, `setMaxDepositPerEpoch` |
+| 21 | Tạm dừng hợp đồng | `pause()` / `unpause()` |
+| 24 | Đếm số lần gửi | `depositCount(w)` (trong `AccountView`) |
+
+### YieldDistributor — doanh thu & chia lãi
+| # | Tính năng | Hàm / view |
+| --- | --- | --- |
+| 15/16 | Lãi cơ bản theo gốc + lãi thưởng theo streak | `setBaseRatioBps(bps)`, summary có `totalPrincipal` |
+| 17 | Phí yield về treasury | `setYieldFeeBps(bps)`, `fee` trong summary |
+| 11 | Hoa hồng giới thiệu trên yield claim | `setReferrer(r)`, `referralEarnings(r)` |
+| 21 | Tạm dừng chốt/claim | `pause()` / `unpause()` |
+
+### Contracts mới (`src/`)
+| # | Tính năng | Contract |
+| --- | --- | --- |
+| 4 | Auto-saving định kỳ (bot gọi `execute` mỗi kỳ) | `AutoSaver` |
+| 5 | Round-up tiết kiệm (làm tròn lên bội số) | `AutoSaver.register(amount, roundUpTo)` |
+| 7/8 | Nhóm bạn bè (mã mờ) + streak nhóm | `StreakGroups` |
+| 9/10 | Điểm thành tựu + bảng xếp hạng | `Leaderboard.scoreOf / leaderboard()` |
+| 12 | NFT mốc streak 3/7/30 (soulbound) | `StreakNFT` |
+| 13/14 | Thử thách tài trợ + nhiệm vụ (streak / số lần gửi) | `Challenges` |
+| 22 | Mục tiêu tiết kiệm dài hạn (target + deadline) | `SavingsGoal` |
+| 23 | Vòng quay may mắn (giải từ pool, 1 lượt/kỳ) | `LuckyWheel` |
+| 25 | Nhắc nhở qua bot (opt-in + sự kiện mở kỳ) | `ReminderCenter` |
+| 18 | Treasury thu mọi loại phí | `Treasury` |
+
+### Deploy toàn bộ
+```bash
+EPOCH_SECONDS=180 START_DELAY_SECONDS=300 make deploy-all-fuji   # hoặc forge script script/DeployAll.s.sol:DeployAll ...
+```
+Script `DeployAll.s.sol` deploy 13 contracts và nối treasury; ghi `deployments/<chainId>.json` đầy đủ địa chỉ.
+
+### Kiểm thử
+- 57 tests (36 MVP + 21 mở rộng trong `test/Extensions.t.sol`), gồm freeze/revive/insurance,
+  auto-save + round-up, base/bonus split, referral, yield fee, groups, NFT, challenges, wheel, goal, leaderboard, reminder.

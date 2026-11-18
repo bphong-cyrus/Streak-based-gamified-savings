@@ -12,13 +12,13 @@
   },
   "43113": {
     "chainId": 43113,
-    "deployBlock": 61268499,
+    "deployBlock": 61269525,
     "deployer": "0xBc4c717B826c9E18682D1A0A02D9Dc83EAC69440",
-    "distributor": "0xb06CE2c26E532697EdA3EB9146aE254d85Eae45a",
+    "distributor": "0xc72B87F9F80AeFba2Eda2793F35C7BBD6Fa55B24",
     "epochSeconds": 180,
-    "startAt": 1794978484,
-    "token": "0x2581418fD1Dc2aF720A9c9d0850814Bacf7480aB",
-    "vault": "0x68D7559b2f8f4025FaF518f95eB9C40A0F410fFA",
-    "yieldSource": "0x45E09331CAb549f121F7CC284656e69edF5fbfC5"
+    "startAt": 1794980600,
+    "token": "0x0db5cdD119083C36c03a3BC62601bb5779E40044",
+    "vault": "0x1Aba9260d4d02AEe46654CBA0cDE773dfAB8AB14",
+    "yieldSource": "0x907398287e3b729C0285875C4e830Ab9F8E7D895"
   }
 }
