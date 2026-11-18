@@ -30,8 +30,8 @@ send "$AN_PK"   $TOKEN "approve(address,uint256)" $VAULT $(cast max-uint)
 send "$BINH_PK" $TOKEN "approve(address,uint256)" $VAULT $(cast max-uint)
 send "$CHI_PK"  $TOKEN "approve(address,uint256)" $VAULT $(cast max-uint)
 
-START=$(cast call $VAULT "startAt()(uint256)" --rpc-url "$RPC" | head -1)
-DUR=$(cast call $VAULT "epochDuration()(uint256)" --rpc-url "$RPC" | head -1)
+START=$(cast call $VAULT "startAt()(uint256)" --rpc-url "$RPC" | head -1 | awk '{print $1}')
+DUR=$(cast call $VAULT "epochDuration()(uint256)" --rpc-url "$RPC" | head -1 | awk '{print $1}')
 echo "startAt=$START duration=$DUR"
 NOW=$(date +%s)
 if (( NOW < START )); then
