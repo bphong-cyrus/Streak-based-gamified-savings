@@ -2,6 +2,8 @@
 # Kịch bản demo trên Fuji: An, Bình, Chi (README mục 6).
 set -euo pipefail
 
+export PATH="$HOME/.foundry/bin:$PATH"
+
 RPC=${RPC:-https://api.avax-test.network/ext/bc/C/rpc}
 TOKEN=0x0db5cdD119083C36c03a3BC62601bb5779E40044
 VAULT=0x1Aba9260d4d02AEe46654CBA0cDE773dfAB8AB14
