@@ -5,7 +5,15 @@ import { contracts } from "@/lib/config";
 import { yieldDistributorAbi } from "@/lib/abis";
 import { fmt } from "@/lib/format";
 import { TxFeedback, useTx } from "@/components/useTx";
+import { MissionsCard } from "@/components/cozy/MissionsCard";
 import type { VaultData } from "@/lib/useVaultData";
+import { fmtGems, type MissionView } from "@/lib/useGemsData";
+
+interface RewardsProps {
+  data: VaultData;
+  missions: MissionView[];
+  gemsBalance: bigint;
+}
 
 const WHEEL_REWARDS = [
   { icon: "❄️", label: "Streak Freeze" },
@@ -18,8 +26,8 @@ const WHEEL_REWARDS = [
   { icon: "🎨", label: "Theme độc quyền" },
 ];
 
-/** Tab Rewards: nhận thưởng on-chain, chốt kỳ, vòng quay may mắn (demo). */
-export function RewardsTab({ data }: { data: VaultData }) {
+/** Tab Rewards: nhiệm vụ Gems, nhận thưởng on-chain, chốt kỳ, vòng quay may mắn (demo). */
+export function RewardsTab({ data, missions, gemsBalance }: RewardsProps) {
   const claim = useTx();
   const finalize = useTx();
   const [spinning, setSpinning] = useState(false);
@@ -64,19 +72,27 @@ export function RewardsTab({ data }: { data: VaultData }) {
 
   return (
     <div className="space-y-3 px-4 pb-28 pt-2">
+      {/* nhiệm vụ kiếm Gems */}
+      <MissionsCard missions={missions} hasWallet={!!data.address} />
+
       {/* thưởng on-chain */}
       <div className="card-cream p-4">
         <h3 className="font-cozy text-lg font-bold">🎁 Thưởng của bạn</h3>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <div className="rounded-xl border-2 border-cream-300 bg-white/80 p-3 text-center">
-            <div className="text-[11px] font-bold uppercase text-cocoa-500">Chờ nhận</div>
-            <div className="font-cozy text-xl font-extrabold text-leaf-600">{fmt(claimable)} mUSDC</div>
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          <div className="rounded-xl border-2 border-cream-300 bg-white/80 p-2 text-center">
+            <div className="text-[10px] font-bold uppercase text-cocoa-500">💎 Gems</div>
+            <div className="font-cozy text-base font-extrabold text-lavender-500">{fmtGems(gemsBalance)}</div>
           </div>
-          <div className="rounded-xl border-2 border-cream-300 bg-white/80 p-3 text-center">
-            <div className="text-[11px] font-bold uppercase text-cocoa-500">Đã nhận</div>
-            <div className="font-cozy text-xl font-extrabold text-cocoa-700">{fmt(claimed)} mUSDC</div>
+          <div className="rounded-xl border-2 border-cream-300 bg-white/80 p-2 text-center">
+            <div className="text-[10px] font-bold uppercase text-cocoa-500">Chờ nhận</div>
+            <div className="font-cozy text-base font-extrabold text-leaf-600">{fmt(claimable)}</div>
+          </div>
+          <div className="rounded-xl border-2 border-cream-300 bg-white/80 p-2 text-center">
+            <div className="text-[10px] font-bold uppercase text-cocoa-500">Đã nhận</div>
+            <div className="font-cozy text-base font-extrabold text-cocoa-700">{fmt(claimed)}</div>
           </div>
         </div>
+        <div className="text-center text-[10px] font-semibold text-cocoa-500">mUSDC · Gems</div>
         <button className="btn-cozy mt-3 w-full" disabled={busy || !claimable || claimable === 0n} onClick={claimYield}>
           💸 Nhận thưởng về ví
         </button>

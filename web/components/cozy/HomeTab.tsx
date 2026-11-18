@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Building, mascotOf } from "@/components/cozy/Building";
 import { DepositSheet } from "@/components/cozy/DepositSheet";
 import { fmt } from "@/lib/format";
+import { fmtGems } from "@/lib/useGemsData";
 import type { VaultData } from "@/lib/useVaultData";
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
   night: boolean;
   building: boolean;
   celebrateKey: number;
+  gemsBalance: bigint;
   onDepositStart: () => void;
 }
 
@@ -27,7 +29,7 @@ function Pill({ icon, label, value, tone }: { icon: string; label: string; value
 }
 
 /** Tab Home: thông tin chính + tòa nhà. */
-export function HomeTab({ data, night, building, celebrateKey, onDepositStart }: Props) {
+export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDepositStart }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const { account, claimable, claimed, countdown, hasStarted } = data;
 
@@ -53,10 +55,11 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart }:
   return (
     <div className="px-4 pb-28 pt-2">
       {/* stats bar */}
-      <div className="flex gap-2">
-        <Pill icon="🏦" label="Đã tiết kiệm" value={fmt(account.principal)} />
+      <div className="grid grid-cols-4 gap-2">
+        <Pill icon="🏦" label="Tiết kiệm" value={fmt(account.principal)} />
         <Pill icon="🌱" label="Lãi" value={`+${fmt(interestTotal)}`} tone="text-leaf-600" />
-        <Pill icon="🔥" label="Streak" value={`${account.streak} tuần`} tone="text-blush-500" />
+        <Pill icon="🔥" label="Streak" value={`${account.streak}t`} tone="text-blush-500" />
+        <Pill icon="💎" label="Gems" value={fmtGems(gemsBalance)} tone="text-lavender-500" />
       </div>
 
       {/* weekly goal */}

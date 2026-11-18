@@ -15,6 +15,9 @@ import {LuckyWheel} from "../src/LuckyWheel.sol";
 import {SavingsGoal} from "../src/SavingsGoal.sol";
 import {Leaderboard} from "../src/Leaderboard.sol";
 import {ReminderCenter} from "../src/ReminderCenter.sol";
+import {Gems} from "../src/Gems.sol";
+import {Missions} from "../src/Missions.sol";
+import {GemShop} from "../src/GemShop.sol";
 
 /// @notice Deploy toàn bộ hệ thống: 4 contracts lõi + 9 contracts mở rộng.
 /// Env:
@@ -37,7 +40,10 @@ contract DeployAll is Script {
             LuckyWheel wheel,
             SavingsGoal goal,
             Leaderboard leaderboard,
-            ReminderCenter reminders
+            ReminderCenter reminders,
+            Gems gems,
+            Missions missions,
+            GemShop gemShop
         )
     {
         uint256 epochSeconds = vm.envOr("EPOCH_SECONDS", uint256(604800));
@@ -64,6 +70,31 @@ contract DeployAll is Script {
         leaderboard = new Leaderboard(vault);
         reminders = new ReminderCenter(vault);
 
+        // Vòng lặp tiền tệ trong game: nhiệm vụ -> Gems -> cửa hàng.
+        gems = new Gems(deployer);
+        missions = new Missions(vault, gems, deployer);
+        gemShop = new GemShop(gems, deployer, deployer); // treasury = deployer
+        gems.grantRole(gems.MINTER_ROLE(), address(missions));
+
+        // Nhiệm vụ mặc định theo thiết kế sản phẩm.
+        missions.addMission(Missions.Kind.WeeklyTarget, 0, 10, true); // Gửi đủ mục tiêu tuần này: 10 Gems
+        missions.addMission(Missions.Kind.StreakMilestone, 4, 100, false); // Streak 4 tuần: 100 Gems
+        missions.addMission(Missions.Kind.StreakMilestone, 8, 300, false); // Streak 8 tuần: 300 Gems
+        missions.addMission(Missions.Kind.DepositCount, 10, 50, false); // Gửi 10 lần: 50 Gems
+        missions.addMission(Missions.Kind.TotalSaved, 100 * 1e6, 200, false); // Gốc >= 100 mUSDC: 200 Gems
+
+        // Catalog shop mẫu: theme (id 1-4) và decor (id 1-6).
+        gemShop.setTheme(1, 50); // Modern
+        gemShop.setTheme(2, 80); // Fantasy
+        gemShop.setTheme(3, 120); // Japanese
+        gemShop.setTheme(4, 200); // Animal Crossing-inspired
+        gemShop.setDecor(1, 10); // Đèn bàn
+        gemShop.setDecor(2, 15); // Kệ sách
+        gemShop.setDecor(3, 20); // Ghế sofa
+        gemShop.setDecor(4, 25); // Cây lớn
+        gemShop.setDecor(5, 30); // Tranh treo
+        gemShop.setDecor(6, 40); // Mèo cưng
+
         // Nối treasury cho vault + distributor (mọi phí mặc định = 0)
         vault.setTreasury(address(treasury));
         distributor.setTreasury(address(treasury));
@@ -84,10 +115,13 @@ contract DeployAll is Script {
         console2.log("SavingsGoal      ", address(goal));
         console2.log("Leaderboard      ", address(leaderboard));
         console2.log("ReminderCenter   ", address(reminders));
+        console2.log("Gems             ", address(gems));
+        console2.log("Missions         ", address(missions));
+        console2.log("GemShop          ", address(gemShop));
         console2.log("startAt          ", startAt);
         console2.log("epochSeconds     ", epochSeconds);
 
-        _writeDeployment(deployer, token, vault, source, distributor, treasury, autoSaver, groups, nft, challenges, wheel, goal, leaderboard, reminders, startAt, epochSeconds);
+        _writeDeployment(deployer, token, vault, source, distributor, treasury, autoSaver, groups, nft, challenges, wheel, goal, leaderboard, reminders, gems, missions, gemShop, startAt, epochSeconds);
     }
 
     function _writeDeployment(
@@ -105,6 +139,9 @@ contract DeployAll is Script {
         SavingsGoal goal,
         Leaderboard leaderboard,
         ReminderCenter reminders,
+        Gems gems,
+        Missions missions,
+        GemShop gemShop,
         uint256 startAt,
         uint256 epochSeconds
     ) internal {
@@ -124,6 +161,9 @@ contract DeployAll is Script {
         vm.serializeAddress(k, "goal", address(goal));
         vm.serializeAddress(k, "leaderboard", address(leaderboard));
         vm.serializeAddress(k, "reminders", address(reminders));
+        vm.serializeAddress(k, "gems", address(gems));
+        vm.serializeAddress(k, "missions", address(missions));
+        vm.serializeAddress(k, "gemShop", address(gemShop));
         vm.serializeUint(k, "startAt", startAt);
         vm.serializeUint(k, "deployBlock", block.number);
         string memory json = vm.serializeUint(k, "epochSeconds", epochSeconds);

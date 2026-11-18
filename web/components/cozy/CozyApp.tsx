@@ -9,19 +9,22 @@ import { GoalsTab } from "@/components/cozy/GoalsTab";
 import { RewardsTab } from "@/components/cozy/RewardsTab";
 import { GroupTab } from "@/components/cozy/GroupTab";
 import { MeTab } from "@/components/cozy/MeTab";
+import { ShopTab } from "@/components/cozy/ShopTab";
 import { mascotOf } from "@/components/cozy/Building";
 import { useVaultData, type VaultData } from "@/lib/useVaultData";
+import { useGemsData } from "@/lib/useGemsData";
 import { shortAddr } from "@/lib/format";
 import { targetChainId } from "@/lib/config";
 import type { ThemeMode } from "@/components/cozy/useThemeLanding";
 
-type TabKey = "home" | "goals" | "group" | "rewards" | "me";
+type TabKey = "home" | "goals" | "group" | "rewards" | "shop" | "me";
 
 const TABS: Array<{ key: TabKey; icon: string; label: string }> = [
   { key: "home", icon: "🏠", label: "Nhà" },
   { key: "goals", icon: "🎯", label: "Mục tiêu" },
   { key: "group", icon: "👥", label: "Nhóm" },
   { key: "rewards", icon: "🎁", label: "Quà" },
+  { key: "shop", icon: "🛍️", label: "Cửa hàng" },
   { key: "me", icon: "😺", label: "Tôi" },
 ];
 
@@ -37,6 +40,7 @@ interface CozyAppProps {
 export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppProps) {
   const live = useVaultData();
   const data = demoData ?? live;
+  const gemsData = useGemsData();
   const chainId = useChainId();
   const [tab, setTab] = useState<TabKey>("home");
   const night = theme === "night";
@@ -131,12 +135,24 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
             night={night}
             building={building}
             celebrateKey={celebrateKey}
+            gemsBalance={gemsData.gemsBalance}
             onDepositStart={() => setPendingCelebrate(true)}
           />
         )}
         {tab === "goals" && <GoalsTab data={data} />}
         {tab === "group" && <GroupTab data={data} />}
-        {tab === "rewards" && <RewardsTab data={data} />}
+        {tab === "rewards" && (
+          <RewardsTab data={data} missions={gemsData.missions} gemsBalance={gemsData.gemsBalance} />
+        )}
+        {tab === "shop" && (
+          <ShopTab
+            themes={gemsData.themes}
+            decors={gemsData.decors}
+            gemsBalance={gemsData.gemsBalance}
+            gemsAllowance={gemsData.gemsAllowance}
+            hasWallet={!!data.address}
+          />
+        )}
         {tab === "me" && <MeTab data={data} theme={theme} onThemeChange={onThemeChange} />}
       </main>
 

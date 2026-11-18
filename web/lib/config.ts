@@ -30,6 +30,9 @@ export const contracts = {
   vault: process.env.NEXT_PUBLIC_VAULT_ADDRESS as `0x${string}`,
   yieldSource: process.env.NEXT_PUBLIC_YIELD_SOURCE_ADDRESS as `0x${string}`,
   distributor: process.env.NEXT_PUBLIC_DISTRIBUTOR_ADDRESS as `0x${string}`,
+  gems: (process.env.NEXT_PUBLIC_GEMS_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
+  missions: (process.env.NEXT_PUBLIC_MISSIONS_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
+  gemShop: (process.env.NEXT_PUBLIC_GEMSHOP_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
 };
 
 export function explorerTx(hash: string) {

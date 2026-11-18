@@ -19,6 +19,7 @@ const CONTRACTS = [
   "YieldRouter", "YieldSmoother", "ReserveFund", "TrustedForwarder",
   "RoundUpVault", "PortfolioView", "BatchHelper", "CouncilMultisig",
   "Timelock", "Watchtower", "AuditExporter", "VaultMigrator", "GasSponsor",
+  "Gems", "Missions", "GemShop",
 ];
 
 mkdirSync(outDir, { recursive: true });

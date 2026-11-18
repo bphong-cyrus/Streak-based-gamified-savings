@@ -8,18 +8,34 @@
 
 ### Contract (hoàn tất)
 
-- Bốn contract ở `contracts/src/` đã viết xong và **38 test Foundry pass** (`forge test -vv`), gồm unit test, kịch bản demo 3 ví, invariant kiểm chứng solvency vault/distributor và giới hạn 20 ví.
-- Đã **deploy lên Avalanche Fuji C-Chain** (Demo mode: `epochDuration = 180s`):
+- **49 contract** ở `contracts/src/`: 4 contract lõi (vault/distributor/mock) + 42 contract mở rộng (nhóm, NFT, lucky wheel, challenges, boost yield, v.v. của teammate) + **3 contract vòng lặp tiền tệ trong game do IT1 bổ sung**:
+  - `Gems.sol` — ERC-20 "Cozy Gems" (kiểu Duolingo Gems), mint qua `MINTER_ROLE`.
+  - `Missions.sol` — nhiệm vụ kiểm chứng on-chain qua StreakVault, thưởng Gems: gửi đủ mục tiêu tuần này (lặp mỗi kỳ), streak đạt mốc 4/8 tuần, gửi 10 lần, gốc ≥ 100 mUSDC.
+  - `GemShop.sol` — cửa hàng tiêu Gems: mở khóa theme tòa nhà (Modern/Fantasy/Japanese/AC-inspired) và đồ trang trí; tiền về treasury.
+- **109 test Foundry pass** (`forge test`), gồm 16 test mới cho vòng Gems → Missions → Shop (quyền mint, từng loại nhiệm vụ, nhận lặp theo kỳ, chống claim trùng, mua theme/decor, thiếu Gems).
+- Đã **deploy toàn bộ 16 contract chính lên Fuji** bằng `script/DeployAll.s.sol` (Demo mode: `epochDuration = 180s`), seed ngân sách kỳ 0/1, cấu hình sẵn 5 nhiệm vụ + 4 theme + 6 decor, nạp prize pool LuckyWheel 2 mUSDC. Địa chỉ đầy đủ trong `contracts/deployments/43113.json`:
 
 | Hợp đồng | Địa chỉ |
 | --- | --- |
-| `MockUSDC` (token) | `0x0EB42B93A431a4E29D3D95aa662A38FC2fee7fee` |
-| `StreakVault` | `0x99d22D21a86fc5497E3d4525b001c65f31cEd779` |
-| `MockYieldSource` | `0xE3E2B5643B2A9240a57612Fc014E3A4916DfD089` |
-| `YieldDistributor` | `0x1db1DBc14678E374bc35943CA27fBB367E7de399` |
+| `token` | `0xAd4a6c0a6f3C9c14AE5f353C940C42008123B3Cd` |
+| `vault` | `0xFcCf1d7da4287d63CD2d04d43Fe2abb9Dd353b5E` |
+| `yieldSource` | `0x3fC3f9Eeb39DE710A611aA12D51229323f27bE16` |
+| `distributor` | `0xb568D1BC56A37E3a7406B6507caF358930F1d53c` |
+| `treasury` | `0x51EE4c07666cd1aA84fD8A7d037B4317919FCf4B` |
+| `autoSaver` | `0xBa6bb42646f45Cb73FD93d006228a2Ad6d38E6DD` |
+| `groups` | `0x71aD017AFe8b76c8b5B06311c8bB6B79a2Ef6d61` |
+| `nft` | `0x2D0176948c9b79ed6c632e07CC70104f7ce7f41D` |
+| `challenges` | `0x69c424Db215DcC4043D1DD8485d096e30c17947e` |
+| `wheel` | `0x689803a89e7765f4601A5ca3FCE7D0F271C038b8` |
+| `goal` | `0xFab4f248c7C1Fb80CCc6855549E76cdc8de66f69` |
+| `leaderboard` | `0x01F0a28ce3dD9fc94A9F7819BdfF80476F170c99` |
+| `reminders` | `0x1B5014665555aeA502AcA97C5E4Fd63aC30D7BA9` |
+| `gems` | `0x14f5BfE294dA30Bcba58EcBed4405e878641f701` |
+| `missions` | `0xB977Db7d959680F48f14efC24222FE5523b3cA0e` |
+| `gemShop` | `0x742a8ED5d26Ac9C3f77eF8c496168555495862B7` |
 
-- Deployer: `0xBc4c717B826c9E18682D1A0A02D9Dc83EAC69440` · `startAt = 1794980242` · chi tiết trong `contracts/deployments/43113.json`. ABI bàn giao ở `contracts/abi/abis.ts` (đã gồm cả chain 43113 và 31337).
-- Seed demo đã nạp: ngân sách kỳ 0 = 2 mUSDC, kỳ 1 = 3 mUSDC. Riêng ví An (deployer) đã chạy thật toàn bộ vòng lặp trên Fuji: đặt mục tiêu 5 → approve + gửi 5 → chờ hết kỳ → chốt kỳ 0–4 (rollover 2+3 mUSDC chuyển đúng về kỳ 4) → nhận đủ 5 mUSDC theo trọng số streak → rút/gửi lại gốc. Mọi giao dịch đối chiếu được trên [Snowtrace](https://testnet.snowtrace.io/address/0x99d22D21a86fc5497E3d4525b001c65f31cEd779). Verify source trên Snowtrace còn treo do giới hạn API key, có thể submit lại sau.
+- Deployer: `0xBc4c717B826c9E18682D1A0A02D9Dc83EAC69440` · `startAt = 1795005223` · chi tiết trong `contracts/deployments/43113.json`. ABI bàn giao ở `contracts/abi/abis.ts` (51 contract, chain 43113 và 31337) — web đồng bộ tại `web/lib/abis.ts`.
+- Seed demo đã nạp: ngân sách kỳ 0 = 2 mUSDC, kỳ 1 = 3 mUSDC; LuckyWheel có 2 mUSDC giải (50%/30%/20% trúng 0.1/0.3/0.5 mUSDC). Vòng lặp lõi (đặt mục tiêu → gửi → chốt kỳ → nhận thưởng → rút gốc) đã chạy thật trên Fuji ở bản deploy trước và được 109 test bao phủ ở bản hiện tại; cấu hình nhiệm vụ/shop/wheel của bản mới đã kiểm tra đọc lại on-chain. Mọi giao dịch đối chiếu được trên [Snowtrace](https://testnet.snowtrace.io/). Verify source trên Snowtrace còn treo do giới hạn API key, có thể submit lại sau.
 - Ví demo Bình/Chi: cần xin test AVAX ở faucet, sau đó deployer chạy `Seed.s.sol` với `DEMO_WALLETS=<địa chỉ>` để mint mUSDC.
 
 ### Frontend `web/` (hoàn tất, IT1 phụ trách UI/UX)

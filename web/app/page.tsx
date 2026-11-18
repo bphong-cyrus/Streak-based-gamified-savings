@@ -11,7 +11,9 @@ import { buildMockData } from "@/lib/mockData";
 export default function Home() {
   const { isConnected } = useAccount();
   const [theme, setTheme] = useCozyTheme();
-  const [demo, setDemo] = useState(false);
+  const [demo, setDemo] = useState(
+    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("demo"),
+  );
   const night = theme === "night";
 
   return (
