@@ -10,7 +10,7 @@ import { RewardsTab } from "@/components/cozy/RewardsTab";
 import { GroupTab } from "@/components/cozy/GroupTab";
 import { MeTab } from "@/components/cozy/MeTab";
 import { ShopTab } from "@/components/cozy/ShopTab";
-import { mascotOf } from "@/components/cozy/Building";
+import { IdentityAvatar } from "@/lib/identity";
 import { useVaultData, type VaultData } from "@/lib/useVaultData";
 import { useGemsData } from "@/lib/useGemsData";
 import { shortAddr } from "@/lib/format";
@@ -54,11 +54,12 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
   useEffect(() => {
     if (!pendingCelebrate) return;
     setBuilding(true);
+    // 4.6s: đủ cho chuỗi chạy vào -> đập búa -> lấp lánh của ConstructionSite
     const t1 = setTimeout(() => {
       setBuilding(false);
       setCelebrateKey((k) => k + 1);
-    }, 1400);
-    const t2 = setTimeout(() => setPendingCelebrate(false), 3000);
+    }, 4600);
+    const t2 = setTimeout(() => setPendingCelebrate(false), 7800);
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
@@ -87,15 +88,22 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
       {/* header */}
       <header className="sticky top-0 z-30 flex items-center justify-between px-4 pb-2 pt-3">
         <div className="flex items-center gap-2">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-cocoa-700/50 bg-cream-100 text-xl shadow-chunkySm">
-            {mascotOf(data.address)}
-          </span>
+          <IdentityAvatar address={data.address} className="h-10 w-10" />
           <div>
             <div className="font-cozy text-lg font-extrabold leading-none text-white drop-shadow-[0_2px_0_rgba(70,56,39,0.45)]">
               Cozy Save
             </div>
             <div className={`text-[11px] font-bold ${night ? "text-indigo-200" : "text-sky-100"}`}>
-              {data.address ? `Hi, ${shortAddr(data.address)}! ✨` : "Tiết kiệm mọc nhà 🏡"}
+              {data.address ? (
+                <>
+                  Hi, {shortAddr(data.address)}!{" "}
+                  <span className="rounded bg-cream-100/90 px-1 py-px font-cozy text-[10px] font-extrabold text-lavender-500">
+                    Lv.{1 + Math.floor(Number(data.account?.streak ?? 0n) / 2)}
+                  </span>
+                </>
+              ) : (
+                "Tiết kiệm mọc nhà 🏡"
+              )}
             </div>
           </div>
         </div>

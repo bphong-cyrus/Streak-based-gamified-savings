@@ -17,16 +17,16 @@ interface RewardsProps {
 
 const WHEEL_REWARDS = [
   { icon: "❄️", label: "Streak Freeze" },
-  { icon: "💰", label: "+50 Gems" },
+  { icon: "💰", label: "+50 Paws" },
   { icon: "⚡", label: "Interest x2 (1 tuần)" },
   { icon: "🎁", label: "Hộp quà bí ẩn" },
-  { icon: "💎", label: "+120 Gems" },
+  { icon: "💎", label: "+120 Paws" },
   { icon: "🔥", label: "Streak Revival" },
-  { icon: "🪙", label: "+20 Gems" },
+  { icon: "🪙", label: "+20 Paws" },
   { icon: "🎨", label: "Theme độc quyền" },
 ];
 
-/** Tab Rewards: nhiệm vụ Gems, nhận thưởng on-chain, chốt kỳ, vòng quay may mắn (demo). */
+/** Tab Rewards: nhiệm vụ Paws, nhận thưởng on-chain, chốt kỳ, vòng quay may mắn (demo). */
 export function RewardsTab({ data, missions, gemsBalance }: RewardsProps) {
   const claim = useTx();
   const finalize = useTx();
@@ -80,7 +80,7 @@ export function RewardsTab({ data, missions, gemsBalance }: RewardsProps) {
         <h3 className="font-cozy text-lg font-bold">🎁 Thưởng của bạn</h3>
         <div className="mt-2 grid grid-cols-3 gap-2">
           <div className="rounded-xl border-2 border-cream-300 bg-white/80 p-2 text-center">
-            <div className="text-[10px] font-bold uppercase text-cocoa-500">💎 Gems</div>
+            <div className="text-[10px] font-bold uppercase text-cocoa-500">🐾 Paws</div>
             <div className="font-cozy text-base font-extrabold text-lavender-500">{fmtGems(gemsBalance)}</div>
           </div>
           <div className="rounded-xl border-2 border-cream-300 bg-white/80 p-2 text-center">
@@ -92,7 +92,7 @@ export function RewardsTab({ data, missions, gemsBalance }: RewardsProps) {
             <div className="font-cozy text-base font-extrabold text-cocoa-700">{fmt(claimed)}</div>
           </div>
         </div>
-        <div className="text-center text-[10px] font-semibold text-cocoa-500">mUSDC · Gems</div>
+        <div className="text-center text-[10px] font-semibold text-cocoa-500">mUSDC · Paws</div>
         <button className="btn-cozy mt-3 w-full" disabled={busy || !claimable || claimable === 0n} onClick={claimYield}>
           💸 Nhận thưởng về ví
         </button>

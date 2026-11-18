@@ -1,6 +1,6 @@
 "use client";
 
-/** Bầu trời day/night: mây trôi, sao lấp lánh, mặt trờ/mặt trăng. */
+/** Bầu trờ day/night: mây pixel dày dặn, sao lấp lánh, mặt trờ/mặt trăng. */
 export function Sky({ night }: { night: boolean }) {
   return (
     <div className={`pointer-events-none fixed inset-0 overflow-hidden ${night ? "sky-night" : "sky-day"}`}>
@@ -18,13 +18,7 @@ export function Sky({ night }: { night: boolean }) {
             <span
               key={i}
               className="star"
-              style={{
-                top: s.top,
-                left: s.left,
-                width: s.size,
-                height: s.size,
-                animationDelay: `${s.delay}s`,
-              }}
+              style={{ top: s.top, left: s.left, width: s.size, height: s.size, animationDelay: `${s.delay}s` }}
             />
           ))}
           <div className="absolute right-6 top-10 text-5xl drop-shadow-[0_0_12px_rgba(255,241,168,0.6)]">🌙</div>
@@ -32,19 +26,38 @@ export function Sky({ night }: { night: boolean }) {
       ) : (
         <>
           <div className="absolute left-5 top-8 text-5xl">☀️</div>
-          <div className="cloud" style={{ top: "12%", width: 70, height: 22, animationDuration: "70s" }} />
-          <div className="cloud" style={{ top: "26%", width: 54, height: 18, animationDuration: "95s", animationDelay: "-30s" }} />
-          <div className="cloud" style={{ top: "7%", width: 44, height: 15, animationDuration: "80s", animationDelay: "-55s" }} />
+          {/* cụm mây dày dặn kiểu pixel-art */}
+          <div className="cloud-fluffy" style={{ top: "10%", width: 190, height: 46, animation: "drift 85s linear infinite" }}>
+            <span className="puff" />
+            <div className="cloud-shadow" />
+          </div>
+          <div
+            className="cloud-fluffy"
+            style={{ top: "24%", width: 140, height: 36, animation: "drift 110s linear infinite", animationDelay: "-40s" }}
+          >
+            <span className="puff" />
+            <div className="cloud-shadow" />
+          </div>
+          <div
+            className="cloud-fluffy"
+            style={{ top: "6%", width: 110, height: 30, animation: "drift 95s linear infinite", animationDelay: "-70s" }}
+          >
+            <span className="puff" />
+            <div className="cloud-shadow" />
+          </div>
+          <div
+            className="cloud-fluffy"
+            style={{ top: "34%", width: 90, height: 26, animation: "drift 130s linear infinite", animationDelay: "-15s", opacity: 0.9 }}
+          >
+            <span className="puff" />
+            <div className="cloud-shadow" />
+          </div>
         </>
       )}
       {/* đồi cỏ phía dưới */}
       <div
         className="absolute bottom-0 left-0 right-0 h-24"
-        style={{
-          background: night ? "#1d3a2a" : "#7ec96f",
-          borderRadius: "100% 100% 0 0 / 60px",
-          transform: "scaleX(1.4)",
-        }}
+        style={{ background: night ? "#1d3a2a" : "#7ec96f", borderRadius: "100% 100% 0 0 / 60px", transform: "scaleX(1.4)" }}
       />
       <div
         className="absolute -bottom-6 left-0 right-0 h-24"

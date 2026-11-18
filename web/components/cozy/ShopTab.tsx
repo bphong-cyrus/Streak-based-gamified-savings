@@ -13,7 +13,7 @@ interface Props {
   hasWallet: boolean;
 }
 
-/** Tab Cửa hàng: mở khóa theme và đồ trang trí bằng Gems. */
+/** Tab Cửa hàng: mở khóa theme và đồ trang trí bằng Paws. */
 export function ShopTab({ themes, decors, gemsBalance, gemsAllowance, hasWallet }: Props) {
   const { run, step, hash, error } = useTx();
 
@@ -21,7 +21,7 @@ export function ShopTab({ themes, decors, gemsBalance, gemsAllowance, hasWallet 
     const calls: Parameters<typeof run>[1] = [];
     if (gemsAllowance < item.price) {
       calls.push({
-        label: "Đang cấp quyền Gems…",
+        label: "Đang cấp quyền Paws…",
         call: { address: contracts.gems, abi: gemsAbi, functionName: "approve", args: [contracts.gemShop, item.price] },
       });
     }
@@ -56,7 +56,7 @@ export function ShopTab({ themes, decors, gemsBalance, gemsAllowance, hasWallet 
                   disabled={!hasWallet || step !== null || gemsBalance < i.price}
                   onClick={() => buy(i, isTheme)}
                 >
-                  💎 {fmtGems(i.price)}
+                  🐾 {fmtGems(i.price)}
                 </button>
               )}
             </div>
@@ -70,11 +70,11 @@ export function ShopTab({ themes, decors, gemsBalance, gemsAllowance, hasWallet 
       <div className="card-cream flex items-center justify-between p-4">
         <div>
           <h3 className="font-cozy text-lg font-bold">🛍️ Cửa hàng</h3>
-          <p className="text-xs font-semibold text-cocoa-500">Dùng Gems kiếm được từ nhiệm vụ để trang trí tòa nhà</p>
+          <p className="text-xs font-semibold text-cocoa-500">Dùng Paws kiếm được từ nhiệm vụ để trang trí tòa nhà</p>
         </div>
         <div className="rounded-xl border-2 border-cocoa-700/40 bg-white/80 px-3 py-1.5 text-center">
-          <div className="text-[10px] font-bold uppercase text-cocoa-500">Gems của bạn</div>
-          <div className="font-cozy text-lg font-extrabold text-lavender-500">💎 {fmtGems(gemsBalance)}</div>
+          <div className="text-[10px] font-bold uppercase text-cocoa-500">Paws của bạn</div>
+          <div className="font-cozy text-lg font-extrabold text-lavender-500">🐾 {fmtGems(gemsBalance)}</div>
         </div>
       </div>
 

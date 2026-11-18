@@ -3,17 +3,18 @@
 import { useMemo, useState } from "react";
 import { useAccount, useReadContracts } from "wagmi";
 import { contracts } from "@/lib/config";
-import { streakVaultAbi, yieldDistributorAbi } from "@/lib/abis";
+import { streakVaultAbi, yieldDistributorAbi, autoSaverAbi, mockUSDCAbi } from "@/lib/abis";
 import { fmt, parseAmount } from "@/lib/format";
 import { TxFeedback, useTx } from "@/components/useTx";
+import { estimateApy } from "@/components/cozy/HomeTab";
 import type { VaultData } from "@/lib/useVaultData";
 
 const SHOWN_EPOCHS = 8;
 
-/** Tab Goals: đặt mục tiêu + lịch sử các kỳ. */
+/** Tab Mục tiêu: đặt mục tiêu, chi tiết APY, biểu đồ, gửi tự động, nhật ký chuỗi. */
 export function GoalsTab({ data }: { data: VaultData }) {
-  const { run, step, hash, error } = useTx();
   const { account } = data;
+  const { run, step, hash, error } = useTx();
   const [input, setInput] = useState("");
 
   async function setTarget() {
@@ -28,14 +29,23 @@ export function GoalsTab({ data }: { data: VaultData }) {
     if (ok) setInput("");
   }
 
+  const streak = account?.streak ?? 0n;
+  const baseApy = 4.8;
+  const bonusApy = Math.min(Number(streak) * 0.5, 2.5);
+  const totalApy = baseApy + bonusApy;
+  const weeklyTarget = account?.currentTarget ?? 0n;
+  // lãi ước tính một kỳ cho mức gửi tuần hiện tại
+  const weeklyInterest =
+    weeklyTarget > 0n ? (Number(weeklyTarget) * (totalApy / 100)) / 52 : 0;
+
   return (
     <div className="space-y-3 px-4 pb-28 pt-2">
       {/* đặt mục tiêu */}
       <div className="card-cream p-4">
         <h3 className="font-cozy text-lg font-bold">🎯 Mục tiêu tuần</h3>
         <p className="mt-0.5 text-xs font-semibold text-cocoa-500">
-          {account?.activated ? "Thay đổi áp dụng từ kỳ kế tiếp." : "Lần đầu đặt có hiệu lực ngay kỳ này."}{" "}
-          Hiện tại: {fmt(account?.currentTarget)} mUSDC/tuần
+          {account?.activated ? "Thay đổi áp dụng từ kỳ kế tiếp." : "Lần đầu đặt có hiệu lực ngay kỳ này."} Hiện tại:{" "}
+          {fmt(weeklyTarget)} mUSDC/tuần
         </p>
         <div className="mt-2 flex gap-2">
           <div className="relative flex-1">
@@ -55,7 +65,183 @@ export function GoalsTab({ data }: { data: VaultData }) {
         <TxFeedback state={{ step, hash, error }} />
       </div>
 
+      {/* hiệu suất sinh lợi */}
+      <div className="card-cream p-4">
+        <div className="flex items-center justify-between">
+          <h4 className="font-cozy font-bold">⚡ Hiệu suất sinh lợi</h4>
+          <span className="rounded-full bg-leaf-300/50 px-2.5 py-0.5 font-cozy text-xs font-extrabold text-leaf-600">
+            {totalApy.toFixed(1)}% APY
+          </span>
+        </div>
+        <div className="mt-2 space-y-2 text-sm font-semibold">
+          <div className="flex items-center justify-between rounded-xl border-2 border-cream-300 bg-white/80 px-3 py-2">
+            <span className="flex items-center gap-2 text-cocoa-600">
+              <span className="h-2.5 w-2.5 rounded-full bg-sky-400" /> Lãi cơ bản (Base Yield)
+            </span>
+            <span className="font-cozy font-extrabold text-cocoa-700">{baseApy.toFixed(1)}% APY</span>
+          </div>
+          <div className="flex items-center justify-between rounded-xl border-2 border-cream-300 bg-white/80 px-3 py-2">
+            <span className="flex items-center gap-2 text-cocoa-600">
+              <span className="h-2.5 w-2.5 rounded-full bg-blush-400" /> Thưởng duy trì chuỗi (Streak Bonus)
+            </span>
+            <span className="font-cozy font-extrabold text-blush-500">+{bonusApy.toFixed(1)}% APY</span>
+          </div>
+          <p className="text-[11px] text-cocoa-500">
+            Base: nguồn yield mock tham chiếu USDC Lending. Bonus: +0.5% mỗi tuần giữ chuỗi (tối đa +2.5%) — bạn đang
+            có chuỗi {streak.toString()} tuần.
+          </p>
+        </div>
+
+        {/* biểu đồ biến động APY (mock) */}
+        <div className="mt-3 rounded-xl border-2 border-cream-300 bg-white/80 p-3">
+          <div className="flex items-center justify-between text-[11px] font-bold text-cocoa-500">
+            <span>📉 Biến động APY 6 kỳ gần nhất (mock)</span>
+            <span className="rounded-full bg-cream-200 px-2 py-0.5">Rất ổn định</span>
+          </div>
+          <ApyChart />
+          <div className="mt-1 flex justify-between text-[10px] font-semibold text-cocoa-500">
+            <span>Kỳ trước</span>
+            <span className="font-cozy font-extrabold text-leaf-600">Hiện tại: {totalApy.toFixed(1)}%</span>
+          </div>
+        </div>
+
+        {weeklyTarget > 0n && (
+          <div className="mt-2 flex items-center justify-between rounded-xl border-2 border-dashed border-lavender-400 bg-lavender-300/20 px-3 py-2 text-sm font-semibold text-cocoa-600">
+            <span>🧮 Gửi {fmt(weeklyTarget)} mUSDC/tuần → lãi kỳ này ước tính</span>
+            <span className="font-cozy font-extrabold text-lavender-500">
+              +{weeklyInterest >= 0.01 ? weeklyInterest.toFixed(2) : "<0.01"} mUSDC
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* gửi tự động */}
+      <AutoSaveCard data={data} />
+
       <EpochHistory currentEpoch={account?.currentEpoch} />
+    </div>
+  );
+}
+
+/** Biểu đồ đường APY đơn giản bằng SVG. */
+function ApyChart() {
+  const series = [5.6, 5.9, 5.7, 6.0, 6.3, 6.2];
+  const min = 5.4;
+  const max = 6.5;
+  const W = 280;
+  const H = 70;
+  const pts = series
+    .map((v, i) => `${(i / (series.length - 1)) * W},${H - ((v - min) / (max - min)) * H}`)
+    .join(" ");
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="mt-1 w-full">
+      <polyline points={pts} fill="none" stroke="#4fbe7d" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
+      {series.map((v, i) => (
+        <circle
+          key={i}
+          cx={(i / (series.length - 1)) * W}
+          cy={H - ((v - min) / (max - min)) * H}
+          r="4"
+          fill="#fff"
+          stroke="#4fbe7d"
+          strokeWidth="2.5"
+        />
+      ))}
+    </svg>
+  );
+}
+
+/** Gửi tự động mỗi kỳ qua contract AutoSaver (có thể tự bấm "Gửi hộ ngay"). */
+function AutoSaveCard({ data }: { data: VaultData }) {
+  const { address, account } = data;
+  const { run, step, hash, error } = useTx();
+
+  const reads = useReadContracts({
+    contracts: address
+      ? [
+          { address: contracts.autoSaver, abi: autoSaverAbi, functionName: "plans", args: [address] },
+          { address: contracts.autoSaver, abi: autoSaverAbi, functionName: "executable", args: [address] },
+          { address: contracts.token, abi: mockUSDCAbi, functionName: "allowance", args: [address, contracts.autoSaver] },
+        ]
+      : [],
+    query: { refetchInterval: 8_000, enabled: !!address },
+  });
+
+  const plan = reads.data?.[0]?.result as
+    | { amount: bigint; roundUpTo: bigint; lastExecutedEpoch: bigint; active: boolean }
+    | undefined;
+  const executable = (reads.data?.[1]?.result as boolean | undefined) ?? false;
+  const allowance = (reads.data?.[2]?.result as bigint | undefined) ?? 0n;
+
+  const amount = account?.currentTarget ?? 0n;
+
+  async function enable() {
+    if (amount === 0n) return;
+    const calls: Parameters<typeof run>[1] = [];
+    if (allowance < amount) {
+      calls.push({
+        label: "Đang cấp quyền tự động gửi…",
+        call: { address: contracts.token, abi: mockUSDCAbi, functionName: "approve", args: [contracts.autoSaver, amount * 52n] },
+      });
+    }
+    calls.push({
+      label: "Đang bật gửi tự động…",
+      call: { address: contracts.autoSaver, abi: autoSaverAbi, functionName: "register", args: [amount, 0n] },
+    });
+    await run("Bật gửi tự động", calls);
+  }
+
+  async function disable() {
+    await run("Tắt gửi tự động", [
+      {
+        label: "Đang tắt…",
+        call: { address: contracts.autoSaver, abi: autoSaverAbi, functionName: "deactivate" },
+      },
+    ]);
+  }
+
+  async function executeNow() {
+    if (!address) return;
+    await run("Gửi hộ ngay", [
+      {
+        label: "Đang thực hiện khoản gửi…",
+        call: { address: contracts.autoSaver, abi: autoSaverAbi, functionName: "execute", args: [address] },
+      },
+    ]);
+  }
+
+  const busy = step !== null;
+  const active = plan?.active ?? false;
+
+  return (
+    <div className="card-cream p-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h4 className="font-cozy font-bold">🔁 Gửi tự động mỗi kỳ</h4>
+          <p className="text-xs font-semibold text-cocoa-500">
+            {active
+              ? `Đang bật: gửi ${fmt(plan?.amount)} mUSDC mỗi kỳ, tự động cộng chuỗi.`
+              : "Hệ thống tự gửi đúng mục tiêu mỗi kỳ để bạn không bỏ lỡ tuần nào."}
+          </p>
+        </div>
+        <button
+          className={`relative h-8 w-14 shrink-0 rounded-full border-2 border-cocoa-700/50 transition ${active ? "bg-leaf-400" : "bg-cream-300"}`}
+          disabled={busy || !address || (!active && amount === 0n)}
+          onClick={active ? disable : enable}
+          title={active ? "Tắt gửi tự động" : "Bật gửi tự động theo mục tiêu hiện tại"}
+        >
+          <span
+            className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${active ? "left-7" : "left-1"}`}
+          />
+        </button>
+      </div>
+      {active && (
+        <button className="btn-cream mt-2 w-full text-sm" disabled={busy || !executable} onClick={executeNow}>
+          {executable ? "⚡ Gửi hộ ngay cho kỳ này" : "Kỳ này đã được gửi"}
+        </button>
+      )}
+      {!active && !address && <p className="mt-2 text-[11px] font-semibold text-cocoa-500">Kết nối ví để bật.</p>}
+      <TxFeedback state={{ step, hash, error }} />
     </div>
   );
 }
@@ -129,7 +315,10 @@ function EpochHistory({ currentEpoch }: { currentEpoch: bigint | undefined }) {
 
   return (
     <div className="card-cream p-4">
-      <h3 className="mb-2 font-cozy text-lg font-bold">📅 Lịch sử kỳ</h3>
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="font-cozy text-lg font-bold">📜 Nhật ký chuỗi & thưởng</h3>
+        <span className="text-[11px] font-bold text-cocoa-500">Chi tiết</span>
+      </div>
       <ul className="space-y-2">
         {rows.map((r) => {
           const isCurrent = r.epoch === currentEpoch;
@@ -142,9 +331,7 @@ function EpochHistory({ currentEpoch }: { currentEpoch: bigint | undefined }) {
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className="text-xl">
-                  {r.settled ? (r.qualified ? "✅" : "💔") : isCurrent ? "🔥" : "⏳"}
-                </span>
+                <span className="text-xl">{r.settled ? (r.qualified ? "✅" : "💔") : isCurrent ? "🔥" : "⏳"}</span>
                 <div>
                   <div className="font-cozy text-sm font-bold text-cocoa-700">
                     Kỳ #{r.epoch.toString()}
@@ -156,7 +343,7 @@ function EpochHistory({ currentEpoch }: { currentEpoch: bigint | undefined }) {
                       <>
                         {fmt(r.progress)}/{fmt(r.target)} mUSDC
                         {r.settled &&
-                          (r.qualified ? ` · streak ${r.streakAtSettle.toString()} 🔥` : " · streak về 0")}
+                          (r.qualified ? ` · chuỗi ${r.streakAtSettle.toString()} 🔥` : " · chuỗi về 0")}
                       </>
                     ) : (
                       "Chưa đặt mục tiêu"

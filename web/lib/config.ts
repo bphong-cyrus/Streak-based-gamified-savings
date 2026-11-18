@@ -33,6 +33,7 @@ export const contracts = {
   gems: (process.env.NEXT_PUBLIC_GEMS_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
   missions: (process.env.NEXT_PUBLIC_MISSIONS_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
   gemShop: (process.env.NEXT_PUBLIC_GEMSHOP_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
+  autoSaver: (process.env.NEXT_PUBLIC_AUTOSAVER_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
 };
 
 export function explorerTx(hash: string) {
