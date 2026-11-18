@@ -32,7 +32,8 @@ export function EpochHistory({ currentEpoch }: { currentEpoch: bigint | undefine
     return list.reverse(); // mới nhất lên đầu
   }, [currentEpoch]);
 
-  const calls = useMemo(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const calls: any[] = useMemo(
     () =>
       address && epochs.length > 0
         ? epochs.flatMap((e) => [
