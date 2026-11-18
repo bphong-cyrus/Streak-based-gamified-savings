@@ -49,6 +49,7 @@ contract YieldDistributor is ReentrancyGuard, Pausable, Ownable {
 
     mapping(address => uint256) public claimableYield;
     mapping(address => uint256) public claimedYield;
+    mapping(address => bool) public autoCompound; // Tính năng 43: tự động tái đầu tư yield
     mapping(address => mapping(uint256 => uint256)) public rewardOf;
     mapping(uint256 => EpochSummary) internal _summaries;
 
@@ -67,6 +68,8 @@ contract YieldDistributor is ReentrancyGuard, Pausable, Ownable {
     );
     event RewardAllocated(address indexed wallet, uint256 indexed epoch, uint256 amount);
     event YieldClaimed(address indexed wallet, uint256 amount);
+    event AutoCompounded(address indexed wallet, uint256 amount);
+    event AutoCompoundSet(address indexed wallet, bool enabled);
     event ReferralPaid(address indexed wallet, address indexed referrer, uint256 commission);
     event ReferrerSet(address indexed wallet, address indexed referrer);
     event TreasurySet(address indexed treasury);
@@ -240,8 +243,22 @@ contract YieldDistributor is ReentrancyGuard, Pausable, Ownable {
             token.safeTransfer(referrer, commission);
             emit ReferralPaid(msg.sender, referrer, commission);
         }
-        token.safeTransfer(msg.sender, amount - commission);
         emit YieldClaimed(msg.sender, amount);
+
+        // Tính năng 43: auto-compound — yield tự gửi lại vào vault thay vì chuyển về ví.
+        uint256 net = amount - commission;
+        if (autoCompound[msg.sender] && net > 0 && vault.hasStarted()) {
+            token.approve(address(vault), net);
+            vault.depositFor(msg.sender, net);
+            emit AutoCompounded(msg.sender, net);
+        } else if (net > 0) {
+            token.safeTransfer(msg.sender, net);
+        }
+    }
+
+    function setAutoCompound(bool enabled) external {
+        autoCompound[msg.sender] = enabled;
+        emit AutoCompoundSet(msg.sender, enabled);
     }
 
     // ---------------------------------------------------------------------

@@ -8,6 +8,7 @@ import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {IStreakVault} from "./interfaces/IStreakVault.sol";
+import {IBoostProvider} from "./interfaces/IBoostProvider.sol";
 
 /// @title StreakVault
 /// @notice Giữ gốc của người dùng, lưu mục tiêu theo kỳ, tiền gửi/rút từng kỳ, streak,
@@ -33,6 +34,7 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
 
     address public distributor;
     address public treasury;
+    address public boostProvider; // hook boost multiplier (0 = tắt)
     uint256 public override totalPrincipal;
     /// @notice Kỳ kế tiếp cần chốt (phòng thủ thêm, distributor cũng kiểm tra thứ tự).
     uint256 public nextEpochToSettle;
@@ -41,6 +43,9 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
     uint256 public maxDepositPerEpoch; // 0 = không giới hạn trên
     uint256 public withdrawFeeBps; // Phí rút thường (về treasury)
     uint256 public emergencyPenaltyBps; // Phạt rút khẩn cấp
+    uint256 public whaleThreshold; // gốc >= ngưỡng -> giảm phí rút
+    uint256 public whaleFeeBps; // phí rút áp dụng cho whale (0 = giữ nguyên withdrawFeeBps)
+    bool public freeFirstWithdraw; // Tính năng 29: miễn phí lần rút đầu mỗi kỳ
 
     struct TargetCheckpoint {
         uint64 fromEpoch;
@@ -79,6 +84,7 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
     mapping(address => uint256) internal _streakBeforeFail; // streak trước khi bị reset
     mapping(address => uint256) internal _lastFailedEpoch; // kỳ gần nhất chốt thất bại + 1 (0 = chưa từng)
     mapping(address => uint256) internal _revivedAtEpoch; // kỳ thất bại đã revive (tránh revive trùng)
+    mapping(address => uint256) internal _freeWithdrawUsedEpoch; // kỳ đã dùng miễn phí rút đầu
 
     modifier onlyDistributor() {
         if (msg.sender != distributor) revert NotDistributor();
@@ -131,6 +137,21 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
     function setEmergencyPenaltyBps(uint256 bps) external onlyOwner {
         require(bps <= BPS_DENOMINATOR, "penalty>100%");
         emergencyPenaltyBps = bps;
+    }
+
+    /// @notice Tính năng 28/29: ưu đãi whale + miễn phí lần rút đầu mỗi kỳ.
+    function setWhaleDiscount(uint256 threshold, uint256 bps) external onlyOwner {
+        whaleThreshold = threshold;
+        whaleFeeBps = bps;
+    }
+
+    function setFreeFirstWithdraw(bool enabled) external onlyOwner {
+        freeFirstWithdraw = enabled;
+    }
+
+    /// @notice Gắn hook boost multiplier (nhóm C, tính năng 26). 0 = tắt.
+    function setBoostProvider(address provider) external onlyOwner {
+        boostProvider = provider;
     }
 
     function setProtectionFees(uint256 freezeFee_, uint256 reviveFee_, uint256 premium_) external onlyOwner {
@@ -252,6 +273,15 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
         _flows[msg.sender][epoch].withdrawn += amount;
 
         uint256 fee = (amount * withdrawFeeBps) / BPS_DENOMINATOR;
+        // Tính năng 28: whale (gốc còn lại >= ngưỡng) giảm phí rút.
+        if (fee > 0 && whaleThreshold > 0 && acc.principal >= whaleThreshold) {
+            fee = (amount * whaleFeeBps) / BPS_DENOMINATOR;
+        }
+        // Tính năng 29: miễn phí lần rút đầu tiên trong mỗi kỳ (lưu epoch+1, 0 = chưa dùng).
+        if (fee > 0 && freeFirstWithdraw && _freeWithdrawUsedEpoch[msg.sender] != epoch + 1) {
+            _freeWithdrawUsedEpoch[msg.sender] = epoch + 1;
+            fee = 0;
+        }
         if (fee > 0) {
             if (treasury == address(0)) revert ZeroAddress();
             token.safeTransfer(treasury, fee);
@@ -387,8 +417,15 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
             newStreak = 0;
         }
         acc.streak = newStreak;
+        // Tính năng 26: áp dụng boost multiplier qua hook (nếu đã gắn).
+        uint256 weightOut = newStreak;
+        if (newStreak > 0 && boostProvider != address(0)) {
+            uint256 mult = IBoostProvider(boostProvider).weightMultiplier(w, epoch);
+            weightOut = (newStreak * mult) / BPS_DENOMINATOR;
+        }
         _results[w][epoch] = EpochResult({settled: true, qualified: qualified, streak: SafeCast.toUint64(newStreak)});
         emit AccountEpochSettled(w, epoch, qualified, newStreak);
+        return weightOut;
     }
 
     // ---------------------------------------------------------------------

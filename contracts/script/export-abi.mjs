@@ -12,6 +12,13 @@ const CONTRACTS = [
   "MockUSDC", "StreakVault", "MockYieldSource", "YieldDistributor",
   "Treasury", "AutoSaver", "StreakGroups", "StreakNFT", "Challenges",
   "LuckyWheel", "SavingsGoal", "Leaderboard", "ReminderCenter",
+  "SavingsPots", "StreakBoosts", "EpochBonus", "GroupVault", "TeamChallenge",
+  "Duel", "ReferralSeasons", "ProfileSBT", "ActivityFeed", "BuddyPact",
+  "AnonCommit", "GroupAlerts", "BattlePass", "MysteryBox", "Raffle", "Badges",
+  "Bingo", "VoucherMarket", "SalvageSpin", "SeasonBoard", "MockLendingPool",
+  "YieldRouter", "YieldSmoother", "ReserveFund", "TrustedForwarder",
+  "RoundUpVault", "PortfolioView", "BatchHelper", "CouncilMultisig",
+  "Timelock", "Watchtower", "AuditExporter", "VaultMigrator", "GasSponsor",
 ];
 
 mkdirSync(outDir, { recursive: true });

@@ -196,3 +196,68 @@ Script `DeployAll.s.sol` deploy 13 contracts và nối treasury; ghi `deployment
 ### Kiểm thử
 - 57 tests (36 MVP + 21 mở rộng trong `test/Extensions.t.sol`), gồm freeze/revive/insurance,
   auto-save + round-up, base/bonus split, referral, yield fee, groups, NFT, challenges, wheel, goal, leaderboard, reminder.
+
+---
+
+## Đợt 3 — 50 tính năng mở rộng (`test/Extensions2.t.sol`, 34 tests)
+
+Đánh số tiếp nối đợt 2 (1-25). Mọi phí mặc định 0, tương thích ngược.
+
+### Nhóm A — Cơ chế tiết kiệm (26-35)
+| # | Tính năng | Contract / hàm |
+| --- | --- | --- |
+| 26 | Boost multiplier: tier theo streak + voucher tiêu hao + boost window | `StreakBoosts` + `vault.setBoostProvider` |
+| 27 | Savings pots — hũ đặt tên | `SavingsPots.createPot/fundPot` |
+| 28 | Whale fee discount | `vault.setWhaleDiscount` |
+| 29 | Miễn phí lần rút đầu mỗi kỳ | `vault.setFreeFirstWithdraw` |
+| 30 | Kỳ hạn khóa hũ + phạt rút trước hạn | `SavingsPots` + `setEarlyWithdrawPenaltyBps` |
+| 31 | Quỹ nhóm chung, rút theo tỷ lệ đóng góp | `GroupVault` |
+| 32 | Thử thách nhóm — tổng tiến độ ≥ target | `TeamChallenge` |
+| 33 | Đấu streak 1v1 | `Duel` |
+| 34 | Pool hoàn gas relayer | `GasSponsor` |
+| 35 | Version tracking | `Versioned` |
+
+### Nhóm B — Xã hội (36-45)
+| # | Tính năng | Contract |
+| --- | --- | --- |
+| 36 | Batch giao dịch | `BatchHelper` |
+| 37 | Rate limit batch | `BatchHelper` |
+| 38 | Allowlist mode | `BatchHelper.setAllowlistEnabled` |
+| 39 | Hội đồng 2/3 multisig pause | `CouncilMultisig` |
+| 40 | Timelock thay đổi tham số | `Timelock` |
+| 41 | Lending pool mô phỏng (APY theo thờ gian) | `MockLendingPool` |
+| 42 | Router chọn nguồn yield tối ưu | `YieldRouter.bestSource` |
+| 43 | Vault migrator | `VaultMigrator` |
+| 44 | Quỹ dự phòng yield | `ReserveFund` |
+| 45 | Meta-tx forwarder EIP-712 + permit | `TrustedForwarder` |
+
+### Nhóm C — Gamification (46-50 + nền tảng)
+| # | Tính năng | Contract |
+| --- | --- | --- |
+| 46 | Round-up từ chi tiêu | `RoundUpVault` |
+| 47 | Watchtower giám sát solvency | `Watchtower` |
+| 48 | Audit exporter snapshot | `AuditExporter` |
+| 49 | Portfolio tổng hợp một view | `PortfolioView` |
+| 50 | Yield smoother (moving average) | `YieldSmoother` |
+
+### Nhóm D — Gamification bổ sung (đợt 3 mở rộng)
+| Tính năng | Contract |
+| --- | --- |
+| Battle pass mùa + check-in | `BattlePass` |
+| Hộp quà bí ẩn | `MysteryBox` |
+| Xổ số theo kỳ | `Raffle` |
+| Thư viện huy hiệu | `Badges` |
+| Bingo tiết kiệm | `Bingo` |
+| Chợ voucher P2P | `VoucherMarket` |
+| Vòng quay cứu trợ | `SalvageSpin` |
+| Bảng xếp hạng mùa | `SeasonBoard` |
+| Theo dõi ví / feed | `ActivityFeed` |
+| Hồ sơ soulbound | `ProfileSBT` |
+| Cam kết cặp đôi | `BuddyPact` |
+| Cam kết ẩn danh commit-reveal | `AnonCommit` |
+| Bot cảnh báo nhóm | `GroupAlerts` |
+| Mùa giới thiệu + mentorship | `ReferralSeasons` |
+| Early bird / last call bonus | `EpochBonus` |
+| Auto-compound yield | `distributor.setAutoCompound` |
+
+**Tổng: 91 tests passing** (36 MVP + 21 đợt 2 + 34 đợt 3).

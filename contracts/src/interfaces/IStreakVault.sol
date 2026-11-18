@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 /// @notice Kiểu dữ liệu và interface của StreakVault dùng chung cho distributor, mock source và frontend.
 interface IStreakVault {
     /// @notice Dữ liệu tài khoản trả về cho dashboard.
@@ -85,6 +87,9 @@ interface IStreakVault {
     function getParticipants() external view returns (address[] memory);
     function totalPrincipal() external view returns (uint256);
     function nextEpochToSettle() external view returns (uint256);
+    function token() external view returns (IERC20);
+    function lastFailedEpoch(address wallet) external view returns (uint256);
+    function streakBeforeFail(address wallet) external view returns (uint256);
     function depositCount(address wallet) external view returns (uint256);
     function frozenUntilEpoch(address wallet) external view returns (uint256);
     function hasInsurance(address wallet) external view returns (bool);
