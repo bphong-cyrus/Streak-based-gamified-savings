@@ -5,24 +5,48 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        ink: {
-          950: "#0b0f1a",
-          900: "#111827",
-          800: "#1b2436",
-          700: "#273349",
+        cream: {
+          50: "#fffaf0",
+          100: "#fff6e0",
+          200: "#f7e8c8",
+          300: "#eedcae",
+          400: "#e0c690",
         },
-        flame: {
-          400: "#ffb454",
-          500: "#ff8a3d",
-          600: "#f2622e",
+        cocoa: {
+          500: "#8a7256",
+          600: "#6b573f",
+          700: "#5b4a35",
+          800: "#463827",
         },
-        mint: {
-          400: "#4ade80",
-          500: "#22c55e",
+        leaf: {
+          300: "#a8e6b8",
+          400: "#7fd8a4",
+          500: "#4fbe7d",
+          600: "#3a9e64",
+        },
+        blush: {
+          300: "#ffc9d4",
+          400: "#ff9fb2",
+          500: "#f26d8d",
+        },
+        lavender: {
+          300: "#c9bdf5",
+          400: "#a794e6",
+          500: "#8b74d8",
+        },
+        skynight: {
+          700: "#232a5e",
+          800: "#1a2049",
+          900: "#141938",
         },
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        cozy: ["var(--font-baloo)", "system-ui", "sans-serif"],
+        body: ["var(--font-quicksand)", "system-ui", "sans-serif"],
+      },
+      boxShadow: {
+        chunky: "0 4px 0 rgba(70,56,39,0.35)",
+        chunkySm: "0 3px 0 rgba(70,56,39,0.3)",
       },
     },
   },

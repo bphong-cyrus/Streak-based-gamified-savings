@@ -1,62 +1,60 @@
 "use client";
 
-import { useAccount, useChainId } from "wagmi";
+import { useAccount } from "wagmi";
 import { ConnectButton } from "@/components/ConnectButton";
-import { Dashboard, useVaultData } from "@/components/Dashboard";
-import { SaveActions } from "@/components/SaveActions";
-import { Rewards } from "@/components/Rewards";
-import { EpochHistory } from "@/components/EpochHistory";
-import { targetChainId } from "@/lib/config";
+import { CozyApp } from "@/components/cozy/CozyApp";
+import { Sky } from "@/components/cozy/Sky";
+import { useThemeLanding } from "@/components/cozy/useThemeLanding";
 
 export default function Home() {
   const { isConnected } = useAccount();
-  const chainId = useChainId();
-  const data = useVaultData();
-  const wrongChain = chainId !== targetChainId;
+  const night = useThemeLanding();
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-2xl px-4 pb-16 pt-6">
-      <header className="mb-5 flex items-center justify-between">
-        <div>
-          <h1 className="bg-gradient-to-r from-flame-400 via-flame-500 to-rose-500 bg-clip-text text-2xl font-extrabold text-transparent">
-            StreakSave
-          </h1>
-          <p className="text-xs text-slate-400">Tiết kiệm đều — giữ streak — nhận thưởng lớn hơn · Avalanche Fuji</p>
-        </div>
-        <ConnectButton />
-      </header>
+    <div className="min-h-screen">
+      <Sky night={night} />
+      {!isConnected ? <Landing /> : <CozyApp />}
+    </div>
+  );
+}
 
-      {!isConnected ? (
-        <div className="card text-center">
-          <div className="text-4xl">🔥</div>
-          <h2 className="mt-2 text-lg font-semibold">Bắt đầu chuỗi tiết kiệm của bạn</h2>
-          <p className="mx-auto mt-1 max-w-sm text-sm text-slate-400">
-            Đặt mục tiêu gửi mỗi tuần, gửi đúng hạn để giữ streak. Streak càng dài, phần thưởng yield của bạn càng
-            lớn. Bỏ một tuần là streak về 0 — nhưng tiền gốc luôn an toàn và rút được anytime.
-          </p>
-          <div className="mt-4 flex justify-center">
-            <ConnectButton />
+function Landing() {
+  return (
+    <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-md flex-col items-center justify-center px-6 pb-10">
+      <div className="text-center">
+        <div className="font-cozy text-5xl font-extrabold text-white drop-shadow-[0_3px_0_rgba(70,56,39,0.5)]">
+          Cozy Save
+        </div>
+        <p className="mt-1 font-cozy text-lg font-bold text-white/90 drop-shadow-[0_2px_0_rgba(70,56,39,0.4)]">
+          Gửi tiền mỗi tuần — xây tòa nhà của bạn
+        </p>
+      </div>
+
+      {/* tòa nhà minh họa */}
+      <div className="mt-6 text-7xl" style={{ filter: "drop-shadow(0 6px 4px rgba(0,0,0,0.25))" }}>
+        🏡
+      </div>
+
+      <div className="card-cream mt-6 w-full space-y-2 p-4 text-sm font-semibold text-cocoa-600">
+        {[
+          ["🏗️", "Gửi đủ mục tiêu mỗi tuần → +1 tầng nhà"],
+          ["🔥", "Streak càng dài → phần thưởng lãi càng lớn"],
+          ["💸", "Tiền gốc luôn của bạn, rút anytime"],
+          ["👥", "Cùng bạn bè giữ nhịp, không lo mất streak"],
+        ].map(([icon, text]) => (
+          <div key={text} className="flex items-center gap-2">
+            <span>{icon}</span>
+            <span>{text}</span>
           </div>
-        </div>
-      ) : wrongChain ? (
-        <div className="card text-center">
-          <h2 className="text-lg font-semibold">Sai mạng</h2>
-          <p className="mt-1 text-sm text-slate-400">Ứng dụng chạy trên Avalanche Fuji C-Chain (chain ID {targetChainId}).</p>
-          <div className="mt-4 flex justify-center">
-            <ConnectButton />
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <Dashboard data={data} />
-          <SaveActions data={data} />
-          <Rewards data={data} />
-          <EpochHistory currentEpoch={data.account?.currentEpoch} />
-          <p className="text-center text-xs text-slate-600">
-            Demo mode: mỗi kỳ 180 giây · mUSDC là token thử nghiệm · Yield từ nguồn mô phỏng
-          </p>
-        </div>
-      )}
-    </main>
+        ))}
+      </div>
+
+      <div className="mt-6">
+        <ConnectButton />
+      </div>
+      <p className="mt-3 text-center text-xs font-bold text-white/80 drop-shadow-[0_1px_0_rgba(70,56,39,0.5)]">
+        Avalanche Fuji Testnet · mUSDC demo
+      </p>
+    </div>
   );
 }
