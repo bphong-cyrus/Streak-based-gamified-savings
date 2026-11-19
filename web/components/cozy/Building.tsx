@@ -6,7 +6,14 @@ import { Icon } from "@/components/cozy/icons";
 /** Scene 3D chỉ render ở client (WebGL) — tránh SSR/hydration lỗi. */
 const HouseScene = dynamic(() => import("@/components/cozy/HouseScene").then((m) => m.HouseScene), {
   ssr: false,
-  loading: () => <div className="h-full w-full" />,
+  loading: () => (
+    <div className="flex h-full w-full flex-col items-center justify-center gap-2">
+      <div className="big-jump text-5xl" style={{ filter: "drop-shadow(0 4px 3px rgba(0,0,0,0.25))" }}>
+        🐈
+      </div>
+      <div className="font-cozy text-xs font-bold text-cocoa-500">Đang dựng tòa nhà…</div>
+    </div>
+  ),
 });
 
 interface BuildingProps {

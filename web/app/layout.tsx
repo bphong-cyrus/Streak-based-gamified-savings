@@ -4,7 +4,29 @@ import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
   title: "Cozy Save — Tiết kiệm mọc nhà",
-  description: "Gửi tiền đều mỗi tuần, xây tòa tháp của riêng bạn và nhận thưởng theo streak.",
+  description:
+    "Gửi tiền đều mỗi kỳ, giữ streak, xây tòa nhà 3D của bạn trên Avalanche. Streak càng dài, phần thưởng lãi càng lớn — gốc luôn của bạn, rút anytime.",
+  applicationName: "Cozy Save",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Cozy Save",
+    statusBarStyle: "default",
+  },
+  openGraph: {
+    title: "Cozy Save — Tiết kiệm mọc nhà",
+    description:
+      "Streak-based gamified savings trên Avalanche: gửi đều mỗi kỳ → +1 tầng nhà 3D, streak càng dài thưởng càng lớn. 25+ hợp đồng on-chain.",
+    type: "website",
+    images: ["/icons/icon-512.png"],
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/icon-180.png", sizes: "180x180", type: "image/png" }],
+  },
 };
 
 export const viewport: Viewport = {

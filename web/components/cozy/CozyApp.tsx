@@ -12,6 +12,7 @@ import { GroupTab } from "@/components/cozy/GroupTab";
 import { MeTab } from "@/components/cozy/MeTab";
 import { Icon, type IconName } from "@/components/cozy/icons";
 import { isMuted, setMuted, sfx, unlockAudio } from "@/lib/sound";
+import { Onboarding } from "@/components/cozy/Onboarding";
 import { IdentityAvatar } from "@/lib/identity";
 import { useVaultData, type VaultData } from "@/lib/useVaultData";
 import { useGemsData } from "@/lib/useGemsData";
@@ -174,6 +175,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
             celebrateKey={celebrateKey}
             gemsBalance={gemsData.gemsBalance}
             onDepositStart={() => setPendingCelebrate(true)}
+            isDemo={!!demoData}
           />
         )}
         {tab === "goals" && <GoalsTab data={data} />}
@@ -192,6 +194,9 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
           />
         )}
       </main>
+
+      {/* hướng dẫn lần đầu */}
+      <Onboarding />
 
       {/* bottom nav */}
       <nav className="fixed bottom-3 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2">

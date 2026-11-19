@@ -6,7 +6,10 @@ import { DepositSheet } from "@/components/cozy/DepositSheet";
 import { fmt } from "@/lib/format";
 import { fmtGems } from "@/lib/useGemsData";
 import { contracts, isConfigured } from "@/lib/config";
+import { streakVaultAbi } from "@/lib/abis";
+import { useTokenAllowance, withTokenApprove } from "@/components/cozy/panel";
 import { faucetDripAbi } from "@/lib/abis";
+import { useReadContracts } from "wagmi";
 import { TxFeedback, useTx } from "@/components/useTx";
 import { Icon } from "@/components/cozy/icons";
 import { sfx } from "@/lib/sound";
@@ -46,6 +49,8 @@ interface Props {
   celebrateKey: number;
   gemsBalance: bigint;
   onDepositStart: () => void;
+  /** demo với dữ liệu mẫu — nút gửi tiền đổi thành mô phỏng kịch bản pitch */
+  isDemo?: boolean;
 }
 
 function Tile({
@@ -79,7 +84,7 @@ export function estimateApy(streak: bigint): number {
 }
 
 /** Tab Home: báo cáo tóm tắt gọn nhẹ — chi tiết số liệu nằm ở tab Mục tiêu. */
-export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDepositStart }: Props) {
+export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDepositStart, isDemo }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [showParty, setShowParty] = useState(false);
   const [zoom, setZoom] = useState<number | null>(null); // null = tự vừa khung
@@ -246,8 +251,15 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
         >
           <Icon name="clock" size={15} /> Còn {countdown} để giữ chuỗi
         </div>
-        <button className="btn-cozy mt-3 w-full text-lg" onClick={() => setSheetOpen(true)}>
-          {goalDone ? "Gửi thêm" : `Gửi ${fmt(remaining)} mUSDC hoàn thành tầng`}
+        <button
+          className="btn-cozy mt-3 w-full text-lg"
+          onClick={() => (isDemo ? onDepositStart() : setSheetOpen(true))}
+        >
+          {isDemo
+            ? "Mô phỏng gửi tiền — xem tòa nhà lớn lên"
+            : goalDone
+              ? "Gửi thêm"
+              : `Gửi ${fmt(remaining)} mUSDC hoàn thành tầng`}
         </button>
         {!account.activated && (
           <>
@@ -257,6 +269,9 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
         )}
       </div>
 
+      {/* tự bảo vệ streak: đóng băng kỳ khi chưa kịp gửi đủ */}
+      {!isDemo && !goalDone && target > 0n && <FreezeEpochButton />}
+
       {/* băng tin thị trường */}
       <div className="mx-auto mt-3 flex max-w-xs items-center gap-2 rounded-xl border-2 border-cocoa-700/30 bg-white/70 px-3 py-1.5 text-[11px] font-semibold text-cocoa-600">
         <Icon name="chart" size={15} className="shrink-0" />
@@ -264,6 +279,39 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
       </div>
 
       <DepositSheet data={data} open={sheetOpen} onClose={() => setSheetOpen(false)} onDeposited={onDepositStart} />
+    </div>
+  );
+}
+
+/** Nút tự trả phí đóng băng kỳ hiện tại — giữ streak khi chưa kịp gửi đủ. */
+function FreezeEpochButton() {
+  const tx = useTx();
+  const allowance = useTokenAllowance(contracts.vault);
+  const feeState = useReadContracts({
+    contracts: isConfigured(contracts.vault)
+      ? [{ address: contracts.vault, abi: streakVaultAbi, functionName: "freezeFee", args: [] }]
+      : [],
+    query: { refetchInterval: 30_000 },
+  });
+  const fee = (feeState.data?.[0]?.result as bigint | undefined) ?? 0n;
+  if (fee === 0n) return null;
+
+  async function freeze() {
+    const calls = withTokenApprove(
+      [{ label: "Đang đóng băng kỳ này…", call: { address: contracts.vault, abi: streakVaultAbi, functionName: "freezeCurrentEpoch", args: [] } }],
+      contracts.vault,
+      fee,
+      allowance,
+    );
+    await tx.run("Đóng băng streak", calls);
+  }
+
+  return (
+    <div className="mx-auto mt-2 max-w-xs">
+      <button className="btn-cream w-full !py-2 text-sm" disabled={tx.step !== null} onClick={freeze}>
+        <Icon name="snow" size={16} className="inline -mt-0.5" /> Đóng băng kỳ này ({fmt(fee)} mUSDC) — giữ chuỗi an toàn
+      </button>
+      <TxFeedback state={tx} />
     </div>
   );
 }

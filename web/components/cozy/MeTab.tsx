@@ -7,6 +7,7 @@ import { IdentityAvatar, identityOf, useIdentityIndex, pickIdentity, IDENTITIES 
 import type { ThemeMode } from "@/components/cozy/useThemeLanding";
 import type { VaultData } from "@/lib/useVaultData";
 import { ShopPanel } from "@/components/cozy/ShopTab";
+import { RecentTxPanel } from "@/components/cozy/RecentTxPanel";
 import { MeExtras } from "@/components/cozy/MeExtras";
 import { Icon } from "@/components/cozy/icons";
 import type { ShopItemView } from "@/lib/useGemsData";
@@ -83,6 +84,9 @@ export function MeTab({ data, theme, onThemeChange, themes, decors, gemsBalance,
           })}
         </div>
       </div>
+
+      {/* nhật ký giao dịch gần đây */}
+      <RecentTxPanel />
 
       {/* cửa hàng + bộ sưu tập */}
       <ShopPanel themes={themes} decors={decors} gemsBalance={gemsBalance} gemsAllowance={gemsAllowance} hasWallet={!!address} />

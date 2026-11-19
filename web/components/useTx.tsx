@@ -13,6 +13,28 @@ export interface TxState {
   error: string | null;
 }
 
+export interface TxLogEntry {
+  label: string;
+  hash: string;
+  at: number;
+}
+
+/** Nhật ký giao dịch thành công gần đây — lưu localStorage, hiển thị ở tab Tôi. */
+export function readTxLog(): TxLogEntry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    return JSON.parse(localStorage.getItem("cozy-txlog") ?? "[]") as TxLogEntry[];
+  } catch {
+    return [];
+  }
+}
+
+function pushTxLog(entry: TxLogEntry) {
+  const log = [entry, ...readTxLog()].slice(0, 8);
+  localStorage.setItem("cozy-txlog", JSON.stringify(log));
+  window.dispatchEvent(new Event("cozy-txlog"));
+}
+
 /** Gói writeContractAsync + chờ receipt, trả về trạng thái để hiển thị. Tự chuyển chain nếu ví đang sai mạng. */
 export function useTx() {
   const { writeContractAsync } = useWriteContract();
@@ -40,6 +62,7 @@ export function useTx() {
             retryCount: 5,
             retryDelay: 2_000,
           });
+          pushTxLog({ label: c.label, hash, at: Date.now() });
         }
         setState({ step: null, hash: null, error: null });
         sfx.success();

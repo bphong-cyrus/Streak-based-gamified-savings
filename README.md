@@ -225,3 +225,24 @@ Sau khi chốt kỳ 1, cho Bình rút **5 mUSDC tiền gốc** và claim **1 mUS
 - [Avalanche Fuji C-Chain và hướng dẫn thêm mạng](https://build.avax.network/academy/blockchain/x402-payment-infrastructure/04-x402-on-avalanche/02-network-setup) · [Avalanche Builder Hub Console](https://build.avax.network/console)
 - [Cài Foundry](https://www.getfoundry.sh/introduction/installation) · [Anvil và local fork](https://www.getfoundry.sh/anvil) · [OpenZeppelin ERC-20](https://docs.openzeppelin.com/contracts/5.x/api/token/erc20)
 - [Cài Next.js](https://nextjs.org/docs/app/getting-started/installation) · [Chờ transaction receipt với Wagmi](https://wagmi.sh/react/api/hooks/useWaitForTransactionReceipt) · [Viem chains](https://viem.sh/docs/chains/introduction)
+
+## Kịch bản demo 3 phút (Final Demo Day)
+
+> Mục tiêu: đi đủ **ý chính → cảm xúc → bằng chứng on-chain** trong 3 phút. Chuẩn bị sẵn 2 ví (An "ngườ chăm", Bình "ngườ hay quên") đã nạp AVAX faucet + mUSDC.
+
+**0:00–0:30 — Vấn đề & giải pháp.** "Ngườ trẻ khó giữ thói quen gửi tiền đều. Cozy Save game hoá bằng streak: gửi đủ mỗi kỳ → streak tăng, thưởng lãi tăng, nhà 3D mọc tầng. Bỏ kỳ → streak về 0. Tiền gốc luôn của bạn, rút anytime." Mở landing → nhấn nút **Xem thử giao diện** để giám khảo thấy app ngay không cần ví.
+
+**0:30–1:30 — Vòng đờ streak trên Fuji.** Kết nối ví An:
+1. Tab **Mục tiêu**: đặt mục tiêu 5 mUSDC/tuần — "thay đổi áp dụng từ kỳ sau, không thể sửa kỳ đang chạy".
+2. Tab **Nhà**: gửi 5 mUSDC → **âm thanh arpeggio, mưa vàng, tòa nhà nhảy tầng ngay trước mắt** (kỳ Fuji 3 phút).
+3. Tab **Chơi**: điểm danh, quay vòng quay on-chain, chờ chốt kỳ công khai → claim thưởng — mỗi bước bấm **Xem giao dịch trên Snowtrace**.
+4. Bình bỏ kỳ → tab Nhà: nút **đóng băng kỳ** (tính năng 54) giữ chuỗi an toàn — "thất bại có phí, nhưng rẻ hơn mất streak".
+
+**1:30–2:30 — Hệ sinh thái mở rộng.** Lướt nhanh: **Bảng vàng** (điểm = streak × tổng gửi, đọc thẳng từ vault), hụi điện tử, xổ số tiết kiệm, ngài vàng, bang hội chiến, pet, sưu tập tem — "25+ hợp đồng, tất cả đối chiếu được on-chain, không server nào giữ tiền ngườ dùng".
+
+**2:30–3:00 — Vì sao Avalanche.** Finalize: chốt kỳ là giao dịch công khai ai cũng gọi được; phí gas ~ không đáng kể trên Fuji; kiến trúc mở rộng sang L1 của riêng mình khi cần. Kết: "Cozy Save biến kỷ luật tài chính thành một trò chơi ngườ Việt chơi mỗi tuần."
+
+**Gợi ý trả lờ giám khảo:**
+- *An toàn tiền ngườ dùng?* Vault tách biệt, gốc rút được anytime, mọi thao tác event trên Snowtrace; không custodial.
+- *Khác gì hũ heo điện tử web2?* Streak + yield thật từ nguồn lãi (mock lending → Aave v3 khi mainnet), 25+ cơ chế on-chain không thể làm web2.
+- *Scale thế nào?* Kỳ ngắn 3 phút chỉ để demo; production 1 tuần/kỳ. Nhóm nhóm qua StreakGroups, bang hội qua GuildWars đã có sẵn.
