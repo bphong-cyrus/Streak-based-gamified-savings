@@ -8,7 +8,7 @@ import { Icon } from "@/components/cozy/icons";
 
 /** Danh sách nhiệm vụ: hoàn thành điều kiện on-chain thì nhận Paws. */
 export function MissionsCard({ missions, hasWallet }: { missions: MissionView[]; hasWallet: boolean }) {
-  const { run, step, hash, error } = useTx();
+  const { run, step, hash, error, info } = useTx();
 
   async function claim(missionId: bigint) {
     await run("Nhận thưởng nhiệm vụ", [
@@ -54,7 +54,7 @@ export function MissionsCard({ missions, hasWallet }: { missions: MissionView[];
           })}
         </ul>
       )}
-      <TxFeedback state={{ step, hash, error }} />
+      <TxFeedback state={{ step, hash, error, info }} />
     </div>
   );
 }

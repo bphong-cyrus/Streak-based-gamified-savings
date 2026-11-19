@@ -165,7 +165,7 @@ function FreezeGiftButton({ to }: { to: string }) {
       >
         {tx.step ? "…" : <span className="inline-flex items-center gap-1"><Icon name="snow" size={12} /> Tặng freeze</span>}
       </button>
-      <TxFeedback state={{ step: tx.step, hash: tx.hash, error: tx.error }} />
+      <TxFeedback state={{ step: tx.step, hash: tx.hash, error: tx.error, info: tx.info }} />
     </div>
   );
 }
@@ -196,7 +196,7 @@ function InsuranceGiftButton({ to }: { to: string }) {
       >
         {tx.step ? "…" : <span className="inline-flex items-center gap-1"><Icon name="shield" size={12} /> Tặng insurance</span>}
       </button>
-      <TxFeedback state={{ step: tx.step, hash: tx.hash, error: tx.error }} />
+      <TxFeedback state={{ step: tx.step, hash: tx.hash, error: tx.error, info: tx.info }} />
     </div>
   );
 }
@@ -278,7 +278,7 @@ function GroupsPanel() {
             Tạo
           </button>
         </div>
-        <TxFeedback state={{ step: createTx.step, hash: createTx.hash, error: createTx.error }} />
+        <TxFeedback state={{ step: createTx.step, hash: createTx.hash, error: createTx.error, info: createTx.info }} />
 
         <div className="flex gap-2">
           <input
@@ -302,7 +302,7 @@ function GroupsPanel() {
             Tham gia
           </button>
         </div>
-        <TxFeedback state={{ step: joinTx.step, hash: joinTx.hash, error: joinTx.error }} />
+        <TxFeedback state={{ step: joinTx.step, hash: joinTx.hash, error: joinTx.error, info: joinTx.info }} />
 
         <div className="flex gap-2">
           <input

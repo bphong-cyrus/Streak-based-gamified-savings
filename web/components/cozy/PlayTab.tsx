@@ -248,7 +248,7 @@ function WheelCard({ data }: { data: VaultData }) {
           )}
         </div>
       )}
-      <TxFeedback state={{ step: spin.step, hash: spin.hash, error: spin.error }} />
+      <TxFeedback state={{ step: spin.step, hash: spin.hash, error: spin.error, info: spin.info }} />
     </FeatureCard>
   );
 }

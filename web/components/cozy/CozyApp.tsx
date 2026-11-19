@@ -13,6 +13,7 @@ import { MeTab } from "@/components/cozy/MeTab";
 import { Icon, type IconName } from "@/components/cozy/icons";
 import { isMuted, setMuted, sfx, unlockAudio } from "@/lib/sound";
 import { Onboarding } from "@/components/cozy/Onboarding";
+import { setDemoMode } from "@/lib/demo";
 import { IdentityAvatar } from "@/lib/identity";
 import { useVaultData, type VaultData } from "@/lib/useVaultData";
 import { useGemsData } from "@/lib/useGemsData";
@@ -42,7 +43,28 @@ interface CozyAppProps {
 /** Vỏ app: header, tab content, bottom nav, animation xây tầng. Bầu trờ do page.tsx render theo theme. */
 export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppProps) {
   const live = useVaultData({ enabled: !demoData });
-  const data = demoData ?? live;
+  // Demo: mỗi lượt "mô phỏng gửi tiền" hoàn thành → tòa nhà thật sự +1 tầng
+  const [demoBoost, setDemoBoost] = useState(0);
+  const demoAcc = demoData?.account;
+  const data = demoData
+    ? {
+        ...demoData,
+        account: demoAcc
+          ? {
+              ...demoAcc,
+              streak: demoAcc.streak + BigInt(demoBoost),
+              currentEpoch: demoAcc.currentEpoch + BigInt(demoBoost),
+              depositCount: (demoAcc.depositCount ?? 0n) + BigInt(demoBoost),
+              ...(demoBoost > 0 ? { currentProgress: 0n, currentDeposited: 0n } : {}),
+            }
+          : demoAcc,
+      }
+    : live;
+
+  useEffect(() => {
+    setDemoMode(!!demoData);
+    return () => setDemoMode(false);
+  }, [demoData]);
   const gemsData = useGemsData({ enabled: !demoData });
   const chainId = useChainId();
   const [tab, setTab] = useState<TabKey>("home");
@@ -62,25 +84,22 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
   const night = theme === "night";
   const wrongChain = !demoData && chainId !== targetChainId;
 
-  // animation xây tầng: building → celebrate
+  // animation xây tầng: buildKey tăng mỗi lượt gửi → bấm nhanh nhiều lần vẫn chạy đúng
   const [building, setBuilding] = useState(false);
   const [celebrateKey, setCelebrateKey] = useState(0);
-  const [pendingCelebrate, setPendingCelebrate] = useState(false);
+  const [buildKey, setBuildKey] = useState(0);
 
   useEffect(() => {
-    if (!pendingCelebrate) return;
+    if (buildKey === 0) return;
     setBuilding(true);
     // 4.6s: đủ cho chuỗi chạy vào -> đập búa -> lấp lánh của ConstructionSite
     const t1 = setTimeout(() => {
       setBuilding(false);
       setCelebrateKey((k) => k + 1);
+      if (demoData) setDemoBoost((b) => b + 1); // nhà mọc tầng ngay khi xây xong
     }, 4600);
-    const t2 = setTimeout(() => setPendingCelebrate(false), 7800);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [pendingCelebrate]);
+    return () => clearTimeout(t1);
+  }, [buildKey, demoData]);
 
   if (wrongChain) {
     return (
@@ -174,7 +193,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
             building={building}
             celebrateKey={celebrateKey}
             gemsBalance={gemsData.gemsBalance}
-            onDepositStart={() => setPendingCelebrate(true)}
+            onDepositStart={() => setBuildKey((k) => k + 1)}
             isDemo={!!demoData}
           />
         )}

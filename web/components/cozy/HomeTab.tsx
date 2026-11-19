@@ -37,7 +37,7 @@ function FaucetButton() {
       <button className="btn-cream w-full" disabled={tx.step !== null} onClick={drip}>
         <Icon name="droplet" size={17} className="inline -mt-0.5" /> Nhận 5 mUSDC miễn phí (ví mới)
       </button>
-      <TxFeedback state={{ step: tx.step, hash: tx.hash, error: tx.error }} />
+      <TxFeedback state={{ step: tx.step, hash: tx.hash, error: tx.error, info: tx.info }} />
     </div>
   );
 }

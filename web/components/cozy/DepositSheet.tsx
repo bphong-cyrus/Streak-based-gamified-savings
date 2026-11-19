@@ -18,7 +18,7 @@ interface Props {
 
 /** Bottom sheet gửi / rút gốc, tự approve khi thiếu allowance. */
 export function DepositSheet({ data, open, onClose, onDeposited }: Props) {
-  const { run, step, hash, error } = useTx();
+  const { run, step, hash, error, info } = useTx();
   const [mode, setMode] = useState<"deposit" | "withdraw">("deposit");
   const [amount, setAmount] = useState("");
   const { account, allowance, tokenBalance } = data;
@@ -126,7 +126,7 @@ export function DepositSheet({ data, open, onClose, onDeposited }: Props) {
           {mode === "deposit" ? <span className="inline-flex items-center gap-1.5"><Icon name="hammer" size={17} /> Gửi & xây tầng</span> : "Rút về ví"}
         </button>
 
-        <TxFeedback state={{ step, hash, error }} />
+        <TxFeedback state={{ step, hash, error, info }} />
       </div>
     </div>
   );

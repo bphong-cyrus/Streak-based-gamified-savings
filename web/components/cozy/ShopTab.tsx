@@ -15,7 +15,7 @@ interface Props {
 
 /** Panel Cửa hàng: mở khóa theme và đồ trang trí bằng Paws (nằm trong tab Tôi). */
 export function ShopPanel({ themes, decors, gemsBalance, gemsAllowance, hasWallet }: Props) {
-  const { run, step, hash, error } = useTx();
+  const { run, step, hash, error, info } = useTx();
 
   async function buy(item: ShopItemView, isTheme: boolean) {
     const calls: Parameters<typeof run>[1] = [];
@@ -91,7 +91,7 @@ export function ShopPanel({ themes, decors, gemsBalance, gemsAllowance, hasWalle
       <p className="text-center text-[11px] font-semibold text-cocoa-500">
         Sở hữu ghi on-chain — theme và decor riêng của từng ví, đối chiếu được trên Snowtrace.
       </p>
-      <TxFeedback state={{ step, hash, error }} />
+      <TxFeedback state={{ step, hash, error, info }} />
     </div>
   );
 }

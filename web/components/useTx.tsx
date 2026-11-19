@@ -6,11 +6,14 @@ import { waitForTransactionReceipt } from "@wagmi/core";
 import { BaseError } from "viem";
 import { wagmiConfig, targetChainId, fuji, explorerTx } from "@/lib/config";
 import { sfx } from "@/lib/sound";
+import { isDemoMode } from "@/lib/demo";
 
 export interface TxState {
   step: string | null;
   hash: string | null;
   error: string | null;
+  /** Thông báo mô phỏng khi đang ở chế độ demo (không phải lỗi). */
+  info?: string | null;
 }
 
 export interface TxLogEntry {
@@ -45,6 +48,11 @@ export function useTx() {
   const run = useCallback(
     async (label: string, calls: Array<{ label: string; call: Parameters<typeof writeContractAsync>[0] }>) => {
       setState({ step: null, hash: null, error: null });
+      if (isDemoMode()) {
+        // Chế độ demo: không ví nên không ký được — báo thân thiện thay vì lỗi cryptic
+        setState({ step: null, hash: null, error: null, info: "Chế độ demo — giao dịch chỉ mô phỏng. Kết nối ví để thực hiện thật." });
+        return false;
+      }
       try {
         // Ép đúng mạng trước khi gửi — tránh lỗi "Unsupported Network" của MetaMask
         if (currentChainId !== targetChainId) {
@@ -88,6 +96,13 @@ export function useTx() {
 }
 
 export function TxFeedback({ state }: { state: TxState }) {
+  if (state.info && !state.step && !state.error) {
+    return (
+      <div className="mt-3 rounded-xl border-2 border-cocoa-700/30 bg-cream-200/70 px-3 py-2 text-sm font-semibold text-cocoa-600">
+        {state.info}
+      </div>
+    );
+  }
   if (!state.step && !state.error) return null;
   return (
     <div

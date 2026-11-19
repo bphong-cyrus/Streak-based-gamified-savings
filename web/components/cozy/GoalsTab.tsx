@@ -15,7 +15,7 @@ const SHOWN_EPOCHS = 8;
 /** Tab Mục tiêu: đặt mục tiêu, chi tiết APY, biểu đồ, gửi tự động, nhật ký chuỗi. */
 export function GoalsTab({ data }: { data: VaultData }) {
   const { account } = data;
-  const { run, step, hash, error } = useTx();
+  const { run, step, hash, error, info } = useTx();
   const [input, setInput] = useState("");
 
   async function setTarget() {
@@ -55,7 +55,7 @@ export function GoalsTab({ data }: { data: VaultData }) {
             Lưu
           </button>
         </div>
-        <TxFeedback state={{ step, hash, error }} />
+        <TxFeedback state={{ step, hash, error, info }} />
       </div>
 
       {/* cơ chế chia thưởng — tham số đọc trực tiếp từ YieldDistributor */}
@@ -72,7 +72,7 @@ export function GoalsTab({ data }: { data: VaultData }) {
 /** Gửi tự động mỗi kỳ qua contract AutoSaver (có thể tự bấm "Gửi hộ ngay"). */
 function AutoSaveCard({ data }: { data: VaultData }) {
   const { address, account } = data;
-  const { run, step, hash, error } = useTx();
+  const { run, step, hash, error, info } = useTx();
 
   const reads = useReadContracts({
     contracts: address
@@ -159,7 +159,7 @@ function AutoSaveCard({ data }: { data: VaultData }) {
         </button>
       )}
       {!active && !address && <p className="mt-2 text-[11px] font-semibold text-cocoa-500">Kết nối ví để bật.</p>}
-      <TxFeedback state={{ step, hash, error }} />
+      <TxFeedback state={{ step, hash, error, info }} />
     </div>
   );
 }
