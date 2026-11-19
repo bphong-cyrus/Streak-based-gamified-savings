@@ -89,11 +89,35 @@
 
 ### F7 — Frontend approve đúng số tiền — Low / Fixed
 
-**Vị trí:** `web/lib/transactions.ts` / `web/components/useTx.tsx`.
+**Vị trí:** `web/components/useTx.tsx`, `web/components/cozy/DepositSheet.tsx`, `web/components/cozy/panel.tsx`.
 
-**Mô tả:** Mọi flow approve USDC đều dùng `parseUnits(amount, 6)` thay vì `MaxUint256`. Đúng chain ID (`43113`) được kiểm tra trước khi gọi wallet.
+**Mô tả:** Mọi flow approve USDC đều dùng số tiền chính xác (`amount`) thay vì `MaxUint256`. Đúng chain ID (`43113`) được kiểm tra và tự chuyển mạng trước khi gọi wallet.
 
 **Trạng thái:** **Fixed / Verified** trong quá trình review code.
+
+### F8 — StreakNFT `mint()` thiếu `nonReentrant` — Low / Fixed
+
+**Vị trí:** `contracts/src/StreakNFT.sol:38-46`.
+
+**Mô tả:** Hàm `mint()` gọi `_mint()` của ERC-1155, có thể trigger `onERC1155Received` ở ví contract. Mặc dù `balanceOf` check và soulbound (`TransfersDisabled`) đã ngăn mint lặp, thêm `nonReentrant` là lớp phòng thủ sâu (defense-in-depth).
+
+**Trạng thái:** **Fixed** — đã thêm `ReentrancyGuard` và `nonReentrant` cho `mint()`; test `test_nftMintDuplicateReverts` pass.
+
+### F9 — Link ngoài `RecentTxPanel` thiếu `noopener` — Informational / Fixed
+
+**Vị trí:** `web/components/cozy/RecentTxPanel.tsx:32`.
+
+**Mô tả:** Link Snowtrace dùng `rel="noreferrer"` nhưng thiếu `noopener`, tiềm ẩn tabnapping/window.opener manipulation.
+
+**Trạng thái:** **Fixed** — đã đổi thành `rel="noopener noreferrer"`.
+
+### F10 — Automated E2E QA zero console-error — Informational / Verified
+
+**Vị trí:** `web/e2e/qa.spec.ts`, `web/playwright.config.ts`.
+
+**Mô tả:** Bộ kiểm thử tự động chạy trên Desktop (1440×900) và Mobile (390×844) với cả `?demo=1` và chế độ chưa kết nối ví. Mọi test pass, bắt toàn bộ `console.error`, `pageerror`, HTTP 4xx/5xx.
+
+**Trạng thái:** **Verified** — `npx playwright test` 10/10 pass.
 
 ## 4. Kiểm chứng tính toàn vẹn tiền (chạy thật trên Fuji)
 

@@ -7,6 +7,8 @@ contracts/.env
 # Node / Next.js
 node_modules/
 web/.next/
+web/test-results/
+web/playwright-report/
 web/.env.local
 web/.env*.local
 *.tsbuildinfo

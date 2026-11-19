@@ -29,7 +29,7 @@ export function RecentTxPanel() {
               className="shrink-0 font-mono text-[11px] font-bold text-lavender-500 underline"
               href={explorerTx(e.hash)}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
               {shortAddr(e.hash)}
             </a>

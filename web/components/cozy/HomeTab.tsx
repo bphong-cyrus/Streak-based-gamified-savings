@@ -186,7 +186,7 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, i
   return (
     <div className="space-y-3 lg:grid lg:grid-cols-12 lg:gap-4 lg:space-y-0">
       {/* Cột trái — HUD: Streak hero + stats (desktop: 4 cột; mobile: full) */}
-      <div className="space-y-3 lg:col-span-4">
+      <div className="relative z-10 space-y-3 lg:col-span-4">
         {/* Streak hero */}
         <div className="card-cream relative overflow-hidden p-4">
           <div className="pointer-events-none absolute -right-6 -top-8 opacity-[0.08]">
@@ -243,7 +243,7 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, i
       </div>
 
       {/* Cột giữa — Nhà 3D */}
-      <div className="relative lg:col-span-5">
+      <div className="relative z-0 lg:col-span-5">
         <div className="relative flex flex-col items-center justify-center rounded-[24px] border border-[#eadfc6] bg-[#fffdf7]/70 p-3 shadow-sm backdrop-blur-sm">
           {/* Badge Floor gọn ở trên */}
           <div className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-2xl border border-cocoa-700/15 bg-white/95 px-4 py-1 shadow-sm backdrop-blur-sm">
@@ -257,7 +257,7 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, i
           >
             <div
               ref={wrapRef}
-              className="absolute left-1/2 top-1/2 w-fit -translate-x-1/2 -translate-y-1/2"
+              className="pointer-events-none absolute left-1/2 top-1/2 w-fit -translate-x-1/2 -translate-y-1/2"
               style={{ transform: `translate(-50%, -50%) scale(${scale})` }}
             >
               <Building key={celebrateKey} floors={floors} night={night} building={building} celebrating={celebrateKey > 0} goalDone={goalDone} />
@@ -293,7 +293,7 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, i
       </div>
 
       {/* Cột phải — Controls + heatmap mobile (desktop: zoom, quick actions) */}
-      <div className="space-y-3 lg:col-span-3">
+      <div className="relative z-10 space-y-3 lg:col-span-3">
         <div className="card-cream p-4">
           <h4 className="font-cozy text-sm font-bold text-cocoa-600">Điều khiển tòa nhà</h4>
           <div className="mt-2 flex items-center justify-center gap-2">

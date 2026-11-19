@@ -3,12 +3,13 @@ pragma solidity ^0.8.24;
 
 import {ERC1155} from "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IStreakVault} from "./interfaces/IStreakVault.sol";
 
 /// @title StreakNFT
 /// @notice Huy hiệu NFT mốc streak (3/7/30 kỳ). Ai đủ streak cũng có thể tự mint.
 /// @dev Soulbound-lite: chặn chuyển, chỉ cho mint/burn. URI mặc định theo id.
-contract StreakNFT is ERC1155, Ownable {
+contract StreakNFT is ERC1155, Ownable, ReentrancyGuard {
     IStreakVault public immutable vault;
 
     uint256 public constant STREAK_3 = 3;
@@ -35,7 +36,7 @@ contract StreakNFT is ERC1155, Ownable {
     }
 
     /// @notice Mint huy hiệu cao nhất mà ví đang đủ điều kiện.
-    function mint() external returns (uint256 tier) {
+    function mint() external nonReentrant returns (uint256 tier) {
         uint256 streak = vault.getAccount(msg.sender).streak;
         tier = _tierOf(streak);
         if (tier == 0) revert StreakNotReached();

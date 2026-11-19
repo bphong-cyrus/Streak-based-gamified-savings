@@ -163,13 +163,15 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo, demoCta }:
       </header>
 
       {demoData && (
-        <div className="fixed left-1/2 top-[4.25rem] z-20 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 md:max-w-2xl">
-          <div className="flex items-center justify-between gap-2 rounded-full border border-cocoa-700/20 bg-white/90 py-1.5 pl-3 pr-1.5 shadow-sm backdrop-blur-sm">
+        <div className="pointer-events-none fixed left-1/2 top-[4.25rem] z-20 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 md:max-w-2xl">
+          <div className="pointer-events-none flex items-center justify-between gap-2 rounded-full border border-cocoa-700/20 bg-white/90 py-1.5 pl-3 pr-1.5 shadow-sm backdrop-blur-sm">
             <span className="text-left text-[11px] font-bold text-cocoa-600">
               {demoCta ? "Bạn đang xem thử không cần ví — kết nối để dùng thật" : "Demo với dữ liệu mẫu — giao dịch sẽ không thực hiện được"}
             </span>
-            {demoCta ?? (
-              <button className="shrink-0 text-[11px] font-bold underline" onClick={onExitDemo}>
+            {demoCta ? (
+              <span className="pointer-events-auto">{demoCta}</span>
+            ) : (
+              <button className="pointer-events-auto shrink-0 text-[11px] font-bold underline" onClick={onExitDemo}>
                 Thoát
               </button>
             )}
@@ -178,7 +180,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo, demoCta }:
       )}
 
       {/* nội dung tab — pb-36 để bottom nav không che */}
-      <main className="px-3 pb-36 pt-20 md:px-4">
+      <main className="px-3 pb-36 pt-28 md:px-4 md:pt-36">
         {tab === "home" && (
           <HomeTab
             data={data}
