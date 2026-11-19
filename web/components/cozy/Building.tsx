@@ -39,9 +39,9 @@ function Floor({ num, color, night, lit, resident, pop }: FloorProps) {
         style={{
           position: "absolute",
           left: "100%",
-          top: 4,
-          width: 15,
-          height: 58,
+          top: 5,
+          width: 16,
+          height: 73,
           background: side,
           transform: "skewY(28deg)",
           transformOrigin: "left top",
@@ -52,7 +52,7 @@ function Floor({ num, color, night, lit, resident, pop }: FloorProps) {
       />
       {/* mặt trước */}
       <div
-        className="relative mx-auto h-16 w-44"
+        className="relative mx-auto h-20 w-52"
         style={{
           background: color,
           border: `3px solid ${OUTLINE}`,
@@ -62,7 +62,7 @@ function Floor({ num, color, night, lit, resident, pop }: FloorProps) {
       >
         {/* cửa sổ 3D có glare + cư dân đi lại + lan can */}
         <div
-          className="absolute left-1/2 top-2 h-8 w-9 -translate-x-1/2"
+          className="absolute left-1/2 top-3 h-10 w-11 -translate-x-1/2"
           style={{
             border: `2px solid ${OUTLINE}`,
             borderRadius: 4,
@@ -85,7 +85,7 @@ function Floor({ num, color, night, lit, resident, pop }: FloorProps) {
                 src={`/identities/${["rabbit-office","cat-office","cat-farmer","cat-wizard","cat-knight"][num % 5]}.svg`}
                 alt=""
                 aria-hidden
-                className="walker-past absolute bottom-0 left-0 h-9 w-auto object-contain"
+                className="walker-past absolute bottom-0 left-0 h-10 w-auto object-contain"
                 style={{
                   objectPosition: "50% 8%",
                   animationDelay: `${-(((num * 2.3) % 9) + 0.6)}s`,
@@ -97,21 +97,21 @@ function Floor({ num, color, night, lit, resident, pop }: FloorProps) {
           </div>
           <div className="absolute left-1/2 top-0 h-full w-0.5 -translate-x-1/2 bg-cocoa-700/50" />
           <div className="absolute left-0 top-1/2 h-0.5 w-full -translate-y-1/2 bg-cocoa-700/50" />
-          <div className="absolute -bottom-1.5 left-1/2 h-1.5 w-12 -translate-x-1/2 rounded-sm bg-white/80" style={{ border: `1.5px solid ${OUTLINE}` }} />
+          <div className="absolute -bottom-2 left-1/2 h-2 w-14 -translate-x-1/2 rounded-sm bg-white/80" style={{ border: `1.5px solid ${OUTLINE}` }} />
         </div>
         {/* chậu cây + đèn */}
-        <div className="absolute bottom-1 left-2 text-lg">{num % 2 === 0 ? "🪴" : "🌷"}</div>
-        <div className="absolute bottom-1 right-2 text-base">{night ? "🏮" : "💡"}</div>
+        <div className="absolute bottom-1.5 left-2 text-xl">{num % 2 === 0 ? "🪴" : "🌷"}</div>
+        <div className="absolute bottom-1.5 right-2.5 text-lg">{night ? "🏮" : "💡"}</div>
         {/* số tầng */}
         <div
-          className="absolute -left-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center border-2 bg-cream-50 font-cozy text-sm font-bold text-cocoa-700"
+          className="absolute -left-2.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center border-2 bg-cream-50 font-cozy text-sm font-bold text-cocoa-700"
           style={{ borderRadius: 8, borderColor: OUTLINE, boxShadow: "2px 2px 0 rgba(70,56,39,0.35)" }}
         >
           {num}
         </div>
         {/* cư dân chibi ngồi ban công tầng trên cùng */}
         {resident && (
-          <div className="mascot-bounce absolute -top-8 right-3 h-8 w-8 overflow-visible">
+          <div className="mascot-bounce absolute -top-10 right-4 h-10 w-10 overflow-visible">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={residentSrc(num * 7 + 3)}
@@ -222,27 +222,27 @@ export function Building({ floors, night, building, celebrating, goalDone }: Bui
 
       {/* biển "Floor N" trên mái */}
       <div
-        className="relative z-30 mx-auto -mb-3 w-fit rounded-2xl border-[3px] bg-cream-100 px-4 py-1 text-center"
+        className="relative z-30 mx-auto -mb-3 w-fit rounded-2xl border-[3px] bg-cream-100 px-5 py-1.5 text-center"
         style={{ borderColor: OUTLINE, boxShadow: "0 3px 0 rgba(70,56,39,0.4)" }}
       >
-        <div className="font-cozy text-[11px] font-bold uppercase tracking-wide text-cocoa-500">Floor</div>
-        <div className="font-cozy text-2xl font-extrabold leading-none text-cocoa-700">
+        <div className="font-cozy text-xs font-bold uppercase tracking-wide text-cocoa-500">Floor</div>
+        <div className="font-cozy text-3xl font-extrabold leading-none text-cocoa-700">
           {building ? total + 1 : total}
         </div>
       </div>
 
       {/* cờ trên nóc (ẩn khi đang xây tầng mới phía trên) */}
       {!building && (
-        <div className="relative z-20 mx-auto flex h-10 w-fit items-end justify-center">
-          <div className="h-9 w-1 bg-cocoa-700/80" />
+        <div className="relative z-20 mx-auto flex h-12 w-fit items-end justify-center">
+          <div className="h-11 w-1 bg-cocoa-700/80" />
           <div className={`flag-wave mb-6 -ml-1 text-xl ${night ? "grayscale-[0.3]" : ""}`}>🚩</div>
         </div>
       )}
 
-      {/* mái nhà: mặt trước + mặt hông dày + cư dân dạo trên nóc (ẩn khi đang xây) */}
+      {/* mái nhà dựng bằng SVG: sắc nét ở mọi màn hình, không bị bể góc */}
       {!building && (
       <div className="relative z-10 mx-auto w-fit">
-        <div className="relative z-10 -mb-2 ml-6 flex h-7 w-36 items-end overflow-visible">
+        <div className="relative z-10 -mb-1 ml-5 flex h-8 w-44 items-end overflow-visible">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={residentSrc(8)}
@@ -253,42 +253,34 @@ export function Building({ floors, night, building, celebrating, goalDone }: Bui
             draggable={false}
           />
         </div>
-        <div
-          className="h-0 w-0 border-l-[92px] border-r-[92px] border-b-[46px] border-l-transparent border-r-transparent"
-          style={{ borderBottomColor: night ? shade("#a794e6", 0.7) : "#a794e6", filter: "drop-shadow(0 -2px 0 rgba(70,56,39,0.4))" }}
-        >
-          <div className="absolute -left-2 top-1 text-lg">🌸</div>
-          <div className="absolute left-4 top-3 text-sm">🌿</div>
-          <div className="absolute -right-3 top-0 text-base">🧱</div>
+        <svg viewBox="0 0 212 62" width="260" height="76" className="block" aria-hidden>
+          {/* độ dày mái bên phải */}
+          <polygon points="186,10 204,18 204,52 186,46" fill={roofSide} stroke={OUTLINE} strokeWidth="3" strokeLinejoin="round" />
+          {/* mái trước */}
+          <polygon
+            points="4,46 100,4 186,10 186,46"
+            fill={night ? shade("#a794e6", 0.7) : "#a794e6"}
+            stroke={OUTLINE}
+            strokeWidth="3"
+            strokeLinejoin="round"
+          />
           {/* ống khói */}
-          <div className="absolute -right-9 -top-2 h-6 w-4 border-2 bg-blush-400" style={{ borderColor: OUTLINE }}>
-            <div className="absolute -top-3 left-0 text-xs">💨</div>
-          </div>
-        </div>
-        {/* độ dày mái bên phải */}
-        <div
-          style={{
-            position: "absolute",
-            left: "100%",
-            top: 2,
-            width: 14,
-            height: 44,
-            background: roofSide,
-            transform: "skewY(33deg)",
-            transformOrigin: "left top",
-            border: `3px solid ${OUTLINE}`,
-            borderLeft: "none",
-            borderRadius: "0 4px 4px 0",
-          }}
-        />
-        <div className="mx-auto -mt-1 h-2.5 w-48 rounded-sm border-2 bg-lavender-500" style={{ borderColor: OUTLINE }} />
+          <rect x="146" y="14" width="14" height="22" rx="2" fill="#ff9fb2" stroke={OUTLINE} strokeWidth="3" />
+          {/* diềm mái */}
+          <rect x="2" y="46" width="184" height="8" rx="2" fill="#8b74d8" stroke={OUTLINE} strokeWidth="3" />
+          <rect x="186" y="46" width="18" height="8" rx="2" fill={shade("#8b74d8", night ? 0.5 : 0.72)} stroke={OUTLINE} strokeWidth="3" />
+        </svg>
+        {/* hoa trang trí trên mái */}
+        <span className="absolute left-[10%] top-8 text-lg">🌸</span>
+        <span className="absolute left-[26%] top-12 text-base">🌿</span>
+        <span className="absolute left-[62%] top-2 text-sm">💨</span>
       </div>
       )}
 
       {/* tầng đang xây (trên cùng) + công trường kiểu Talking Tom */}
       {building && (
         <div
-          className="floor-pop relative mx-auto h-16 w-44"
+          className="floor-pop relative mx-auto h-20 w-52"
           style={{
             border: `3px dashed ${OUTLINE}`,
             borderRadius: 6,
@@ -314,57 +306,19 @@ export function Building({ floors, night, building, celebrating, goalDone }: Bui
         ))}
       </div>
 
-      {/* ngườ qua lại sau lưng nhà (bị tòa nhà che — kiểu ra vào nhà) */}
-      <div className="pointer-events-none absolute -bottom-8 left-1/2 z-0 h-10 w-72 -translate-x-1/2">
-        {[{ seed: 2, duration: "14s", delay: "-4s" }].map((w, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={i}
-            src={residentSrc(w.seed)}
-            alt=""
-            aria-hidden
-            className="walker-ground absolute bottom-0 left-2 h-11 w-auto object-contain"
-            style={{ objectPosition: "50% 10%", animationDuration: w.duration, animationDelay: w.delay }}
-            draggable={false}
-          />
-        ))}
-      </div>
-
       {/* bóng đổ dưới đất */}
       <div
-        className="absolute -bottom-3 left-1/2 h-5 w-60 -translate-x-1/2 rounded-[50%] bg-black/30"
+        className="absolute -bottom-4 left-1/2 h-6 w-72 -translate-x-1/2 rounded-[50%] bg-black/30"
         style={{ filter: "blur(3px)", zIndex: 0 }}
       />
 
-      {/* mặt đất trước nhà: vài ngườ đi qua lại + vài ngườ đứng nghỉ */}
-      <div className="pointer-events-none absolute -bottom-7 left-1/2 z-20 h-10 w-64 -translate-x-1/2">
-        {/* đi lại: 3 ngườ */}
+      {/* cư dân đứng cố định trước nhà — nhấp nhô nhẹ, không bị cây che */}
+      <div className="pointer-events-none absolute -bottom-6 left-1/2 z-30 h-14 w-80 -translate-x-1/2">
         {[
-          { seed: 1, duration: "9s", delay: "-0.5s", size: "h-10 w-auto" },
-          { seed: 4, duration: "13s", delay: "-6s", size: "h-9 w-auto" },
-          { seed: 7, duration: "7.5s", delay: "-3.4s", size: "h-10 w-auto" },
-        ].map((w, i) => (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            key={i}
-            src={residentSrc(w.seed)}
-            alt=""
-            aria-hidden
-            className={`walker-ground absolute bottom-0 left-2 object-contain ${w.size}`}
-            style={{
-              objectPosition: "50% 10%",
-              animationDuration: w.duration,
-              animationDelay: w.delay,
-              filter: "drop-shadow(1px 2px 1px rgba(0,0,0,0.25))",
-            }}
-            draggable={false}
-          />
-        ))}
-        {/* đứng yên: 3 ngườ nhấp nhô nhẹ */}
-        {[
-          { seed: 0, left: "0%", size: "h-11 w-auto", delay: "0s" },
-          { seed: 3, left: "52%", size: "h-10 w-auto", delay: "0.9s" },
-          { seed: 2, left: "88%", size: "h-9 w-auto", delay: "1.7s" },
+          { seed: 1, left: "14%", size: "h-14 w-auto", delay: "0s" },
+          { seed: 0, left: "38%", size: "h-12 w-auto", delay: "0.8s" },
+          { seed: 3, left: "60%", size: "h-14 w-auto", delay: "1.5s" },
+          { seed: 2, left: "84%", size: "h-12 w-auto", delay: "2.2s" },
         ].map((w, i) => (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -380,7 +334,7 @@ export function Building({ floors, night, building, celebrating, goalDone }: Bui
       </div>
 
       {/* bụi cây phía trước che chân nhà (chiều sâu) */}
-      <div className="absolute -bottom-4 -left-10 z-20 text-3xl" style={{ filter: "drop-shadow(2px 2px 1px rgba(0,0,0,0.25))" }}>
+      <div className="absolute -bottom-4 -left-16 z-20 text-3xl" style={{ filter: "drop-shadow(2px 2px 1px rgba(0,0,0,0.25))" }}>
         🌳
       </div>
       <div className="absolute -bottom-3 -right-8 z-20 text-2xl">🌼</div>

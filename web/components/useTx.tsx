@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useWriteContract } from "wagmi";
+import { useWriteContract, useSwitchChain, useChainId } from "wagmi";
 import { waitForTransactionReceipt } from "@wagmi/core";
 import { BaseError } from "viem";
-import { wagmiConfig, explorerTx } from "@/lib/config";
+import { wagmiConfig, targetChainId, fuji, explorerTx } from "@/lib/config";
 
 export interface TxState {
   step: string | null;
@@ -12,34 +12,50 @@ export interface TxState {
   error: string | null;
 }
 
-/** Gói writeContractAsync + chờ receipt, trả về trạng thái để hiển thị. */
+/** Gói writeContractAsync + chờ receipt, trả về trạng thái để hiển thị. Tự chuyển chain nếu ví đang sai mạng. */
 export function useTx() {
   const { writeContractAsync } = useWriteContract();
+  const { switchChainAsync } = useSwitchChain();
+  const currentChainId = useChainId();
   const [state, setState] = useState<TxState>({ step: null, hash: null, error: null });
 
   const run = useCallback(
     async (label: string, calls: Array<{ label: string; call: Parameters<typeof writeContractAsync>[0] }>) => {
       setState({ step: null, hash: null, error: null });
       try {
+        // Ép đúng mạng trước khi gửi — tránh lỗi "Unsupported Network" của MetaMask
+        if (currentChainId !== targetChainId) {
+          setState((s) => ({ ...s, step: "Đang chuyển sang Avalanche Fuji…" }));
+          await switchChainAsync({ chainId: targetChainId, ...fuji });
+        }
         for (const c of calls) {
           setState((s) => ({ ...s, step: c.label }));
           const hash = await writeContractAsync(c.call);
           setState((s) => ({ ...s, hash }));
-          await waitForTransactionReceipt(wagmiConfig, { hash, chainId: wagmiConfig.chains[0].id });
+          await waitForTransactionReceipt(wagmiConfig, {
+            hash,
+            chainId: fuji.id,
+            timeout: 90_000,
+            retryCount: 5,
+            retryDelay: 2_000,
+          });
         }
         setState({ step: null, hash: null, error: null });
         return true;
       } catch (e) {
         const err = e as BaseError;
+        const raw = err.message ?? "";
         const msg =
-          err.name === "UserRejectedRequestError" || err.message.includes("User denied")
+          err.name === "UserRejectedRequestError" || raw.includes("User denied")
             ? "Bạn đã từ chối ký giao dịch."
-            : (err.shortMessage ?? err.message);
+            : raw.includes("HTTP request failed")
+              ? "Kết nối RPC Fuji bị gián đoạn — thử lại sau vài giây (giao dịch có thể đã thực hiện, kiểm tra Snowtrace trước khi gửi lại)."
+              : (err.shortMessage ?? err.message);
         setState({ step: null, hash: null, error: `${label}: ${msg}` });
         return false;
       }
     },
-    [writeContractAsync],
+    [writeContractAsync, switchChainAsync, currentChainId],
   );
 
   return { run, ...state };

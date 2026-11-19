@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Building } from "@/components/cozy/Building";
 import { DepositSheet } from "@/components/cozy/DepositSheet";
 import { fmt } from "@/lib/format";
@@ -80,7 +80,11 @@ export function estimateApy(streak: bigint): number {
 export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDepositStart }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [showParty, setShowParty] = useState(false);
+  const [zoom, setZoom] = useState<number | null>(null); // null = tự vừa khung
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [natural, setNatural] = useState(0);
   const { account, claimable, claimed, countdown, hasStarted } = data;
+
 
   // Màn ăn mừng sau khi xây xong tầng (~3s)
   useEffect(() => {
@@ -105,7 +109,18 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
   const progress = account.currentProgress;
   const pct = target > 0n ? Math.min(100, Number((progress * 100n) / target)) : 0;
   const goalDone = target > 0n && progress >= target;
-  const floors = Number(account.streak);
+  const floors = Number(account?.streak ?? 0n);
+  // Đo chiều cao tự nhiên của tòa nhà để tự co cho vừa màn hình
+  useEffect(() => {
+    const measure = () => setNatural(wrapRef.current?.offsetHeight ?? 0);
+    measure();
+    const t = setTimeout(measure, 300); // chờ animation xây tầng ổn định
+    return () => clearTimeout(t);
+  }, [floors, building, celebrateKey]);
+
+  const available = typeof window !== "undefined" ? Math.min(window.innerHeight * 0.5, 540) : 480;
+  const fit = natural > 0 ? Math.min(1.2, Math.max(0.35, available / natural)) : 1;
+  const scale = zoom ?? 1; // mặc định phóng to; ⛶ để vừa khung
   const interestTotal = (claimed ?? 0n) + (claimable ?? 0n);
   const apy = estimateApy(account.streak);
   const remaining = target > progress ? target - progress : 0n;
@@ -151,8 +166,38 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
         )}
       </div>
 
-      {/* tòa nhà + màn ăn mừng hoàn thành tầng */}
-      <div className="relative mt-4">
+      {/* tòa nhà (phóng to + tự co để thấy trọn, có nút zoom) + màn ăn mừng */}
+      <div className="relative mt-4" style={{ height: natural * scale }}>
+        {/* nút zoom bên phải tòa nhà */}
+        <div className="absolute -right-1 top-1/2 z-40 flex -translate-y-1/2 flex-col gap-2">
+          <button
+            className="btn-cream !px-0 !py-0 font-cozy text-lg font-extrabold"
+            style={{ width: 36, height: 36 }}
+            disabled={scale >= 1.5}
+            onClick={() => setZoom(Math.min(1.5, scale + 0.15))}
+            title="Phóng to"
+          >
+            +
+          </button>
+          <button
+            className="btn-cream !px-0 !py-0 font-cozy text-lg font-extrabold"
+            style={{ width: 36, height: 36 }}
+            disabled={scale <= 0.4}
+            onClick={() => setZoom(Math.max(0.4, scale - 0.15))}
+            title="Thu nhỏ"
+          >
+            −
+          </button>
+          <button
+            className="btn-cream !px-0 !py-0 text-sm font-extrabold"
+            style={{ width: 36, height: 36 }}
+            onClick={() => setZoom(fit)}
+            title="Vừa khung hình"
+          >
+            ⛶
+          </button>
+        </div>
+        <div ref={wrapRef} className="mx-auto w-fit" style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}>
         <Building
           key={celebrateKey}
           floors={floors}
@@ -180,6 +225,7 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* countdown + CTA */}

@@ -1,4 +1,4 @@
-import { http, createConfig } from "wagmi";
+import { http, fallback, createConfig } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { defineChain } from "viem";
 
@@ -17,11 +17,24 @@ export const fuji = defineChain({
 
 export const targetChainId = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 43113);
 
+// Nhiều nguồn RPC dự phòng — Fuji public RPC đôi khi timeout gây lỗi "HTTP request failed".
+const fujiTransports = fallback(
+  [
+    process.env.NEXT_PUBLIC_RPC_URL,
+    "https://avalanche-fuji-c-chain.publicnode.com",
+    "https://rpc.ankr.com/avalanche_fuji",
+    "https://api.avax-test.network/ext/bc/C/rpc",
+  ]
+    .filter((u): u is string => !!u)
+    .map((url) => http(url, { timeout: 15_000 })),
+  { retryCount: 3 },
+);
+
 export const wagmiConfig = createConfig({
   chains: [fuji],
   connectors: [injected()],
   transports: {
-    [fuji.id]: http(process.env.NEXT_PUBLIC_RPC_URL),
+    [fuji.id]: fujiTransports,
   },
 });
 
