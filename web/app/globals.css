@@ -111,26 +111,60 @@ body {
   @apply font-cozy tracking-tight;
 }
 
+/* Card: be mat trang mem, vien 1px nhat, shadow mem dai — fintech modern
+   thay cho kieu border 3px + shadow cung (nhin nhu do choi) */
 .card-cream {
-  @apply rounded-2xl border-2 border-cream-300 bg-cream-100 text-cocoa-700 shadow-chunkySm;
+  @apply rounded-[20px] border border-[#eadfc6] bg-[#fffdf7] text-cocoa-700;
+  box-shadow: 0 1px 2px rgba(70, 56, 39, 0.04), 0 8px 24px -8px rgba(70, 56, 39, 0.12);
 }
 
 .chunky {
   @apply rounded-xl border-[3px] border-cocoa-700/80 shadow-chunky;
 }
 
+/* Nut chinh: gradient leaf mem, khong vien nang, nhan scale khi bam */
 .btn-cozy {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl border-[3px] border-cocoa-700/80 bg-leaf-400 px-4 py-2.5 font-cozy text-base font-bold text-white shadow-chunky transition hover:bg-leaf-500 active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50 disabled:active:translate-y-0 disabled:active:shadow-chunky;
+  @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border-0 bg-gradient-to-b from-leaf-400 to-leaf-500 px-5 py-2.5 font-cozy text-base font-bold text-white transition;
+  box-shadow: 0 1px 2px rgba(58, 158, 100, 0.35), 0 6px 16px -4px rgba(58, 158, 100, 0.45);
+}
+.btn-cozy:hover {
+  filter: brightness(1.05);
+}
+.btn-cozy:active {
+  transform: scale(0.97);
+  box-shadow: 0 1px 2px rgba(58, 158, 100, 0.3);
+}
+.btn-cozy:disabled {
+  @apply cursor-not-allowed opacity-50;
+  filter: grayscale(0.3);
 }
 
+/* Nut phu: nen trang, vien nhat 1.5px, shadow mem */
 .btn-cream {
-  @apply inline-flex items-center justify-center gap-2 rounded-xl border-[3px] border-cocoa-700/80 bg-cream-50 px-4 py-2.5 font-cozy text-base font-bold text-cocoa-700 shadow-chunky transition hover:bg-white active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50;
+  @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-2xl border-[1.5px] border-[#e3d5b8] bg-white px-5 py-2.5 font-cozy text-base font-bold text-cocoa-700 transition;
+  box-shadow: 0 1px 2px rgba(70, 56, 39, 0.06), 0 3px 10px -3px rgba(70, 56, 39, 0.1);
+}
+.btn-cream:hover {
+  background: #fffdf7;
+  border-color: #d4c29e;
+}
+.btn-cream:active {
+  transform: scale(0.97);
+}
+.btn-cream:disabled {
+  @apply cursor-not-allowed opacity-50;
 }
 
 /* Không đặt w-full ở đây — nó sẽ đè các lớp w-24/w-20 (cùng specificity, thứ tự sau thắng).
    Input trong hàng flex tự co giãn bằng flex-1; input block-level tự thêm w-full tại chỗ dùng. */
+/* Input: vien 1.5px nhe, focus ring mem thay vi doi mau vien */
 .input-cozy {
-  @apply min-w-0 rounded-xl border-[3px] border-cream-300 bg-white px-3 py-2.5 font-body text-base font-semibold text-cocoa-700 outline-none placeholder:text-cocoa-500/50 focus:border-leaf-400;
+  @apply min-w-0 rounded-xl border-[1.5px] border-[#e3d5b8] bg-white px-3.5 py-2.5 font-body text-base font-semibold text-cocoa-700 outline-none placeholder:text-cocoa-500/45 placeholder:font-medium;
+  transition: border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+}
+.input-cozy:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79, 190, 125, 0.18);
 }
 
 /* ---- Bầu trợi & khung cảnh ---- */
@@ -483,7 +517,7 @@ body {
   background: linear-gradient(180deg, var(--night-card) 0%, var(--night-card-deep) 100%);
   border-color: var(--night-border);
   color: var(--night-text);
-  box-shadow: 0 4px 0 var(--night-shadow);
+  box-shadow: 0 8px 24px -8px var(--night-shadow);
 }
 
 .night-ui :is(.text-cocoa-800, .text-cocoa-700) {
@@ -530,14 +564,15 @@ body {
 
 .night-ui .input-cozy {
   background: #171233;
-  border-color: var(--night-border);
+  border-color: #4a3f8c;
   color: var(--night-text);
 }
 
 .night-ui .btn-cream {
   background: #2c2560;
   color: var(--night-text);
-  border-color: #5b4fa0;
+  border-color: #4a3f8c;
+  box-shadow: 0 3px 10px -3px var(--night-shadow);
 }
 
 .night-ui :is(.divide-cream-300) > :not([hidden]) ~ :not([hidden]) {

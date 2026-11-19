@@ -80,15 +80,15 @@ export function FeatureCard({
   );
 }
 
-/** Ô chỉ số nhỏ trong lưới thống kê của panel. Undefined = đang tải → skeleton shimmer. */
+/** Ô chỉ số tối giản kiểu fintech: label nhỏ + số lớn, không khung. */
 export function Stat({ label, value, tone }: { label: string; value: string | undefined; tone?: string }) {
   return (
-    <div className="rounded-xl border-2 border-cream-300 bg-white/80 p-2 text-center">
-      <div className="text-[10px] font-bold uppercase text-cocoa-500">{label}</div>
+    <div className="text-center">
+      <div className="text-[10px] font-bold uppercase tracking-wide text-cocoa-500/90">{label}</div>
       {value === undefined ? (
-        <div className="skeleton mx-auto mt-1 h-4 w-3/4" aria-hidden />
+        <div className="skeleton mx-auto mt-1.5 h-5 w-3/4" aria-hidden />
       ) : (
-        <div className={`font-cozy text-sm font-extrabold ${tone ?? "text-cocoa-700"}`}>{value}</div>
+        <div className={`mt-0.5 font-cozy text-lg font-extrabold leading-tight ${tone ?? "text-cocoa-700"}`}>{value}</div>
       )}
     </div>
   );
@@ -96,7 +96,7 @@ export function Stat({ label, value, tone }: { label: string; value: string | un
 
 /** Nhãn nhỏ phân cấp cho từng dòng thao tác — tránh cảm giác "đống form". */
 export function FieldLabel({ children }: { children: ReactNode }) {
-  return <div className="text-[11px] font-bold uppercase tracking-wide text-cocoa-500">{children}</div>;
+  return <div className="text-xs font-bold text-cocoa-500">{children}</div>;
 }
 
 /** Dòng thao tác chuẩn: input co giãn + nút cố định, không bao giờ bị bóp méo. */

@@ -67,13 +67,13 @@ function Tile({
   tone?: string;
 }) {
   return (
-    <div className="rounded-2xl border-2 border-cream-300 bg-cream-100/95 p-2.5 shadow-chunkySm">
-      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-cocoa-500">
-        <span className="text-cocoa-600">{icon}</span>
+    <div className="card-cream p-3">
+      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-cocoa-500/90">
+        <span className="text-cocoa-500">{icon}</span>
         <span className="truncate">{label}</span>
       </div>
-      <div className={`mt-0.5 font-cozy text-lg font-extrabold leading-tight ${tone ?? "text-cocoa-700"}`}>{value}</div>
-      {sub && <div className="text-[10px] font-semibold text-cocoa-500">{sub}</div>}
+      <div className={`mt-0.5 font-cozy text-xl font-extrabold leading-tight ${tone ?? "text-cocoa-700"}`}>{value}</div>
+      {sub && <div className="text-[11px] font-semibold text-cocoa-500">{sub}</div>}
     </div>
   );
 }
@@ -151,7 +151,7 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
         </div>
         <div className="mt-1.5 flex items-center gap-2">
           <div
-            className="h-4 flex-1 overflow-hidden rounded-full border-2 border-cocoa-700/40 bg-white"
+            className="h-3.5 flex-1 overflow-hidden rounded-full bg-cocoa-700/10"
             role="progressbar"
             aria-valuenow={pct}
             aria-valuemin={0}
@@ -159,7 +159,7 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
             aria-label="Tiến độ mục tiêu tuần này"
           >
             <div
-              className={`h-full rounded-full transition-all duration-500 ${goalDone ? "bg-leaf-400" : "bg-gradient-to-r from-blush-400 to-blush-300"}`}
+              className={`h-full rounded-full transition-all duration-500 ${goalDone ? "bg-gradient-to-r from-leaf-400 to-leaf-500" : "bg-gradient-to-r from-blush-400 to-blush-300"}`}
               style={{ width: `${pct}%` }}
             />
           </div>

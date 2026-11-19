@@ -121,7 +121,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
   return (
     <div className="relative z-10 mx-auto min-h-screen w-full max-w-md pb-4 md:max-w-3xl">
       {/* header */}
-      <header className="sticky top-0 z-30 flex items-center justify-between px-4 pb-2 pt-3">
+      <header className="sticky top-0 z-30 flex items-center justify-between bg-gradient-to-b from-white/25 to-transparent px-4 pb-2 pt-3 backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <IdentityAvatar address={data.address} className="h-10 w-10" />
           <div>
@@ -144,7 +144,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
         </div>
         <div className="flex items-center gap-2">
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-cocoa-700/50 bg-cream-100 text-cocoa-600 shadow-chunkySm active:translate-y-0.5"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e3d5b8] bg-white/90 text-cocoa-600 shadow-sm backdrop-blur-sm transition hover:bg-white active:scale-95"
             onClick={() => onThemeChange(night ? "day" : "night")}
             title={night ? "Chuyển ban ngày" : "Chuyển ban đêm"}
             aria-label={night ? "Chuyển ban ngày" : "Chuyển ban đêm"}
@@ -152,7 +152,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
             <Icon name={night ? "sun" : "moon"} size={19} />
           </button>
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-cocoa-700/50 bg-cream-100 text-cocoa-600 shadow-chunkySm active:translate-y-0.5"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-[#e3d5b8] bg-white/90 text-cocoa-600 shadow-sm backdrop-blur-sm transition hover:bg-white active:scale-95"
             onClick={() => {
               const m = !muted;
               setMuted(m);
@@ -179,7 +179,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
 
       {demoData && (
         <button
-          className="mx-4 mt-1 flex w-[calc(100%-2rem)] items-center justify-between rounded-xl border-2 border-dashed border-cocoa-700/40 bg-cream-100/90 px-3 py-1.5 text-left text-xs font-bold text-cocoa-600"
+          className="mx-4 mt-1 flex w-[calc(100%-2rem)] items-center justify-between rounded-full border border-cocoa-700/20 bg-white/70 px-3 py-1.5 text-left text-[11px] font-bold text-cocoa-600 shadow-sm backdrop-blur-sm"
           onClick={onExitDemo}
         >
           <span>Demo với dữ liệu mẫu — giao dịch sẽ không thực hiện được</span>
@@ -222,12 +222,12 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
 
       {/* bottom nav */}
       <nav className="fixed bottom-3 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2">
-        <div className="flex justify-between rounded-2xl border-[3px] border-cocoa-700/70 bg-cream-100 px-2 py-1.5 shadow-chunky">
+        <div className="flex justify-between rounded-3xl border border-[#eadfc6] bg-white/95 px-2 py-1.5 shadow-[0_8px_30px_-6px_rgba(70,56,39,0.25)] backdrop-blur-md">
           {TABS.map((t) => (
             <button
               key={t.key}
-              className={`flex w-14 flex-col items-center gap-0.5 rounded-xl py-1 transition ${
-                tab === t.key ? "bg-leaf-400/90 shadow-chunkySm" : "opacity-70 hover:opacity-100"
+              className={`flex min-h-[44px] w-14 flex-col items-center justify-center gap-0.5 rounded-2xl py-1 transition ${
+                tab === t.key ? "bg-gradient-to-b from-leaf-400 to-leaf-500 text-white shadow-md" : "opacity-70 hover:opacity-100"
               }`}
               onClick={() => switchTab(t.key)}
               aria-current={tab === t.key ? "page" : undefined}

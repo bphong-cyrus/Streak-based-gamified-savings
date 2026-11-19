@@ -159,7 +159,7 @@ function SavingsBondCard() {
   }
 
   return (
-    <FeatureCard collapsible defaultOpen={false} icon="gem" title="Trái phiếu cozy" desc={`Coupon cơ bản ${Number(baseBps) / 100}% + 0.5% mỗi streak — rút đúng hạn nhận đủ, rút sớm bị phạt`}>
+    <FeatureCard collapsible defaultOpen={false} icon="gem" title="Trái phiếu cozy" desc={`Coupon cơ bản ${baseBps > 0n ? `${Number(baseBps) / 100}%` : "đọc từ contract"} + 0.5% mỗi streak — rút đúng hạn nhận đủ, rút sớm bị phạt`}>
       <div className="grid grid-cols-2 gap-2">
         <Stat label="Trái phiếu của bạn" value={address ? mine.toString() : undefined} />
         <Stat label="Đã phát hành toàn mạng" value={totalIssued.toString()} />
@@ -227,7 +227,7 @@ function TermLockCard() {
   }
 
   return (
-    <FeatureCard collapsible defaultOpen={false} icon="lock" title="Két kỳ hạn" desc={`Thưởng ${Number(bps) / 100}%/năm quy ước — khoá càng lâu càng đáng`}>
+    <FeatureCard collapsible defaultOpen={false} icon="lock" title="Két kỳ hạn" desc={`Thưởng ${bps > 0n ? `${Number(bps) / 100}%/năm` : "theo tham số on-chain"} quy ước — khoá càng lâu càng đáng`}>
       <div className="grid grid-cols-2 gap-2">
         <Stat label="Khoản đang khoá" value={address ? active.toString() : undefined} />
         <Stat label="Phạt rút sớm" value="20%" tone="text-blush-500" />
