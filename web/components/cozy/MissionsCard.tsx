@@ -4,6 +4,7 @@ import { contracts } from "@/lib/config";
 import { missionsAbi } from "@/lib/abis";
 import { TxFeedback, useTx } from "@/components/useTx";
 import { MISSION_KINDS, fmtGems, type MissionView } from "@/lib/useGemsData";
+import { Icon } from "@/components/cozy/icons";
 
 /** Danh sách nhiệm vụ: hoàn thành điều kiện on-chain thì nhận Paws. */
 export function MissionsCard({ missions, hasWallet }: { missions: MissionView[]; hasWallet: boolean }) {
@@ -22,7 +23,7 @@ export function MissionsCard({ missions, hasWallet }: { missions: MissionView[];
 
   return (
     <div className="card-cream p-4">
-      <h3 className="font-cozy text-lg font-bold">🗺️ Nhiệm vụ tuần</h3>
+      <h3 className="flex items-center gap-1.5 font-cozy text-lg font-bold"><Icon name="target" size={20} className="text-cocoa-600" /> Nhiệm vụ tuần</h3>
       <p className="mt-0.5 text-xs font-semibold text-cocoa-500">
         Hoàn thành mục tiêu tiết kiệm để nhận Paws, dùng mua theme và đồ trang trí.
       </p>

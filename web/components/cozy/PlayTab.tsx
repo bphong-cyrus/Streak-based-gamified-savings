@@ -440,7 +440,7 @@ function PrizeLinkedCard() {
   return (
     <FeatureCard icon="ticket" title="Xổ số tiết kiệm" desc="Lãi kỳ này tự thành vé số — không mất thêm đồng nào">
       <div className="grid grid-cols-3 gap-2">
-        <Stat label="Vé của bạn" value={myTickets.toString()} tone="text-lavender-500" />
+        <Stat label="Vé của bạn" value={address ? myTickets.toString() : undefined} tone="text-lavender-500" />
         <Stat label="Tổng vé" value={totalTickets.toString()} />
         <Stat label="Jackpot" value={fmt(jackpot)} tone="text-leaf-600" />
       </div>
@@ -501,7 +501,7 @@ function GuildWarsCard() {
     <FeatureCard icon="flag" title="Bang hội chiến" desc="Mỗi streak thành viên = điểm cho bang — bang mạnh nhất mùa chia prize pool">
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Mùa" value={season.toString()} />
-        <Stat label="Bang đã lập" value={guildCount.toString()} />
+        <Stat label="Bang đã lập" value={guildCount > 0n || state.data ? guildCount.toString() : undefined} />
         <Stat label="Pool" value={fmt(pool)} tone="text-leaf-600" />
       </div>
       {myGuild > 0n && g ? (
@@ -591,8 +591,10 @@ function CelebrationCard({ data }: { data: VaultData }) {
       </div>
       <div className="mt-2 flex gap-2">
         <input className="input-cozy flex-1" placeholder="Lờ chúc mừng (tuỳ chọn)" value={message} onChange={(e) => setMessage(e.target.value)} />
-        <input className="input-cozy w-24" inputMode="decimal" placeholder="Tip" value={tip} onChange={(e) => setTip(e.target.value)} />
-        <button className="btn-cream shrink-0" disabled={tx.step !== null || !parseAmount(tip)} onClick={doTip}>Gửi</button>
+      </div>
+      <div className="mt-2 flex gap-2">
+        <input className="input-cozy flex-1" inputMode="decimal" placeholder="Tip bao nhiêu mUSDC" value={tip} onChange={(e) => setTip(e.target.value)} />
+        <button className="btn-cream shrink-0" disabled={tx.step !== null || !parseAmount(tip)} onClick={doTip}>Gửi tip</button>
       </div>
       <button className="btn-cozy mt-2 w-full" disabled={tx.step !== null || nextMilestone !== undefined} onClick={celebrate}>
         {nextMilestone ? `Còn ${nextMilestone - streak} tuần tới mốc ${nextMilestone}` : "Nhận thưởng mốc streak"}

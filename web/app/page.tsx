@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { ConnectButton } from "@/components/ConnectButton";
 import { CozyApp } from "@/components/cozy/CozyApp";
@@ -14,15 +14,19 @@ import { IDENTITIES } from "@/lib/identity";
 export default function Home() {
   const { isConnected } = useAccount();
   const [theme, setTheme] = useCozyTheme();
-  const [demo, setDemo] = useState(
-    () => typeof window !== "undefined" && new URLSearchParams(window.location.search).has("demo"),
-  );
+  // ?demo chỉ có trên client — đợi mount để tránh hydration mismatch (server luôn render landing).
+  const [demo, setDemo] = useState<boolean | null>(null);
+  useEffect(() => {
+    setDemo(new URLSearchParams(window.location.search).has("demo"));
+  }, []);
   const night = theme === "night";
 
   return (
     <div className={`min-h-screen ${night ? "night-ui" : ""}`}>
       <Sky night={night} />
-      {demo ? (
+      {demo === null ? (
+        <div className="relative z-10 min-h-screen" />
+      ) : demo ? (
         <CozyApp theme={theme} onThemeChange={setTheme} demoData={buildMockData()} onExitDemo={() => setDemo(false)} />
       ) : !isConnected ? (
         <Landing night={night} onTryDemo={() => setDemo(true)} />

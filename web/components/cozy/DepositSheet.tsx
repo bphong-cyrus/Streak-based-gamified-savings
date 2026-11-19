@@ -101,7 +101,7 @@ export function DepositSheet({ data, open, onClose, onDeposited }: Props) {
         <div className="flex gap-2">
           <div className="relative flex-1">
             <input
-              className="input-cozy pr-16"
+              className="input-cozy w-full pr-16"
               inputMode="decimal"
               placeholder="0"
               value={amount}

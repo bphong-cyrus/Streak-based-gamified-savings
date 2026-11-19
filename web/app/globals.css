@@ -30,8 +30,10 @@ body {
   @apply inline-flex items-center justify-center gap-2 rounded-xl border-[3px] border-cocoa-700/80 bg-cream-50 px-4 py-2.5 font-cozy text-base font-bold text-cocoa-700 shadow-chunky transition hover:bg-white active:translate-y-0.5 active:shadow-none disabled:cursor-not-allowed disabled:opacity-50;
 }
 
+/* Không đặt w-full ở đây — nó sẽ đè các lớp w-24/w-20 (cùng specificity, thứ tự sau thắng).
+   Input trong hàng flex tự co giãn bằng flex-1; input block-level tự thêm w-full tại chỗ dùng. */
 .input-cozy {
-  @apply w-full rounded-xl border-[3px] border-cream-300 bg-white px-3 py-2.5 font-body text-base font-semibold text-cocoa-700 outline-none placeholder:text-cocoa-500/50 focus:border-leaf-400;
+  @apply min-w-0 rounded-xl border-[3px] border-cream-300 bg-white px-3 py-2.5 font-body text-base font-semibold text-cocoa-700 outline-none placeholder:text-cocoa-500/50 focus:border-leaf-400;
 }
 
 /* ---- Bầu trợi & khung cảnh ---- */
