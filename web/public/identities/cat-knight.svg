@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 150">
+  <!-- Mèo hiệp sĩ: giáp bạc xanh, khiên -->
+  <g stroke="#5B4A35" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- chân -->
+    <ellipse cx="48" cy="138" rx="11" ry="7" fill="#AEBEC9"/>
+    <ellipse cx="72" cy="138" rx="11" ry="7" fill="#AEBEC9"/>
+    <!-- thân giáp -->
+    <ellipse cx="60" cy="104" rx="30" ry="32" fill="#AEBEC9"/>
+    <path d="M60 76 v56" fill="none" stroke-width="3"/>
+    <path d="M36 96 h48 M38 112 h44" fill="none" stroke-width="3"/>
+    <!-- khiên bên trái -->
+    <path d="M18 92 q16 -10 22 2 v18 q0 14 -11 20 q-11 -6 -11 -20 Z" fill="#7FA8C9"/>
+    <path d="M24 100 q6 -3 10 1 v12 q0 8 -5 11 q-5 -3 -5 -11 Z" fill="#C9D8E4" stroke-width="3"/>
+    <!-- tay trái cầm khiên -->
+    <path d="M36 98 q-6 2 -8 8" fill="none" stroke-width="5"/>
+    <!-- tay phải giơ kiếm gỗ -->
+    <path d="M84 96 q10 -6 12 -16" fill="none" stroke-width="5"/>
+    <path d="M96 78 l4 -34" fill="none" stroke="#B98A5A" stroke-width="5"/>
+    <path d="M92 46 l12 -4 -2 12 Z" fill="#C9D8E4" stroke-width="3"/>
+    <!-- đầu -->
+    <circle cx="60" cy="60" r="26" fill="#F0E6D6"/>
+    <!-- mặt nạ giáp che trán -->
+    <path d="M34 52 q26 -16 52 0 l-4 14 q-22 -10 -44 0 Z" fill="#AEBEC9"/>
+    <!-- mũ giáp hai tai -->
+    <path d="M38 44 q-2 -26 8 -30 q6 14 6 22 Z" fill="#AEBEC9"/>
+    <path d="M82 44 q2 -26 -8 -30 q-6 14 -6 22 Z" fill="#AEBEC9"/>
+    <path d="M40 22 q4 8 4 16 M80 22 q-4 8 -4 16" fill="none" stroke-width="3"/>
+    <!-- mắt -->
+    <circle cx="50" cy="60" r="3.2" fill="#5B4A35" stroke="none"/>
+    <circle cx="70" cy="60" r="3.2" fill="#5B4A35" stroke="none"/>
+    <!-- má -->
+    <ellipse cx="43" cy="68" rx="5" ry="3.5" fill="#FFB3C1" stroke="none"/>
+    <ellipse cx="77" cy="68" rx="5" ry="3.5" fill="#FFB3C1" stroke="none"/>
+    <!-- mũi miệng -->
+    <path d="M58 65 h4 l-2 3 Z" fill="#5B4A35" stroke="none"/>
+    <path d="M60 68 Q60 71 56 72 M60 68 Q60 71 64 72" fill="none" stroke-width="2.5"/>
+    <!-- ngọc trên giáp -->
+    <circle cx="60" cy="88" r="4" fill="#FFD166" stroke-width="3"/>
+  </g>
+</svg>

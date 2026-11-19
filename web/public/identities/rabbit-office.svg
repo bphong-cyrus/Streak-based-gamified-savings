@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 150">
+  <!-- Thỏ văn phòng: tai, đầu, cà vạt xanh, ly cà phê -->
+  <g stroke="#5B4A35" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- tai -->
+    <path d="M38 46 C30 14 44 4 52 26 C56 34 56 42 54 48 Z" fill="#FFF6E0"/>
+    <path d="M82 46 C90 14 76 4 68 26 C64 34 64 42 66 48 Z" fill="#FFF6E0"/>
+    <path d="M43 40 C40 22 46 16 50 28" fill="none" stroke-width="3"/>
+    <path d="M77 40 C80 22 74 16 70 28" fill="none" stroke-width="3"/>
+    <!-- thân -->
+    <ellipse cx="60" cy="102" rx="30" ry="32" fill="#FFF6E0"/>
+    <!-- bụng -->
+    <ellipse cx="60" cy="110" rx="17" ry="20" fill="#FFFFFF" stroke-width="3"/>
+    <!-- đầu -->
+    <circle cx="60" cy="58" r="27" fill="#FFF6E0"/>
+    <!-- mắt nheo vui -->
+    <path d="M47 56 Q51 52 55 56" fill="none" stroke-width="3.5"/>
+    <path d="M65 56 Q69 52 73 56" fill="none" stroke-width="3.5"/>
+    <!-- má hồng -->
+    <ellipse cx="44" cy="64" rx="5" ry="3.5" fill="#FFB3C1" stroke="none"/>
+    <ellipse cx="76" cy="64" rx="5" ry="3.5" fill="#FFB3C1" stroke="none"/>
+    <!-- mũi + miệng -->
+    <path d="M58 62 h4 l-2 3 Z" fill="#5B4A35" stroke="none"/>
+    <path d="M60 65 Q60 68 56 69 M60 65 Q60 68 64 69" fill="none" stroke-width="2.5"/>
+    <!-- râu -->
+    <path d="M40 60 h-8 M41 64 l-7 3 M80 60 h8 M79 64 l7 3" fill="none" stroke-width="2"/>
+    <!-- cà vạt xanh -->
+    <path d="M54 80 h12 l-2 8 h-8 Z" fill="#4A90D9"/>
+    <path d="M57 88 h6 l4 22 -7 8 -7-8 Z" fill="#4A90D9"/>
+    <!-- tay trái cầm ly cà phê -->
+    <path d="M36 96 q-8 6 -4 14" fill="none" stroke-width="5"/>
+    <g>
+      <path d="M14 100 h18 v16 q0 6 -9 6 q-9 0 -9-6 Z" fill="#FFFFFF"/>
+      <path d="M32 104 q8 2 0 10" fill="none" stroke-width="3.5"/>
+      <path d="M18 96 q2-4 4 0 M24 94 q2-4 4 0" fill="none" stroke-width="2.5"/>
+      <rect x="17" y="104" width="12" height="6" fill="#8FCB9B" stroke="none"/>
+    </g>
+    <!-- tay phải -->
+    <path d="M84 96 q8 8 2 16" fill="none" stroke-width="5"/>
+    <!-- chân -->
+    <ellipse cx="48" cy="136" rx="11" ry="7" fill="#FFF6E0"/>
+    <ellipse cx="72" cy="136" rx="11" ry="7" fill="#FFF6E0"/>
+  </g>
+</svg>

@@ -6,6 +6,10 @@ export type ThemeMode = "day" | "night";
 
 function initialTheme(): ThemeMode {
   if (typeof window === "undefined") return "day";
+  // ?night=1 hoặc ?day=1 để ép chế độ (test/pitch)
+  const forced = new URLSearchParams(window.location.search).get("night");
+  if (forced !== null) return "night";
+  if (new URLSearchParams(window.location.search).has("day")) return "day";
   const saved = localStorage.getItem("cozy-theme");
   if (saved === "day" || saved === "night") return saved;
   const h = new Date().getHours();

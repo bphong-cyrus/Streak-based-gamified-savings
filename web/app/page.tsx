@@ -18,7 +18,7 @@ export default function Home() {
   const night = theme === "night";
 
   return (
-    <div className="min-h-screen">
+    <div className={`min-h-screen ${night ? "night-ui" : ""}`}>
       <Sky night={night} />
       {demo ? (
         <CozyApp theme={theme} onThemeChange={setTheme} demoData={buildMockData()} onExitDemo={() => setDemo(false)} />
@@ -51,14 +51,14 @@ function Landing({ night, onTryDemo }: { night: boolean; onTryDemo: () => void }
       {/* dàn nhân vật chibi sinh động */}
       <div className="mt-5 w-full">
         <div className="flex flex-wrap items-end justify-center gap-2">
-          {IDENTITIES.slice(0, 8).map((id, i) => (
+          {IDENTITIES.map((id, i) => (
             <div key={id.key} className="avatar-bob flex flex-col items-center" style={{ animationDelay: `${i * 0.18}s` }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={`/identities/${i + 1}.png`}
+                src={`/identities/${id.key}.svg`}
                 alt={id.name}
-                className="h-14 w-14 rounded-full border-2 border-cocoa-700/50 bg-cream-50 object-cover shadow-chunkySm"
-                style={{ objectPosition: "50% 12%" }}
+                className="h-16 w-16 rounded-full border-2 border-cocoa-700/50 bg-cream-50 object-cover shadow-chunkySm"
+                style={{ objectPosition: "50% 28%" }}
                 draggable={false}
               />
               <span className="mt-0.5 rounded-full bg-white/70 px-1.5 text-[9px] font-extrabold text-cocoa-600">
@@ -68,7 +68,7 @@ function Landing({ night, onTryDemo }: { night: boolean; onTryDemo: () => void }
           ))}
         </div>
         <p className="mt-2 text-center font-cozy text-xs font-bold text-white/90 drop-shadow-[0_1px_0_rgba(70,56,39,0.5)]">
-          8 identity đang chờ chủ nhân — kết nối ví rồi chọn nhân vật của bạn! ✨
+          5 bạn thú đang chờ chủ nhân — kết nối ví rồi chọn nhân vật của bạn! ✨
         </p>
       </div>
 

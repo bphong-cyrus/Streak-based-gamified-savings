@@ -240,6 +240,22 @@ body {
   }
 }
 
+/* Ngườ đứng yên: nhấp nhô nhẹ nhàng */
+@keyframes idleBob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.idle-bob {
+  animation: idleBob 2.6s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
 .walker-ground {
   animation: walkGround 9s linear infinite;
   transform-origin: center;
@@ -346,6 +362,64 @@ body {
 
 .avatar-bob {
   animation: bob 2.2s ease-in-out infinite;
+}
+
+/* ============ NIGHT UI: toàn bộ thành phần chuyển tím đậm ============ */
+.night-ui {
+  --night-card: #262052;
+  --night-card-deep: #1d1842;
+  --night-tile: rgba(64, 54, 118, 0.55);
+  --night-border: #4a3f8c;
+  --night-text: #efeaff;
+  --night-text-soft: #b9afe8;
+  --night-shadow: rgba(8, 6, 24, 0.55);
+}
+
+.night-ui .card-cream {
+  background: linear-gradient(180deg, var(--night-card) 0%, var(--night-card-deep) 100%);
+  border-color: var(--night-border);
+  color: var(--night-text);
+  box-shadow: 0 4px 0 var(--night-shadow);
+}
+
+.night-ui :is(.text-cocoa-800, .text-cocoa-700) {
+  color: var(--night-text);
+}
+.night-ui .text-cocoa-600 {
+  color: var(--night-text-soft);
+}
+.night-ui :is(.text-cocoa-500) {
+  color: #9d92d4;
+}
+
+.night-ui :is(.bg-white, .bg-white\/70, .bg-white\/80, .bg-white\/90, .bg-cream-100\/70, .bg-cream-100\/80, .bg-cream-100\/90, .bg-cream-100\/95) {
+  background: var(--night-tile);
+}
+.night-ui :is(.bg-cream-50, .bg-cream-100, .bg-cream-200) {
+  background: var(--night-card);
+}
+
+.night-ui :is(.border-cream-300) {
+  border-color: var(--night-border);
+}
+.night-ui :is(.border-cocoa-700\/30, .border-cocoa-700\/40, .border-cocoa-700\/50, .border-cocoa-700\/60, .border-cocoa-700\/70, .border-cocoa-700\/80, .border-cocoa-700) {
+  border-color: #5b4fa0;
+}
+
+.night-ui .input-cozy {
+  background: #171233;
+  border-color: var(--night-border);
+  color: var(--night-text);
+}
+
+.night-ui .btn-cream {
+  background: #2c2560;
+  color: var(--night-text);
+  border-color: #5b4fa0;
+}
+
+.night-ui :is(.divide-cream-300) > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--night-border);
 }
 
 @keyframes confettiFall {

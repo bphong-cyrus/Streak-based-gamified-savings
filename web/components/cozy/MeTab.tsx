@@ -60,10 +60,9 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`/identities/${i + 1}.png`}
+                  src={`/identities/${id.key}.svg`}
                   alt={id.name}
-                  className="mx-auto h-14 w-14 rounded-full border border-cocoa-700/30 object-cover"
-                  style={{ objectPosition: "50% 12%" }}
+                  className="mx-auto h-20 w-auto object-contain"
                   draggable={false}
                 />
                 <div className="mt-0.5 truncate text-[10px] font-bold text-cocoa-600">

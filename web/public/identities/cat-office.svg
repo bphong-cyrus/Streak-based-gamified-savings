@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 150">
+  <!-- Mèo công sở: mèo cam, cà vạt xám, cặp táp -->
+  <g stroke="#5B4A35" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- đuôi -->
+    <path d="M88 118 q20 4 16 -14" fill="none" stroke="#F5A94B" stroke-width="9"/>
+    <!-- chân -->
+    <ellipse cx="48" cy="136" rx="11" ry="7" fill="#F5A94B"/>
+    <ellipse cx="72" cy="136" rx="11" ry="7" fill="#F5A94B"/>
+    <!-- thân -->
+    <ellipse cx="60" cy="102" rx="30" ry="32" fill="#F5A94B"/>
+    <ellipse cx="60" cy="110" rx="17" ry="20" fill="#FFF6E0" stroke-width="3"/>
+    <!-- tai -->
+    <path d="M40 40 l-4 -18 16 8 Z" fill="#F5A94B"/>
+    <path d="M80 40 l4 -18 -16 8 Z" fill="#F5A94B"/>
+    <!-- sọc đầu -->
+    <path d="M52 34 q8 -6 16 0 M55 40 q5 -4 10 0" fill="none" stroke-width="3"/>
+    <!-- đầu -->
+    <circle cx="60" cy="58" r="27" fill="#F5A94B"/>
+    <!-- mắt tròn -->
+    <circle cx="50" cy="56" r="6.5" fill="#FFFFFF"/>
+    <circle cx="70" cy="56" r="6.5" fill="#FFFFFF"/>
+    <circle cx="51.5" cy="57" r="3" fill="#5B4A35" stroke="none"/>
+    <circle cx="71.5" cy="57" r="3" fill="#5B4A35" stroke="none"/>
+    <!-- má hồng -->
+    <ellipse cx="42" cy="66" rx="5" ry="3.5" fill="#FFB3C1" stroke="none"/>
+    <ellipse cx="78" cy="66" rx="5" ry="3.5" fill="#FFB3C1" stroke="none"/>
+    <!-- mũi miệng -->
+    <path d="M58 63 h4 l-2 3 Z" fill="#5B4A35" stroke="none"/>
+    <path d="M60 66 Q60 69 56 70 M60 66 Q60 69 64 70" fill="none" stroke-width="2.5"/>
+    <!-- râu -->
+    <path d="M38 60 h-9 M39 65 l-8 3 M82 60 h9 M81 65 l8 3" fill="none" stroke-width="2"/>
+    <!-- cà vạt xám -->
+    <path d="M54 80 h12 l-2 8 h-8 Z" fill="#8A94A6"/>
+    <path d="M57 88 h6 l4 20 -7 8 -7-8 Z" fill="#8A94A6"/>
+    <!-- tay phải giơ chào -->
+    <path d="M84 92 q12 -4 14 -16" fill="none" stroke-width="5"/>
+    <!-- tay trái xách cặp -->
+    <path d="M36 96 q-10 4 -8 12" fill="none" stroke-width="5"/>
+    <g>
+      <rect x="8" y="104" width="24" height="18" rx="4" fill="#7A6856"/>
+      <path d="M14 104 q6 -10 12 0" fill="none" stroke-width="3.5"/>
+      <rect x="8" y="110" width="24" height="4" fill="#5B4A35" stroke="none"/>
+    </g>
+  </g>
+</svg>

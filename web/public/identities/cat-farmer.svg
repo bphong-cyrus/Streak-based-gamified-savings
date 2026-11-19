@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 150">
+  <!-- Mèo nông dân: mũ rơm, yếm teal, áo caro, cào -->
+  <g stroke="#5B4A35" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- cào ba chạc (bên phải) -->
+    <path d="M96 34 v26 M88 36 l4 22 M104 36 l-4 22" fill="none" stroke-width="5"/>
+    <path d="M96 60 v70" fill="none" stroke="#B98A5A" stroke-width="6"/>
+    <!-- đuôi -->
+    <path d="M34 118 q-18 6 -14 -10" fill="none" stroke="#F0E6D6" stroke-width="9"/>
+    <!-- chân -->
+    <ellipse cx="48" cy="138" rx="11" ry="7" fill="#8A6B52"/>
+    <ellipse cx="72" cy="138" rx="11" ry="7" fill="#8A6B52"/>
+    <!-- thân: áo caro đỏ -->
+    <ellipse cx="60" cy="102" rx="30" ry="32" fill="#E2705C"/>
+    <path d="M34 92 h52 M33 106 h54 M36 120 h48 M48 74 v52 M64 72 v56 M78 76 v50" fill="none" stroke="#F5D8CE" stroke-width="2.5"/>
+    <!-- yếm teal -->
+    <path d="M44 76 h32 l6 44 q-22 8 -44 0 Z" fill="#57B8C7"/>
+    <path d="M50 76 q10 8 20 0" fill="none" stroke-width="3"/>
+    <rect x="54" y="96" width="12" height="10" rx="2" fill="#3E97A6" stroke-width="3"/>
+    <!-- tay trái -->
+    <path d="M36 96 q-8 8 -2 16" fill="none" stroke-width="5"/>
+    <!-- tay phải cầm cào -->
+    <path d="M84 94 q8 -2 10 -8" fill="none" stroke-width="5"/>
+    <!-- đầu -->
+    <circle cx="60" cy="56" r="26" fill="#F0E6D6"/>
+    <!-- tai -->
+    <path d="M40 40 l-4 -18 16 8 Z" fill="#F0E6D6"/>
+    <path d="M80 40 l4 -18 -16 8 Z" fill="#F0E6D6"/>
+    <!-- mắt -->
+    <circle cx="50" cy="56" r="3" fill="#5B4A35" stroke="none"/>
+    <circle cx="70" cy="56" r="3" fill="#5B4A35" stroke="none"/>
+    <!-- má -->
+    <ellipse cx="43" cy="64" rx="5" ry="3.5" fill="#FFB3C1" stroke="none"/>
+    <ellipse cx="77" cy="64" rx="5" ry="3.5" fill="#FFB3C1" stroke="none"/>
+    <!-- mũi miệng -->
+    <path d="M58 61 h4 l-2 3 Z" fill="#5B4A35" stroke="none"/>
+    <path d="M60 64 Q60 67 56 68 M60 64 Q60 67 64 68" fill="none" stroke-width="2.5"/>
+    <!-- mũ rơm -->
+    <ellipse cx="60" cy="36" rx="34" ry="9" fill="#E8C468"/>
+    <path d="M42 36 q18 -26 36 0" fill="#E8C468"/>
+    <path d="M46 30 q14 -8 28 0" fill="none" stroke-width="2.5"/>
+  </g>
+</svg>

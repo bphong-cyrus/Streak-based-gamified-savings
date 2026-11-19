@@ -6,7 +6,7 @@ const FLOOR_COLORS = ["#ffd9a8", "#ffc9d4", "#c9bdf5", "#bfe8c9", "#fde9a9", "#b
 
 /** Avatar chibi cư dân: lấy xoay vòng từ bộ 9 identity theo số tầng. */
 function residentSrc(seed: number): string {
-  return `/identities/${(Math.abs(seed) % 8) + 1}.png`;
+  return `/identities/${["rabbit-office","cat-office","cat-farmer","cat-wizard","cat-knight"][Math.abs(seed) % 5]}.svg`;
 }
 
 /** Tối màu hex đi một hệ số (dùng cho mặt hông 2.5D). */
@@ -82,7 +82,7 @@ function Floor({ num, color, night, lit, resident, pop }: FloorProps) {
             {(!night || lit) && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={`/identities/${(num % 8) + 1}.png`}
+                src={`/identities/${["rabbit-office","cat-office","cat-farmer","cat-wizard","cat-knight"][num % 5]}.svg`}
                 alt=""
                 aria-hidden
                 className="walker-past absolute bottom-0 left-0 h-9 w-auto object-contain"
@@ -316,10 +316,7 @@ export function Building({ floors, night, building, celebrating, goalDone }: Bui
 
       {/* ngườ qua lại sau lưng nhà (bị tòa nhà che — kiểu ra vào nhà) */}
       <div className="pointer-events-none absolute -bottom-8 left-1/2 z-0 h-10 w-72 -translate-x-1/2">
-        {[
-          { seed: 2, duration: "13s", delay: "-4s" },
-          { seed: 9, duration: "16s", delay: "-11s" },
-        ].map((w, i) => (
+        {[{ seed: 2, duration: "14s", delay: "-4s" }].map((w, i) => (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             key={i}
@@ -339,16 +336,13 @@ export function Building({ floors, night, building, celebrating, goalDone }: Bui
         style={{ filter: "blur(3px)", zIndex: 0 }}
       />
 
-      {/* ngườ qua lại trên mặt đất trước nhà — đông đúc */}
-      <div className="pointer-events-none absolute -bottom-7 left-1/2 z-20 h-9 w-64 -translate-x-1/2">
+      {/* mặt đất trước nhà: vài ngườ đi qua lại + vài ngườ đứng nghỉ */}
+      <div className="pointer-events-none absolute -bottom-7 left-1/2 z-20 h-10 w-64 -translate-x-1/2">
+        {/* đi lại: 3 ngườ */}
         {[
-          { seed: 1, duration: "7s", delay: "-0.5s", size: "h-10 w-auto" },
-          { seed: 4, duration: "10s", delay: "-3.2s", size: "h-9 w-auto" },
-          { seed: 7, duration: "5.8s", delay: "-2s", size: "h-10 w-auto" },
-          { seed: 10, duration: "8.5s", delay: "-5.5s", size: "h-9 w-auto" },
-          { seed: 0, duration: "12s", delay: "-7.5s", size: "h-10 w-auto" },
-          { seed: 5, duration: "6.6s", delay: "-4.4s", size: "h-9 w-auto" },
-          { seed: 8, duration: "9.4s", delay: "-8.8s", size: "h-10 w-auto" },
+          { seed: 1, duration: "9s", delay: "-0.5s", size: "h-10 w-auto" },
+          { seed: 4, duration: "13s", delay: "-6s", size: "h-9 w-auto" },
+          { seed: 7, duration: "7.5s", delay: "-3.4s", size: "h-10 w-auto" },
         ].map((w, i) => (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -363,6 +357,23 @@ export function Building({ floors, night, building, celebrating, goalDone }: Bui
               animationDelay: w.delay,
               filter: "drop-shadow(1px 2px 1px rgba(0,0,0,0.25))",
             }}
+            draggable={false}
+          />
+        ))}
+        {/* đứng yên: 3 ngườ nhấp nhô nhẹ */}
+        {[
+          { seed: 0, left: "0%", size: "h-11 w-auto", delay: "0s" },
+          { seed: 3, left: "52%", size: "h-10 w-auto", delay: "0.9s" },
+          { seed: 2, left: "88%", size: "h-9 w-auto", delay: "1.7s" },
+        ].map((w, i) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            key={i}
+            src={residentSrc(w.seed)}
+            alt=""
+            aria-hidden
+            className={`idle-bob absolute bottom-0 object-contain ${w.size}`}
+            style={{ left: w.left, animationDelay: w.delay, filter: "drop-shadow(1px 2px 1px rgba(0,0,0,0.25))" }}
             draggable={false}
           />
         ))}

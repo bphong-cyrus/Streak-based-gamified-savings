@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 150">
+  <!-- Mèo pháp sư: mũ xanh lớn, áo choàng, sao vàng -->
+  <g stroke="#5B4A35" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- áo choàng xanh -->
+    <path d="M34 84 q26 -12 52 0 l10 44 q-36 12 -72 0 Z" fill="#4A90D9"/>
+    <!-- thân -->
+    <ellipse cx="60" cy="104" rx="24" ry="28" fill="#F5A94B"/>
+    <ellipse cx="60" cy="112" rx="14" ry="17" fill="#FFF6E0" stroke-width="3"/>
+    <!-- đuôi -->
+    <path d="M86 120 q18 6 14 -10" fill="none" stroke="#F5A94B" stroke-width="8"/>
+    <!-- chân -->
+    <ellipse cx="50" cy="138" rx="10" ry="6" fill="#F5A94B"/>
+    <ellipse cx="70" cy="138" rx="10" ry="6" fill="#F5A94B"/>
+    <!-- tai -->
+    <path d="M42 42 l-4 -18 16 8 Z" fill="#F5A94B"/>
+    <path d="M78 42 l4 -18 -16 8 Z" fill="#F5A94B"/>
+    <!-- đầu -->
+    <circle cx="60" cy="60" r="26" fill="#F5A94B"/>
+    <!-- mắt -->
+    <circle cx="50" cy="58" r="3.2" fill="#5B4A35" stroke="none"/>
+    <circle cx="70" cy="58" r="3.2" fill="#5B4A35" stroke="none"/>
+    <!-- má -->
+    <ellipse cx="43" cy="66" rx="5" ry="3.5" fill="#FFB3C1" stroke="none"/>
+    <ellipse cx="77" cy="66" rx="5" ry="3.5" fill="#FFB3C1" stroke="none"/>
+    <!-- mũi miệng -->
+    <path d="M58 63 h4 l-2 3 Z" fill="#5B4A35" stroke="none"/>
+    <path d="M60 66 Q60 69 56 70 M60 66 Q60 69 64 70" fill="none" stroke-width="2.5"/>
+    <!-- tay trái cầm đũa phép -->
+    <path d="M38 96 q-10 2 -12 10" fill="none" stroke-width="5"/>
+    <path d="M22 112 l-6 14" fill="none" stroke="#B98A5A" stroke-width="4"/>
+    <path d="M14 122 l2 -6 2 4 4 -4 0 6 4 2 -4 3 1 5 -5 -2 -4 3 0 -5 -5 -1 Z" fill="#FFD166" stroke-width="2.5"/>
+    <!-- tay phải -->
+    <path d="M82 96 q8 6 4 14" fill="none" stroke-width="5"/>
+    <!-- mũ pháp sư -->
+    <path d="M30 44 q30 -10 60 0 l-6 8 q-24 -7 -48 0 Z" fill="#3E6FB0"/>
+    <path d="M44 42 q6 -34 26 -34 q14 2 8 16 q-4 8 -12 10 q6 4 8 10" fill="#4A90D9"/>
+    <path d="M64 8 q10 0 10 10" fill="none" stroke="#FFD166" stroke-width="4"/>
+    <path d="M56 40 q6 -26 18 -28" fill="none" stroke="#3E6FB0" stroke-width="3"/>
+    <!-- khóa mũ -->
+    <rect x="55" y="42" width="12" height="9" rx="2" fill="#FFD166" stroke-width="3"/>
+  </g>
+</svg>

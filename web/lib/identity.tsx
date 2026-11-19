@@ -3,22 +3,20 @@
 import { useEffect, useState } from "react";
 
 /**
- * 9 identity chibi đại diện ngườ dùng (ảnh tại /identities/1..9.png).
+ * 5 nhân vật con vật đại diện ngườ dùng (SVG tự vẽ theo phong cách outline dày, màu pastel —
+ * học hỏi art style từ ảnh mẫu, không sao chép thiết kế gốc).
  * Mặc định gán theo địa chỉ ví; ngườ dùng có thể tự chọn và lưu localStorage.
  */
 export const IDENTITIES = [
-  { key: "tech", name: "The Tech Explorer", vi: "Đam mê Công nghệ", icon: "🎧" },
-  { key: "artist", name: "The Fantasy Artist", vi: "Sáng tạo & Bay bổng", icon: "🎨" },
-  { key: "warrior", name: "The Cyber Warrior", vi: "Cá tính & Game thủ", icon: "⚔️" },
-  { key: "nature", name: "The Cozy Nature Lover", vi: "Yêu Thiên nhiên & Bình yên", icon: "🌿" },
-  { key: "musician", name: "The Cyber Musician", vi: "Đam mê Âm nhạc", icon: "🎸" },
-  { key: "bookworm", name: "The Cozy Bookworm", vi: "Trầm lặng & Tri thức", icon: "📚" },
-  { key: "skater", name: "The Street Skater", vi: "Phóng khoáng & Thể thao", icon: "🛹" },
-  { key: "cadet", name: "The Space Cadet", vi: "Khám phá & Vũ trụ", icon: "🚀" },
+  { key: "rabbit-office", name: "Thỏ Cà Phê", vi: "Đều đặn mỗi sáng", icon: "☕" },
+  { key: "cat-office", name: "Mèo Công Sở", vi: "Chăm chỉ tích lũy", icon: "💼" },
+  { key: "cat-farmer", name: "Mèo Nông Trại", vi: "Chậm mà chắc", icon: "🌾" },
+  { key: "cat-wizard", name: "Mèo Pháp Sư", vi: "Lãi kỳ diệu", icon: "🔮" },
+  { key: "cat-knight", name: "Mèo Hiệp Sĩ", vi: "Giữ chuỗi bất bại", icon: "🛡️" },
 ] as const;
 
 export function identityIndex(address: string | undefined): number {
-  if (!address) return 3;
+  if (!address) return 0;
   return parseInt(address.slice(2, 8), 16) % IDENTITIES.length;
 }
 
@@ -54,7 +52,7 @@ export function useIdentityIndex(address: string | undefined): number {
   return idx;
 }
 
-/** Avatar chibi: ảnh nhân vật đã tách, căn lên trên để lấy mặt trong khung tròn. */
+/** Avatar: ảnh tròn cắt ở vùng mặt (avatar đúng chất), dùng khắp app. */
 export function IdentityAvatar({
   address,
   className = "h-10 w-10",
@@ -67,13 +65,38 @@ export function IdentityAvatar({
 }) {
   const chosen = useIdentityIndex(address);
   const idx = index ?? chosen;
+  const id = IDENTITIES[idx];
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`/identities/${idx + 1}.png`}
-      alt={IDENTITIES[idx].name}
+      src={`/identities/${id.key}.svg`}
+      alt={id.name}
       className={`inline-block shrink-0 rounded-full border-2 border-cocoa-700/50 bg-cream-50 object-cover shadow-chunkySm ${className}`}
-      style={{ objectPosition: "50% 12%" }}
+      style={{ objectPosition: "50% 28%" }}
+      draggable={false}
+    />
+  );
+}
+
+/** Ảnh full body (nền trong suốt) — dùng cho cảnh dân đi lại trong tòa nhà. */
+export function IdentityFull({
+  address,
+  className = "h-10 w-auto",
+  index,
+}: {
+  address: string | undefined;
+  className?: string;
+  index?: number;
+}) {
+  const chosen = useIdentityIndex(address);
+  const idx = index ?? chosen;
+  const id = IDENTITIES[idx];
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={`/identities/${id.key}.svg`}
+      alt={id.name}
+      className={`inline-block shrink-0 object-contain ${className}`}
       draggable={false}
     />
   );
