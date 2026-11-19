@@ -30,13 +30,15 @@ const TABS: Array<{ key: TabKey; icon: IconName; label: string }> = [
 interface CozyAppProps {
   theme: ThemeMode;
   onThemeChange: (t: ThemeMode) => void;
-  /** Dữ liệu mẫu khi xem demo không cần ví (?demo=1). */
+  /** Dữ liệu mẫu khi xem demo không cần ví (?demo=1 hoặc ví chưa kết nối). */
   demoData?: VaultData;
   onExitDemo?: () => void;
+  /** CTA hiển thị trong banner demo (VD: nút kết nối ví khi chưa đăng nhập). */
+  demoCta?: React.ReactNode;
 }
 
 /** Vỏ app: header, tab content, bottom nav, animation xây tầng. Bầu trờ do page.tsx render theo theme. */
-export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppProps) {
+export function CozyApp({ theme, onThemeChange, demoData, onExitDemo, demoCta }: CozyAppProps) {
   const live = useVaultData({ enabled: !demoData });
   // Demo: mỗi lượt "mô phỏng gửi tiền" hoàn thành → tòa nhà thật sự +1 tầng
   const [demoBoost, setDemoBoost] = useState(0);
@@ -171,13 +173,16 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
       </header>
 
       {demoData && (
-        <button
-          className="mx-4 mt-1 flex w-[calc(100%-2rem)] items-center justify-between rounded-full border border-cocoa-700/20 bg-white/70 px-3 py-1.5 text-left text-[11px] font-bold text-cocoa-600 shadow-sm backdrop-blur-sm"
-          onClick={onExitDemo}
-        >
-          <span>Demo với dữ liệu mẫu — giao dịch sẽ không thực hiện được</span>
-          <span className="pl-2 underline">Thoát</span>
-        </button>
+        <div className="mx-4 mt-1 flex w-[calc(100%-2rem)] items-center justify-between gap-2 rounded-full border border-cocoa-700/20 bg-white/70 py-1.5 pl-3 pr-1.5 shadow-sm backdrop-blur-sm">
+          <span className="text-left text-[11px] font-bold text-cocoa-600">
+            {demoCta ? "Bạn đang xem thử không cần ví — kết nối để dùng thật" : "Demo với dữ liệu mẫu — giao dịch sẽ không thực hiện được"}
+          </span>
+          {demoCta ?? (
+            <button className="shrink-0 text-[11px] font-bold underline" onClick={onExitDemo}>
+              Thoát
+            </button>
+          )}
+        </div>
       )}
 
       {/* nội dung tab */}
