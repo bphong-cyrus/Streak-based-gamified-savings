@@ -18,7 +18,7 @@ gas_reports = ["StreakVault", "YieldDistributor", "MockYieldSource", "MockUSDC"]
 runs = 256
 
 [invariant]
-runs = 64
+runs = 256
 depth = 64
 fail_on_revert = false
 

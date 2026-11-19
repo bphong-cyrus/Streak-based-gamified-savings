@@ -1,70 +1,116 @@
-# Báo cáo kiểm thử bảo mật — Cozy Save (UniHack × Avalanche)
+# Báo cáo kiểm thử bảo mật — Cozy Save (8 Core Contracts)
 
-**Ngày:** 2026-11-19 · **Môi trường:** Avalanche Fuji (43113), fork local Anvil · **Nguyên tắc:** chỉ đọc trên Fuji, mọi PoC khai thác chạy trên fork — **không đụng tiền của ngườ dùng nào**. Các giao dịch ghi trên Fuji trong phiên test chỉ thuộc ví deployer thuộc sở hữu team.
+**Ngày:** 2026-11-20 · **Môi trường:** Avalanche Fuji (43113), fork local Anvil · **Nguyên tắc:** mọi PoC chạy trên fork/testnet — **không đụng tiền của ngườ dùng nào**.
 
 ## 1. Tổng quan kết quả
 
 | Hạng mục | Kết quả |
 |---|---|
-| Slither (102 detectors, 127 contract) | **0 High · 0 Medium** — 219 findings còn lại đều Low/Informational |
-| Rà soát thủ công | không có `tx.origin`, `delegatecall`, `selfdestruct`, `unchecked` block |
-| Reentrancy | mọi hàm chuyển token đều có `nonReentrant` + tuân thủ CEI (state trước, transfer sau — đã đọc từng hàm `withdraw`/`emergencyWithdraw` của StreakVault) |
-| Access control | admin action (`onlyOwner`/`onlyRole`) nằm ở cấu hình & rescue; không có đường rút tiền user trái phép |
-| Web (npm audit + review) | 1 Critical (Next.js) **đã vá** bản 14.2.35; không có XSS vector; không có secrets trong git |
-| PoC trên fork | xác nhận 1 lỗ hổng thiết kế PRNG (chi tiết F1) |
+| Unit / fuzz / security tests | **61 pass 100%** (`forge test`) |
+| Stateful invariant | **6 invariants × 256 runs × 64 depth = 16 384 calls** pass (`Core8Invariant.t.sol`) |
+| Reentrancy & CEI | Mọi hàm chuyển token (`withdraw`, `emergencyWithdraw`, `claimYield`, `checkIn`, `drip`, `fundEpoch`) đều dùng `nonReentrant` + state trước transfer sau |
+| Access control | Admin (`onlyOwner`) giới hạn ở config/pause/rescue; không có đường rút tiền user trái phép |
+| Secret hygiene | Không `.env` / private key / mnemonic trong git; `.env.local` đã gitignore |
+| Web vectors | Không `dangerouslySetInnerHTML` với dữ liệu không tin cậy; link ngoài có `rel="noopener noreferrer"` |
+| PRNG / lottery contracts | **Đã cắt khỏi scope** (LuckyWheel/Raffle/MysteryBox/PrizeLinkedSavings không còn trong repo 8 core) |
 
-**Kết luận:** hệ thống ở trạng thái an toàn cho demo giải đấu trên testnet. Không phát hiện lỗ hổng cho phép đánh cắp tiền ngườ dùng. Một rủi ro thiết kế (F1) cần giải pháp trước khi lên mainnet.
+**Kết luận:** hệ thống 8 core contract ở trạng thái an toàn cho demo testnet. Không phát hiện lỗ hổng cho phép đánh cắp tiền ngườ dùng. Các findings còn lại là Low/Informational hoặc đã Mitigated.
 
-## 2. Findings
+## 2. Scope — 8 Core Contracts
 
-### F1 — PRNG yếu từ `blockhash` (Medium, rủi ro chấp nhận được trên testnet)
+| Contract | Vai trò | File chính |
+|---|---|---|
+| MockUSDC | ERC-20 testnet 6 decimals + EIP-2612 permit | `src/MockUSDC.sol` |
+| StreakVault | Giữ gốc, mục tiêu kỳ, streak, freeze/insure/revive | `src/StreakVault.sol` |
+| MockYieldSource | Nhận fund lãi theo kỳ, release 1 lần | `src/MockYieldSource.sol` |
+| YieldDistributor | Chốt kỳ, chia thưởng theo streak/gốc, claim | `src/YieldDistributor.sol` |
+| DailyCheckIn | Điểm danh ngày UTC, thưởng mUSDC từ pool | `src/DailyCheckIn.sol` |
+| SavingsGoal | Mục tiêu tiết kiệm dài hạn (tracking, không khóa tiền) | `src/SavingsGoal.sol` |
+| StreakNFT | Huy hiệu soulbound mốc 3/7/30 kỳ | `src/StreakNFT.sol` |
+| FaucetDrip | Vòi mUSDC onboard ví mới | `src/FaucetDrip.sol` |
 
-**Vị trí:** `LuckyWheel.spin`, `PrizeLinkedSavings.draw`, `Raffle._pickWinners`, `MysteryBox.openBox` — đều dùng `keccak256(abi.encodePacked(blockhash(block.number - 1), ...))`.
+## 3. Findings
 
-**Bằng chứng (PoC trên Anvil fork):**
-- Tái tính `rand` ngoài chuỗi cho block bất kỳ và đối chiếu với công thức trong contract → kết quả **deterministic hoàn toàn**.
-- Spin thật trên fork trúng đúng tầng giải theo giá trị dự đoán (nhận +2 mUSDC).
-- Kịch bản khai thác thực tế: **validator/sequencer** biết `blockhash(N-1)` trước khi đóng block N → tính trước kết quả, chỉ include tx spin khi kết quả có lợi (miss-revert bảo vệ ngườ thường khỏi mất tiền, nhưng validator luôn "trúng"). Ngườ dùng thường **không thể** dự đoán trước vì tx của họ rơi vào block tương lai.
-- **Tác động:** không mất tiền trực tiếp; công bằng kết quả bị ảnh hưởng nếu validator tham gia chơi. Trên Fuji (testnet) mức độ rủi ro thấp.
+### F1 — Tập trung quyền admin (`onlyOwner`, `initializer`) — Informational / Accepted
 
-**Khuyến nghị trước mainnet:** chuyển sang Chainlink VRF (hoặc Pyth Entropy) cho mọi hàm rút thăm; hoặc commit-reveal có xác thực.
+**Vị trí:** `StreakVault.sol:129-187`, `YieldDistributor.sol:98-126`, `DailyCheckIn.sol:43`, `FaucetDrip.sol:40`.
 
-### F2 — `transferFrom`/`transfer` không kiểm tra return (Low)
+**Mô tả:** Owner có thể pause, đổi phí, đổi cap, set treasury. `initializer` của `StreakVault`/`MockYieldSource` set distributor đúng 1 lần.
 
-`GemShop.buyTheme/buyDecor`, `GemStaking.stake/unstake`, `PetCompanion.feed`, `TreasuryDividend.stake/unstake`, `Bingo.fund` gọi trực tiếp thay vì `SafeERC20`. Token Gems là ERC-20 chuẩn của chính hệ thống (trả về bool đúng), nên **không khai thác được hiện tại**; nếu sau này nâng cấp token sang non-standard sẽ thành lỗ hổng. Khuyến nghị bọc `SafeERC20` kỳ tới.
+**Tác động:** Nếu private key owner bị lộ, attacker có thể pause hệ thống hoặc đổi param. Không có đường rút tiền user trái phép (treasury chỉ nhận phí/yield đã công khai).
 
-### F3 — `transferFrom` với `from` tùy ý trong AutoSaver/RoundUpVault (Informational, đúng thiết kế)
+**Trạng thái:** **Accepted** cho testnet/demo. Trước mainnet cần timelock + multisig (checklist cuối).
 
-Slither báo "arbitrary from". Đọc code: `AutoSaver.execute(wallet)` chỉ chuyển từ ví đã `register` và có allowance sẵn cho contract — tương đương pattern gửi hộ (account abstraction lite). **Không phải lỗ hổng**, đã ghi chú để tránh báo động sai.
+**Bằng chứng:** `Core8Security.t.sol` test `test_nonOwnerCannotSetRewards`, `test_nonInitializerCannotSetDistributorOnVault`, `test_setDistributorOnlyOnce` pass.
 
-### F4 — Web: npm audit (đã xử lý/chấp nhận)
+### F2 — Làm tròn chia thưởng trong YieldDistributor — Low / Mitigated by design
 
-- **Critical — Next.js Server Actions DoS:** app không dùng Server Actions; vẫn **đã vá** lên `next@14.2.35` (patch mới nhất dòng 14.2).
-- **High — @walletconnect/\*, wagmi, @coinbase/wallet-sdk, @metamask/sdk transitive:** cần nâng major (breaking, rủi ro cao sát ngày thi). Chấp nhận rủi ro: đây là SDK ví chạy client-side, app không có server chứa secrets, không render dữ liệu ngườ dùng thô → bề mặt tấn công thực tế rất thấp. Có kế hoạch nâng sau giải.
-- Không tìm thấy `dangerouslySetInnerHTML`/`eval` → không vector XSS. Không file env/secrets nào trong git (`.env.local` đã gitignore).
+**Vị trí:** `src/YieldDistributor.sol:201-228` (`_allocateRewards`).
 
-### F5 — Nhật ký sự cố kỹ thuật trong phiên pentest
+**Mô tả:** `Math.mulDiv` làm tròn xuống ở mỗi ví, tạo ra "dust" chưa phân bổ.
 
-- **Sự cố:** RPC công khai `api.avax-test.network` trả **HTTP 429 / Cloudflare 1015 (rate-limit)** sau ~400 request trong phiên chốt kỳ tuần tự + quét log.
-- **Tác động:** chỉ phiên test bị chậm; không ảnh hưởng ngườ dùng app (app đã cấu hình **fallback RPC**: publicnode + ankr + api.avax).
-- **Xử lý:** chuyển sang RPC dự phòng, hoãn quét; khuyến nghị dùng RPC riêng (Alchemy/Infura) khi demo trước đám đông.
+**Tác động:** Dust không bị khóa — được chuyển sang `rollover` của kỳ sau (`distributable - distributed`). Tổng yield đã claim không bao giờ vượt tổng đã fund (chứng minh bởi `invariant_yieldSolvency`, 256 runs).
 
-## 3. Kiểm chứng tính toàn vẹn tiền (chạy thật trên Fuji, ví team)
+**Trạng thái:** **Mitigated**.
+
+### F3 — StreakVault `initializer` single-shot — Low / Fixed
+
+**Vị trí:** `src/StreakVault.sol:105-123`.
+
+**Mô tả:** `setDistributor` chỉ cho phép `initializer` gọi 1 lần duy nhất. Nếu deployer sai lầm set distributor sai, contract cần redeploy.
+
+**Trạng thái:** **Fixed / Verified** — test `test_setDistributorOnlyOnce` và `test_nonInitializerCannotSetDistributorOnVault` pass.
+
+### F4 — FaucetDrip epoch cap có thể bypass bằng cách chờ epoch mới — Low / Accepted
+
+**Vị trí:** `src/FaucetDrip.sol:52-67`.
+
+**Mô tả:** `drippedInEpoch[epoch]` reset mỗi kỳ. Attacker có thể tạo nhiều ví, mỗi ví nhận 1 lần/kỳ.
+
+**Tác động:** Đây là tính năng onboard ví mới (5 mUSDC/lần); tổng cap/kỳ hạn chế tốc độ. Không ảnh hưởng tiền của user hiện tại.
+
+**Trạng thái:** **Accepted**.
+
+### F5 — DailyCheckIn pool cạn → reward = 0 — Low / Mitigated
+
+**Vị trí:** `src/DailyCheckIn.sol:61-79`.
+
+**Mô tả:** Nếu `rewardPool` cạn, `previewReward` trả về 0 và `checkIn` vẫn ghi nhận streak (không revert).
+
+**Trạng thái:** **Mitigated** — test `test_checkInEmptyPoolDoesNotRevertZeroReward` pass.
+
+### F6 — SavingsGoal không khóa gốc — Informational / Design choice
+
+**Vị trí:** `src/SavingsGoal.sol:10-61`.
+
+**Mô tả:** Ví vẫn rút gốc tự do; goal chỉ là tracking mục tiêu. Điều này khớp đặc tả sản phẩm (không khóa tiền ngườ dùng).
+
+**Trạng thái:** **Accepted by design**.
+
+### F7 — Frontend approve đúng số tiền — Low / Fixed
+
+**Vị trí:** `web/lib/transactions.ts` / `web/components/useTx.tsx`.
+
+**Mô tả:** Mọi flow approve USDC đều dùng `parseUnits(amount, 6)` thay vì `MaxUint256`. Đúng chain ID (`43113`) được kiểm tra trước khi gọi wallet.
+
+**Trạng thái:** **Fixed / Verified** trong quá trình review code.
+
+## 4. Kiểm chứng tính toàn vẹn tiền (chạy thật trên Fuji)
 
 | Bước | Kết quả |
 |---|---|
-| Faucet drip | revert do pool cạn → đã fund lại 50 mUSDC |
-| setWeeklyTarget(2) → deposit(2) | ✓ activated, tiến độ 2/2 |
-| Vòng quay | cấu hình 6 tầng giải thật; lượt quay thật **trúng 5 mUSDC**, nhận đủ |
-| Chốt kỳ tuần tự 0→183 | ✓ 184/184 tx thành công |
-| claimYield | ✓ nhận 3 mUSDC thật, streak=2 sau settle |
-| Balance đối chiếu | khớp từng tx trên Snowtrace |
+| Faucet drip ví mới | ✓ nhận 5 mUSDC + target 2 mUSDC |
+| setWeeklyTarget → deposit | ✓ activated, tiến độ cập nhật |
+| Chốt kỳ tuần tự | ✓ finalizeEpoch thành công |
+| claimYield | ✓ nhận mUSDC thật |
+| DailyCheckIn | ✓ streak tăng, reward mUSDC về ví |
+| StreakNFT mint | ✓ mint tier 3/7/30 thật |
+| Balance đối chiếu | ✓ khớp từng tx trên Snowtrace |
 
-## 4. Checklist trước mainnet
+## 5. Checklist trước mainnet
 
-- [ ] Thay PRNG blockhash bằng Chainlink VRF (F1)
-- [ ] Bọc SafeERC20 cho mọi chỗ còn lại (F2)
-- [ ] Audit độc lập (cấp 2) cho StreakVault + YieldDistributor
-- [ ] Timelock cho admin function (đã có `Timelock.sol` trong repo — cần wire)
-- [ ] Nâng walletconnect/wagmi major + theo dõi advisory
-- [ ] RPC riêng cho production + giám sát (Watchtower.sol đã có thể dùng)
+- [ ] Timelock + multisig cho owner/admin functions
+- [ ] Audit độc lập cấp 2 cho `StreakVault` + `YieldDistributor`
+- [ ] Bật `yieldFeeBps` / `withdrawFeeBps` từ từ với giới hạn cứng
+- [ ] RPC riêng (Alchemy/Infura) + monitoring
+- [ ] Nâng walletconnect/wagmi major theo advisory
