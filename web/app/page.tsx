@@ -96,6 +96,38 @@ function Landing({ night, onTryDemo }: { night: boolean; onTryDemo: () => void }
         ))}
       </div>
 
+      {/* Vì sao Cozy Save — phần dành cho giám khảo */}
+      <div className="mt-4 w-full rounded-2xl border-2 border-dashed border-cocoa-700/40 bg-white/25 p-4 backdrop-blur-[2px]">
+        <h3 className="text-center font-cozy text-lg font-extrabold text-white drop-shadow-[0_2px_0_rgba(70,56,39,0.5)]">
+          Vì sao Cozy Save?
+        </h3>
+        <div className="mt-2 space-y-2 text-left text-sm font-semibold text-white/95 drop-shadow-[0_1px_0_rgba(70,56,39,0.5)]">
+          <p>
+            <strong>Vấn đề:</strong> ngườ trẻ khó giữ thói quen gửi tiền đều — thiếu động lực, dễ bỏ cuộc sau vài tuần.
+          </p>
+          <p>
+            <strong>Giải pháp:</strong> streak game hoá — gửi đều mỗi kỳ thì streak tăng và phần thưởng lãi tăng theo;
+            bỏ kỳ thì streak về 0. Toà nhà 3D của bạn lớn lên cùng thói quen tốt.
+          </p>
+          <p>
+            <strong>Trên Avalanche:</strong> mọi thứ ghi on-chain — vault, phần thưởng, 25+ hợp đồng mở rộng
+            (nhóm bạn bè, hụi điện tử, xổ số tiết kiệm, tín dụng streak...) đều đối chiếu được trên Snowtrace.
+          </p>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+          {[
+            ["25+", "hợp đồng"],
+            ["6", "tab tính năng"],
+            ["100%", "gốc của bạn"],
+          ].map(([num, label]) => (
+            <div key={label} className="rounded-xl border-2 border-white/40 bg-white/20 px-2 py-1.5">
+              <div className="font-cozy text-lg font-extrabold text-white">{num}</div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-white/85">{label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="mt-6 flex flex-col items-center gap-3">
         <ConnectButton />
         <button className="btn-cream !py-2 text-sm" onClick={onTryDemo}>

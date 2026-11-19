@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useAccount, useReadContracts } from "wagmi";
 import { contracts, isConfigured } from "@/lib/config";
-import { streakVaultAbi, streakGroupsAbi, freezeGiftAbi, mentorHubAbi } from "@/lib/abis";
+import { streakVaultAbi, streakGroupsAbi, freezeGiftAbi, mentorHubAbi, leaderboardAbi } from "@/lib/abis";
 import { fmt, shortAddr } from "@/lib/format";
 import { IdentityAvatar, identityOf } from "@/lib/identity";
 import { TxFeedback, useTx } from "@/components/useTx";
@@ -119,6 +119,8 @@ export function GroupTab({ data }: { data: VaultData }) {
           </p>
         )}
       </div>
+
+      <LeaderboardCard data={data} />
 
       <MentorHubCard />
 
@@ -432,6 +434,56 @@ function MentorHubCard() {
         </div>
       )}
       <TxFeedback state={tx} />
+    </FeatureCard>
+  );
+}
+
+/** Bảng xếp hạng ngườ tiết kiệm on-chain — điểm = streak × tổng gửi, tính trực tiếp từ vault. */
+function LeaderboardCard({ data }: { data: VaultData }) {
+  const { address } = useAccount();
+  const live = isConfigured(contracts.leaderboard);
+
+  const state = useReadContracts({
+    contracts: live ? [{ address: contracts.leaderboard, abi: leaderboardAbi, functionName: "leaderboard", args: [] }] : [],
+    query: { refetchInterval: 20_000, enabled: live },
+  });
+  const result = state.data?.[0]?.result as [string[], bigint[]] | undefined;
+  const rows = result
+    ? result[0].map((w, i) => ({ wallet: w, score: result[1][i] })).slice(0, 8)
+    : [];
+
+  if (!live) return null;
+
+  const medal = (i: number) => (i === 0 ? "text-yellow-500" : i === 1 ? "text-slate-400" : i === 2 ? "text-amber-600" : "text-cocoa-500");
+
+  return (
+    <FeatureCard icon="trophy" title="Bảng vàng tiết kiệm" desc="Tính trực tiếp từ dữ liệu vault on-chain — không thể gian lận, ai cũng kiểm chửa được">
+      {rows.length === 0 ? (
+        <p className="text-sm font-semibold text-cocoa-500">Chưa có dữ liệu xếp hạng.</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {rows.map((r, i) => {
+            const isMe = r.wallet.toLowerCase() === data.address?.toLowerCase();
+            return (
+              <li
+                key={r.wallet}
+                className={`flex items-center gap-2.5 rounded-xl border-2 px-3 py-1.5 ${
+                  isMe ? "border-leaf-500 bg-leaf-300/30" : "border-cream-300 bg-white/80"
+                }`}
+              >
+                <span className={`w-6 text-center font-cozy text-base font-extrabold ${medal(i)}`}>{i + 1}</span>
+                <IdentityAvatar address={r.wallet} className="h-8 w-8" />
+                <span className="min-w-0 flex-1 truncate font-cozy text-sm font-bold text-cocoa-700">
+                  {isMe ? "Bạn" : identityOf(r.wallet).name}
+                  <span className="ml-1 text-[10px] font-semibold text-cocoa-500">{shortAddr(r.wallet)}</span>
+                </span>
+                <span className="font-cozy text-sm font-extrabold text-lavender-500">{r.score.toString()}</span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <p className="mt-2 text-[11px] font-semibold text-cocoa-500">Điểm = chuỗi tuần × tổng mUSDC đã gửi — càng đều càng lên top.</p>
     </FeatureCard>
   );
 }

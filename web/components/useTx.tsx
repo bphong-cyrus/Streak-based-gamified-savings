@@ -5,6 +5,7 @@ import { useWriteContract, useSwitchChain, useChainId } from "wagmi";
 import { waitForTransactionReceipt } from "@wagmi/core";
 import { BaseError } from "viem";
 import { wagmiConfig, targetChainId, fuji, explorerTx } from "@/lib/config";
+import { sfx } from "@/lib/sound";
 
 export interface TxState {
   step: string | null;
@@ -41,6 +42,7 @@ export function useTx() {
           });
         }
         setState({ step: null, hash: null, error: null });
+        sfx.success();
         return true;
       } catch (e) {
         const err = e as BaseError;
@@ -52,6 +54,7 @@ export function useTx() {
               ? "Kết nối RPC Fuji bị gián đoạn — thử lại sau vài giây (giao dịch có thể đã thực hiện, kiểm tra Snowtrace trước khi gửi lại)."
               : (err.shortMessage ?? err.message);
         setState({ step: null, hash: null, error: `${label}: ${msg}` });
+        sfx.error();
         return false;
       }
     },

@@ -45,6 +45,14 @@ function CameraRig({ targetY }: { targetY: number }) {
     camera.position.set(11, 10, 11);
     camera.lookAt(0, targetY, 0);
   }, [camera, targetY]);
+  // Lắc nhẹ quanh trục để cảnh sống động
+  useFrame(({ clock }) => {
+    const a = Math.sin(clock.getElapsedTime() * 0.22) * 0.35;
+    const r = Math.hypot(11, 11);
+    const b = Math.atan2(11, 11) + a * 0.06;
+    camera.position.set(Math.cos(b) * r, 10, Math.sin(b) * r);
+    camera.lookAt(0, targetY, 0);
+  });
   return null;
 }
 
@@ -301,15 +309,72 @@ function Flower({ position, color }: { position: [number, number, number]; color
   );
 }
 
+/** Mèo đi dạo quanh đảo theo vòng tròn, luôn quay mặt về camera. */
+function WalkingCat({ src, radius = 2.9, speed = 0.25 }: { src: string; radius?: number; speed?: number }) {
+  const tex = useSvgTexture(src);
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(({ camera, clock }) => {
+    if (!ref.current) return;
+    const t = clock.getElapsedTime();
+    const a = t * speed;
+    ref.current.position.set(Math.cos(a) * radius, 0.5 + Math.abs(Math.sin(t * 6)) * 0.05, Math.sin(a) * radius);
+    ref.current.quaternion.copy(camera.quaternion);
+  });
+  if (!tex) return null;
+  return (
+    <mesh ref={ref} scale={[0.75, 0.95, 1]}>
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial map={tex} transparent />
+    </mesh>
+  );
+}
+
+/** Cơn mưa vàng ăn mừng: đồng xu rơi từ mái nhà xuống sân. */
+function CoinShower({ topY }: { topY: number }) {
+  const group = useRef<THREE.Group>(null);
+  const coins = useMemo(
+    () =>
+      Array.from({ length: 14 }, (_, i) => ({
+        x: (Math.sin(i * 7.3) * 0.5 + 0.5 - 0.5) * 2.4,
+        z: (Math.cos(i * 3.1) * 0.5) * 2.4,
+        delay: (i % 7) * 0.18,
+        speed: 2.6 + (i % 3) * 0.5,
+      })),
+    [],
+  );
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
+    group.current?.children.forEach((c, i) => {
+      const cfg = coins[i];
+      const p = ((t * cfg.speed + cfg.delay * 3) % 1.6) / 1.6;
+      c.position.set(cfg.x + Math.sin(t * 3 + i) * 0.15, topY - p * (topY + 0.6), cfg.z);
+      c.rotation.z = t * 5 + i;
+      c.rotation.x = Math.PI / 2 + Math.sin(t * 4 + i) * 0.4;
+      c.visible = p < 0.95;
+    });
+  });
+  return (
+    <group ref={group}>
+      {coins.map((_, i) => (
+        <mesh key={i} castShadow>
+          <cylinderGeometry args={[0.14, 0.14, 0.04, 12]} />
+          <meshStandardMaterial color="#ffd166" emissive="#b8860b" emissiveIntensity={0.25} metalness={0.6} roughness={0.3} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 export interface HouseSceneProps {
   floors: number;
   night: boolean;
   building: boolean;
   goalDone: boolean;
+  celebrating?: boolean;
 }
 
 /** Cảnh 3D: đảo cỏ + tòa nhà low-poly mái chóp + cư dân mèo. */
-export function HouseScene({ floors, night, building }: HouseSceneProps) {
+export function HouseScene({ floors, night, building, celebrating }: HouseSceneProps) {
   const p = usePalette(night);
   const total = Math.max(1, floors);
   const floorH = 1.08;
@@ -377,6 +442,10 @@ export function HouseScene({ floors, night, building }: HouseSceneProps) {
       <Cat src="/identities/cat-knight.svg" position={[1.8, 0.5, 2.5]} scale={0.9} delay={3} />
       {/* mèo ngồi trên mái */}
       {!building && <Cat src="/identities/cat-farmer.svg" position={[0.4, 0.05 + total * floorH + 1.35, 1.15]} scale={0.8} delay={0.6} />}
+      {/* mèo đi dạo quanh nhà */}
+      <WalkingCat src="/identities/cat-office.svg" />
+      {/* mưa vàng ăn mừng */}
+      {celebrating && <CoinShower topY={houseH + 2.4} />}
     </Canvas>
   );
 }

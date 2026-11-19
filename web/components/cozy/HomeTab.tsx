@@ -9,6 +9,7 @@ import { contracts, isConfigured } from "@/lib/config";
 import { faucetDripAbi } from "@/lib/abis";
 import { TxFeedback, useTx } from "@/components/useTx";
 import { Icon } from "@/components/cozy/icons";
+import { sfx } from "@/lib/sound";
 import type { VaultData } from "@/lib/useVaultData";
 
 /** Nút nhận mUSDC miễn phí cho ví mới — gọi FaucetDrip (tự đặt mục tiêu đầu luôn). */
@@ -90,6 +91,7 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
   // Màn ăn mừng sau khi xây xong tầng (~3s)
   useEffect(() => {
     if (celebrateKey === 0) return;
+    sfx.fanfare();
     setShowParty(true);
     const t = setTimeout(() => setShowParty(false), 3200);
     return () => clearTimeout(t);
@@ -235,7 +237,13 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
 
       {/* countdown + CTA */}
       <div className="mx-auto mt-3 max-w-xs text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border-2 border-cocoa-700/40 bg-white/80 px-4 py-1.5 font-cozy text-sm font-bold text-cocoa-700">
+        <div
+          className={`inline-flex items-center gap-2 rounded-full border-2 px-4 py-1.5 font-cozy text-sm font-bold ${
+            countdown?.startsWith("00:")
+              ? "animate-pulse border-blush-500 bg-blush-400 text-white shadow-chunkySm"
+              : "border-cocoa-700/40 bg-white/80 text-cocoa-700"
+          }`}
+        >
           <Icon name="clock" size={15} /> Còn {countdown} để giữ chuỗi
         </div>
         <button className="btn-cozy mt-3 w-full text-lg" onClick={() => setSheetOpen(true)}>

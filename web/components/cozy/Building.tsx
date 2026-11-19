@@ -24,7 +24,7 @@ export function Building({ floors, night, building, celebrating, goalDone }: Bui
 
   return (
     <div className="relative mx-auto" style={{ width: 380, height }}>
-      <HouseScene floors={floors} night={night} building={building} goalDone={goalDone} />
+      <HouseScene floors={floors} night={night} building={building} goalDone={goalDone} celebrating={celebrating} />
 
       {/* biển Floor nổi trên cùng */}
       <div

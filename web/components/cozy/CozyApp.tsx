@@ -11,6 +11,7 @@ import { ToolsTab } from "@/components/cozy/ToolsTab";
 import { GroupTab } from "@/components/cozy/GroupTab";
 import { MeTab } from "@/components/cozy/MeTab";
 import { Icon, type IconName } from "@/components/cozy/icons";
+import { isMuted, setMuted, sfx, unlockAudio } from "@/lib/sound";
 import { IdentityAvatar } from "@/lib/identity";
 import { useVaultData, type VaultData } from "@/lib/useVaultData";
 import { useGemsData } from "@/lib/useGemsData";
@@ -44,6 +45,19 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
   const gemsData = useGemsData();
   const chainId = useChainId();
   const [tab, setTab] = useState<TabKey>("home");
+  const [muted, setMutedState] = useState(isMuted());
+
+  // Mở khoá AudioContext ở lần chạm đầu tiên (chính sách autoplay của trình duyệt)
+  useEffect(() => {
+    const unlock = () => unlockAudio();
+    window.addEventListener("pointerdown", unlock, { once: true });
+    return () => window.removeEventListener("pointerdown", unlock);
+  }, []);
+
+  function switchTab(t: TabKey) {
+    if (t !== tab) sfx.tab();
+    setTab(t);
+  }
   const night = theme === "night";
   const wrongChain = !demoData && chainId !== targetChainId;
 
@@ -110,11 +124,25 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
         </div>
         <div className="flex items-center gap-2">
           <button
-            className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-cocoa-700/50 bg-cream-100 text-lg shadow-chunkySm active:translate-y-0.5"
+            className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-cocoa-700/50 bg-cream-100 text-cocoa-600 shadow-chunkySm active:translate-y-0.5"
             onClick={() => onThemeChange(night ? "day" : "night")}
             title={night ? "Chuyển ban ngày" : "Chuyển ban đêm"}
           >
             <Icon name={night ? "sun" : "moon"} size={19} />
+          </button>
+          <button
+            className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-cocoa-700/50 bg-cream-100 text-cocoa-600 shadow-chunkySm active:translate-y-0.5"
+            onClick={() => {
+              const m = !muted;
+              setMuted(m);
+              setMutedState(m);
+              if (!m) sfx.click();
+            }}
+            title={muted ? "Bật âm thanh" : "Tắt âm thanh"}
+          >
+            <span className="relative">
+              <Icon name="volume" size={18} className={muted ? "opacity-40" : undefined} />
+            </span>
           </button>
           {demoData ? (
             <span className="rounded-full border-2 border-cocoa-700/50 bg-cream-100 px-3 py-1.5 font-cozy text-xs font-extrabold text-cocoa-600 shadow-chunkySm">
@@ -174,7 +202,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
               className={`flex w-14 flex-col items-center gap-0.5 rounded-xl py-1 transition ${
                 tab === t.key ? "bg-leaf-400/90 shadow-chunkySm" : "opacity-70 hover:opacity-100"
               }`}
-              onClick={() => setTab(t.key)}
+              onClick={() => switchTab(t.key)}
             >
               <Icon name={t.icon} size={21} className={tab === t.key ? "text-white" : "text-cocoa-600"} />
               <span className={`text-[10px] font-bold ${tab === t.key ? "text-white" : "text-cocoa-600"}`}>

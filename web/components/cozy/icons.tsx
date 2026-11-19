@@ -15,7 +15,7 @@ export type IconName =
   | "lifebuoy" | "piggy" | "droplet" | "sprout" | "check" | "percent"
   | "lock" | "circle" | "rocket" | "send" | "layout" | "key" | "gauge"
   | "grad" | "swap" | "eye" | "x" | "plus" | "minus" | "chevron"
-  | "stamp" | "hammer" | "inbox" | "wallet" | "refresh" | "party";
+  | "stamp" | "hammer" | "inbox" | "wallet" | "refresh" | "party" | "volume";
 
 const P: Record<IconName, ReactNode> = {
   home: (<><path d="M3.5 11.5 12 4l8.5 7.5" /><path d="M5.5 10v10h13V10" /><path d="M9.5 20v-5h5v5" /></>),
@@ -77,6 +77,7 @@ const P: Record<IconName, ReactNode> = {
   wallet: (<><rect x="3" y="6" width="18" height="14" rx="2.5" /><path d="M3 10h18" /><path d="M15.5 14.5h2" /></>),
   refresh: (<><path d="M20 5v5h-5" /><path d="M4 19v-5h5" /><path d="M19.5 10a7.5 7.5 0 0 0-13-3M4.5 14a7.5 7.5 0 0 0 13 3" /></>),
   party: (<><path d="M5 21 7.5 10.5 13.5 16.5z" /><path d="M7.5 10.5 12 6M14 5l.01.01M18 8l.01.01M17 3.5l.01.01M20.5 12l.01.01" /><path d="M14.5 14.5c2 .5 3.5 2 4 4" /></>),
+  volume: (<><path d="M4 9.5v5h3.5L13 19V5L7.5 9.5z" /><path d="M16.5 8.7a5 5 0 0 1 0 6.6" /><path d="M19 6a9 9 0 0 1 0 12" /></>),
 };
 
 export interface IconProps extends Omit<SVGProps<SVGSVGElement>, "name"> {
