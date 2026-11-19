@@ -29,7 +29,7 @@ export default function Home() {
       ) : demo ? (
         <CozyApp theme={theme} onThemeChange={setTheme} demoData={buildMockData()} onExitDemo={() => setDemo(false)} />
       ) : !isConnected ? (
-        <Landing night={night} onTryDemo={() => setDemo(true)} />
+        <Landing night={night} />
       ) : (
         <CozyApp theme={theme} onThemeChange={setTheme} />
       )}
@@ -37,7 +37,7 @@ export default function Home() {
   );
 }
 
-function Landing({ night, onTryDemo }: { night: boolean; onTryDemo: () => void }) {
+function Landing({ night }: { night: boolean }) {
   return (
     <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center justify-center px-6 py-10">
       <div className="w-full text-center md:text-left">
@@ -102,9 +102,6 @@ function Landing({ night, onTryDemo }: { night: boolean; onTryDemo: () => void }
 
         <div className="mt-5 flex flex-col items-center gap-3 md:flex-row">
           <ConnectButton />
-          <button className="btn-cream !py-2 text-sm" onClick={onTryDemo}>
-            Xem thử giao diện (không cần ví)
-          </button>
         </div>
         <p className="mt-3 text-center text-xs font-bold text-white/80 drop-shadow-[0_1px_0_rgba(70,56,39,0.5)] md:text-left">
           Avalanche Fuji Testnet · mUSDC demo

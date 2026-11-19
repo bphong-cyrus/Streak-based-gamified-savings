@@ -6,36 +6,31 @@ import { ConnectButton } from "@/components/ConnectButton";
 import { Sky } from "@/components/cozy/Sky";
 import { HomeTab } from "@/components/cozy/HomeTab";
 import { GoalsTab } from "@/components/cozy/GoalsTab";
-import { PlayTab } from "@/components/cozy/PlayTab";
-import { ToolsTab } from "@/components/cozy/ToolsTab";
-import { GroupTab } from "@/components/cozy/GroupTab";
+import { RewardsTab } from "@/components/cozy/RewardsTab";
 import { MeTab } from "@/components/cozy/MeTab";
+import { IdentityAvatar } from "@/lib/identity";
+import { useVaultData, type VaultData } from "@/lib/useVaultData";
+import { shortAddr } from "@/lib/format";
+import { targetChainId } from "@/lib/config";
 import { Icon, type IconName } from "@/components/cozy/icons";
 import { isMuted, setMuted, sfx, unlockAudio } from "@/lib/sound";
 import { Onboarding } from "@/components/cozy/Onboarding";
 import { setDemoMode } from "@/lib/demo";
-import { IdentityAvatar } from "@/lib/identity";
-import { useVaultData, type VaultData } from "@/lib/useVaultData";
-import { useGemsData } from "@/lib/useGemsData";
-import { shortAddr } from "@/lib/format";
-import { targetChainId } from "@/lib/config";
 import type { ThemeMode } from "@/components/cozy/useThemeLanding";
 
-type TabKey = "home" | "goals" | "group" | "play" | "tools" | "me";
+type TabKey = "home" | "goals" | "rewards" | "me";
 
 const TABS: Array<{ key: TabKey; icon: IconName; label: string }> = [
   { key: "home", icon: "home", label: "Nhà" },
   { key: "goals", icon: "target", label: "Mục tiêu" },
-  { key: "group", icon: "users", label: "Nhóm" },
-  { key: "play", icon: "gamepad", label: "Chơi" },
-  { key: "tools", icon: "wrench", label: "Tiện ích" },
-  { key: "me", icon: "cat", label: "Tôi" },
+  { key: "rewards", icon: "trophy", label: "Thưởng" },
+  { key: "me", icon: "cat", label: "Hồ sơ" },
 ];
 
 interface CozyAppProps {
   theme: ThemeMode;
   onThemeChange: (t: ThemeMode) => void;
-  /** Dữ liệu mẫu khi xem demo không cần ví. */
+  /** Dữ liệu mẫu khi xem demo không cần ví (?demo=1). */
   demoData?: VaultData;
   onExitDemo?: () => void;
 }
@@ -65,12 +60,14 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
     setDemoMode(!!demoData);
     return () => setDemoMode(false);
   }, [demoData]);
-  const gemsData = useGemsData({ enabled: !demoData });
+
   const chainId = useChainId();
   const [tab, setTab] = useState<TabKey>("home");
+  const night = theme === "night";
+  const wrongChain = !demoData && chainId !== targetChainId;
   const [muted, setMutedState] = useState(isMuted());
 
-  // Mở khoá AudioContext ở lần chạm đầu tiên (chính sách autoplay của trình duyệt)
+  // Mở khoá AudioContext ở lần tương tác đầu tiên (chính sách autoplay của trình duyệt)
   useEffect(() => {
     const unlock = () => unlockAudio();
     window.addEventListener("pointerdown", unlock, { once: true });
@@ -81,8 +78,6 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
     if (t !== tab) sfx.tab();
     setTab(t);
   }
-  const night = theme === "night";
-  const wrongChain = !demoData && chainId !== targetChainId;
 
   // animation xây tầng: buildKey tăng mỗi lượt gửi → bấm nhanh nhiều lần vẫn chạy đúng
   const [building, setBuilding] = useState(false);
@@ -163,12 +158,10 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
             aria-label={muted ? "Bật âm thanh" : "Tắt âm thanh"}
             aria-pressed={muted}
           >
-            <span className="relative">
-              <Icon name="volume" size={18} className={muted ? "opacity-40" : undefined} />
-            </span>
+            <Icon name="volume" size={18} className={muted ? "opacity-40" : undefined} />
           </button>
           {demoData ? (
-            <span className="rounded-full border-2 border-cocoa-700/50 bg-cream-100 px-3 py-1.5 font-cozy text-xs font-extrabold text-cocoa-600 shadow-chunkySm">
+            <span className="rounded-full border border-[#e3d5b8] bg-white/90 px-3 py-1.5 font-cozy text-xs font-extrabold text-cocoa-600 shadow-sm">
               Demo
             </span>
           ) : (
@@ -195,26 +188,13 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
             night={night}
             building={building}
             celebrateKey={celebrateKey}
-            gemsBalance={gemsData.gemsBalance}
             onDepositStart={() => setBuildKey((k) => k + 1)}
             isDemo={!!demoData}
           />
         )}
         {tab === "goals" && <GoalsTab data={data} />}
-        {tab === "group" && <GroupTab data={data} />}
-        {tab === "play" && <PlayTab data={data} missions={gemsData.missions} gemsBalance={gemsData.gemsBalance} />}
-        {tab === "tools" && <ToolsTab />}
-        {tab === "me" && (
-          <MeTab
-            data={data}
-            theme={theme}
-            onThemeChange={onThemeChange}
-            themes={gemsData.themes}
-            decors={gemsData.decors}
-            gemsBalance={gemsData.gemsBalance}
-            gemsAllowance={gemsData.gemsAllowance}
-          />
-        )}
+        {tab === "rewards" && <RewardsTab data={data} />}
+        {tab === "me" && <MeTab data={data} theme={theme} onThemeChange={onThemeChange} />}
       </main>
 
       {/* hướng dẫn lần đầu */}
@@ -226,7 +206,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
           {TABS.map((t) => (
             <button
               key={t.key}
-              className={`flex min-h-[44px] w-14 flex-col items-center justify-center gap-0.5 rounded-2xl py-1 transition ${
+              className={`flex min-h-[44px] w-16 flex-col items-center justify-center gap-0.5 rounded-2xl py-1 transition ${
                 tab === t.key ? "bg-gradient-to-b from-leaf-400 to-leaf-500 text-white shadow-md" : "opacity-70 hover:opacity-100"
               }`}
               onClick={() => switchTab(t.key)}

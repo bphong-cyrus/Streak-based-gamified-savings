@@ -1,248 +1,74 @@
-# Streak-based Gamified Savings
+# Cozy Save — Tiết kiệm mọc nhà
 
-Ứng dụng mobile web giúp sinh viên tạo thói quen tiết kiệm. Mỗi người đặt mục tiêu gửi theo tuần, theo dõi chuỗi tuần hoàn thành (**streak**) và nhận một phần ngân sách thưởng theo trọng số streak. Vault chứa token gửi của nhiều người và ghi riêng số dư gốc theo từng ví. Người dùng có thể rút số dư gốc của mình bất kỳ lúc nào.
+**Streak-based gamified savings trên Avalanche**: gửi đủ mục tiêu mỗi kỳ → streak tăng, phần thưởng lãi tăng, tòa nhà 3D của bạn mọc thêm một tầng. Bỏ kỳ → streak về 0. Tiền gốc luôn của bạn, rút anytime — mọi thứ ghi on-chain, đối chiếu được trên Snowtrace.
 
-**Bản nộp** chạy trên Avalanche Fuji C-Chain với token `mUSDC` và nguồn yield mô phỏng được nạp sẵn. Mọi thay đổi về tiền gốc, streak, phân bổ và nhận thưởng đều phát sinh từ giao dịch on-chain. README mô tả đặc tả triển khai cho team. Các lệnh chạy dự án áp dụng sau khi hai bạn IT tạo các file và script tương ứng.
+## Bài toán
 
-## 0. Trạng thái triển khai của IT1 (cập nhật 2026-11-18)
+Ngườ trẻ khó giữ thói quen gửi tiền đều: thiếu động lực, dễ bỏ cuộc sau vài tuần. Cozy Save game hoá kỷ luật tài chính bằng streak + tòa nhà 3D lớn lên cùng thói quen tốt, và biến phần thưởng thành lãi thật chia từ nguồn yield.
 
-### Cập nhật 2026-11-19 — lô 3: 80 tính năng mới + sửa lỗi cốt lõi
+## Kiến trúc — 8 core contract
 
-- **27 contract mới** (Tính năng 51–130) ở `contracts/src/`: xã hội (`FreezeGift`, `SavingCircle`, `MentorHub`, `CelebrationPool`, `Web3Mail`, `GuildWars`), tài chính (`PrizeLinkedSavings`, `SavingsBond`, `PaycheckSplitter`, `TermLock`, `VaultCredit`), game hoá (`PredictionBox`, `DailyCheckIn`, `PetCompanion`, `KingOfTheHill`, `StampsCollection`), an toàn (`TimeCapsule`, `GuardianRecovery`, `EmergencyHatch`, `SpendingLimit`), quản trị (`GemStaking`, `TreasuryDividend`, `FeeRebate`, `CharityPot`), UX (`GoalTemplates`, `FaucetDrip`, `SavingsJournal`). Danh sách đầy đủ ở `contracts/FEATURES3.md`.
-- **136 test Foundry pass** (thêm 29 test trong `test/Extensions3.t.sol`).
-- **Sửa lỗi spec**: `BatchHelper.batchDepositWithTarget` giờ thực sự đặt mục tiêu (cơ chế operator mới `setWeeklyTargetFor`); fix lỗi kép của `frozenUntilEpoch` ở kỳ 0; `SavingCircle` tính phí đóng muộn đúng vòng; `KingOfTheHill` chỉ thưởng khi lật đổ thật; `GuildWars.sync()` không revert khi chưa có kỳ mới.
-- **Frontend nối backend**: vòng quay may mắn quay thật on-chain (`LuckyWheel`), tab Nhóm có tạo/tham gia nhóm bằng mã mờ (`StreakGroups`) + nút tặng Streak Freeze (`FreezeGift`), điểm danh hằng ngày nhận Gems (`DailyCheckIn`), faucet cho ví mới (`FaucetDrip`). Biến môi trường mới trong `web/.env.example`.
-- Deploy lô 3: `forge script script/DeployExtensions.s.sol:DeployExtensions --rpc-url ... --broadcast` (đọc/gộp `deployments/<chainId>.json`, tự cấp quyền operator + minter).
+| Contract | Vai trò | Địa chỉ Fuji (43113) |
+|---|---|---|
+| `MockUSDC` | Tiền tệ demo (6 decimals) | `0x1c0684ad8e5e6B8C1551B9197ACD6Ea821870Efe` |
+| `StreakVault` | **Trái tim**: deposit/withdraw, target, streak, freeze kỳ | `0x898676aB9838a23258C98f68D454D0aeFCA44E1E` |
+| `MockYieldSource` | Nguồn lãi (`fundEpoch`/`release`) | `0xB4A5Fe5620F6F8D5609483819806e7118Add1517` |
+| `YieldDistributor` | Chia thưởng theo gốc + streak, `finalizeEpoch`, `claimYield` | `0xC8Dc7Bf74e7dF17625698B7F41F37287F9e4c98F` |
+| `DailyCheckIn` | Điểm danh ngày — thưởng mUSDC từ pool | `0xF115668e510356E3c3b5191f6707Ab7C912f00C8` |
+| `SavingsGoal` | Mục tiêu gốc + hạn kỳ, ghi nhận đạt on-chain | `0x0aAC7c26418d98F036ab55224b4083D0A516557c` |
+| `StreakNFT` | Huy hiệu ERC-1155 theo mốc streak 3 / 7 / 30 tuần | `0xc812eD731d58a893e45336c930a0eF6C283c4c8A` |
+| `FaucetDrip` | Onboard ví mới: 5 mUSDC thẳng vào vault + target đầu | `0xFc65B124A127C7cD2176f8CaEf7b6A3Eee6543DA` |
 
-### Contract (hoàn tất)
+Vòng đờ một kỳ: đặt mục tiêu tuần → gửi đủ trước hạn chót → kỳ được **finalize** (hành động công khai, ai cũng gọi được) → ngân sách yield chia cho ví giữ streak → user **claim** lãi. Song song: điểm danh mỗi ngày nhận mUSDC, đủ mốc streak mint huy hiệu NFT, cam kết mục tiêu lớn bằng `SavingsGoal`.
 
-- **49 contract** ở `contracts/src/`: 4 contract lõi (vault/distributor/mock) + 42 contract mở rộng (nhóm, NFT, lucky wheel, challenges, boost yield, v.v. của teammate) + **3 contract vòng lặp tiền tệ trong game do IT1 bổ sung**:
-  - `Gems.sol` — ERC-20 "Cozy Gems" (kiểu Duolingo Gems), mint qua `MINTER_ROLE`.
-  - `Missions.sol` — nhiệm vụ kiểm chứng on-chain qua StreakVault, thưởng Gems: gửi đủ mục tiêu tuần này (lặp mỗi kỳ), streak đạt mốc 4/8 tuần, gửi 10 lần, gốc ≥ 100 mUSDC.
-  - `GemShop.sol` — cửa hàng tiêu Gems: mở khóa theme tòa nhà (Modern/Fantasy/Japanese/AC-inspired) và đồ trang trí; tiền về treasury.
-- **109 test Foundry pass** (`forge test`), gồm 16 test mới cho vòng Gems → Missions → Shop (quyền mint, từng loại nhiệm vụ, nhận lặp theo kỳ, chống claim trùng, mua theme/decor, thiếu Gems).
-- Đã **deploy toàn bộ 16 contract chính lên Fuji** bằng `script/DeployAll.s.sol` (Demo mode: `epochDuration = 180s`), seed ngân sách kỳ 0/1, cấu hình sẵn 5 nhiệm vụ + 4 theme + 6 decor, nạp prize pool LuckyWheel 2 mUSDC. Địa chỉ đầy đủ trong `contracts/deployments/43113.json`:
+## Chạy local (3 lệnh)
 
-| Hợp đồng | Địa chỉ |
-| --- | --- |
-| `token` | `0xAd4a6c0a6f3C9c14AE5f353C940C42008123B3Cd` |
-| `vault` | `0xFcCf1d7da4287d63CD2d04d43Fe2abb9Dd353b5E` |
-| `yieldSource` | `0x3fC3f9Eeb39DE710A611aA12D51229323f27bE16` |
-| `distributor` | `0xb568D1BC56A37E3a7406B6507caF358930F1d53c` |
-| `treasury` | `0x51EE4c07666cd1aA84fD8A7d037B4317919FCf4B` |
-| `autoSaver` | `0xBa6bb42646f45Cb73FD93d006228a2Ad6d38E6DD` |
-| `groups` | `0x71aD017AFe8b76c8b5B06311c8bB6B79a2Ef6d61` |
-| `nft` | `0x2D0176948c9b79ed6c632e07CC70104f7ce7f41D` |
-| `challenges` | `0x69c424Db215DcC4043D1DD8485d096e30c17947e` |
-| `wheel` | `0x689803a89e7765f4601A5ca3FCE7D0F271C038b8` |
-| `goal` | `0xFab4f248c7C1Fb80CCc6855549E76cdc8de66f69` |
-| `leaderboard` | `0x01F0a28ce3dD9fc94A9F7819BdfF80476F170c99` |
-| `reminders` | `0x1B5014665555aeA502AcA97C5E4Fd63aC30D7BA9` |
-| `gems` | `0x14f5BfE294dA30Bcba58EcBed4405e878641f701` |
-| `missions` | `0xB977Db7d959680F48f14efC24222FE5523b3cA0e` |
-| `gemShop` | `0x742a8ED5d26Ac9C3f77eF8c496168555495862B7` |
-
-- Deployer: `0xBc4c717B826c9E18682D1A0A02D9Dc83EAC69440` · `startAt = 1795005223` · chi tiết trong `contracts/deployments/43113.json`. ABI bàn giao ở `contracts/abi/abis.ts` (51 contract, chain 43113 và 31337) — web đồng bộ tại `web/lib/abis.ts`.
-- Seed demo đã nạp: ngân sách kỳ 0 = 2 mUSDC, kỳ 1 = 3 mUSDC; LuckyWheel có 2 mUSDC giải (50%/30%/20% trúng 0.1/0.3/0.5 mUSDC). Vòng lặp lõi (đặt mục tiêu → gửi → chốt kỳ → nhận thưởng → rút gốc) đã chạy thật trên Fuji ở bản deploy trước và được 109 test bao phủ ở bản hiện tại; cấu hình nhiệm vụ/shop/wheel của bản mới đã kiểm tra đọc lại on-chain. Mọi giao dịch đối chiếu được trên [Snowtrace](https://testnet.snowtrace.io/). Verify source trên Snowtrace còn treo do giới hạn API key, có thể submit lại sau.
-- Ví demo Bình/Chi: cần xin test AVAX ở faucet, sau đó deployer chạy `Seed.s.sol` với `DEMO_WALLETS=<địa chỉ>` để mint mUSDC.
-
-### Frontend `web/` (hoàn tất, IT1 phụ trách UI/UX)
-
-Mobile web Next.js 14 + Wagmi/Viem + Tailwind. Chạy local:
+Yêu cầu: [Foundry](https://getfoundry.sh) + Node 20+.
 
 ```bash
-cd web
-npm ci
-cp .env.example .env.local   # đã có sẵn .env.local trỏ đúng địa chỉ Fuji
-npm run dev                  # http://localhost:3000
-```
+# 1. Terminal 1 — chuỗi local (Anvil, kỳ 1 tuần)
+cd contracts && anvil
 
-Dashboard gồm: kết nối ví (injected) + tự chuyển mạng Fuji, streak hero với đếm ngược hạn kỳ, thanh tiến độ kỳ hiện tại, thẻ gốc/số dư/thưởng chờ nhận/ngân sách kỳ, form đặt mục tiêu — gửi (approve tự động khi thiếu allowance) — rút gốc, nút nhận thưởng và nút chốt kỳ (public), lịch sử 8 kỳ gần nhất kèm trạng thái đạt/thiếu và thưởng từng kỳ. Mọi giao dịch hiện trạng thái chờ ký/chờ xác nhận/lỗi kèm link Snowtrace. `npm run build` pass.
-
-## 1. Phạm vi đã chốt
-
-| Tính năng | Bản nộp | Tiêu chí nghiệm thu |
-| --- | --- | --- |
-| Mục tiêu tiết kiệm | Đặt số tiền mục tiêu mỗi tuần. Cho phép đổi mục tiêu cho kỳ tiếp theo. | Ví đặt mục tiêu 5 mUSDC, gửi 2 rồi 3 mUSDC trong cùng kỳ và dashboard báo đã đạt. |
-| Gửi và rút | Gửi qua vault sau khi cấp allowance. Rút một phần hoặc toàn bộ gốc về chính ví gửi. | Rút được khi kỳ đang mở, đang chờ chốt hoặc streak đã về 0. Một ví chỉ rút được gốc của mình. |
-| Streak on-chain | Đủ mục tiêu lúc chốt kỳ thì tăng 1. Thiếu mục tiêu hoặc bỏ kỳ thì về 0. | Kết quả đọc được từ contract và có lịch sử theo từng kỳ. |
-| Chia và nhận yield | Mock source cấp ngân sách theo kỳ. Distributor chia theo streak và ghi số có thể nhận của từng ví. | Kỳ có trọng số `2:1:0` và ngân sách 3 mUSDC cho kết quả `2:1:0 mUSDC`. Claim chuyển token về đúng ví. |
-| Dashboard | Hiện gốc, tiến độ kỳ, hạn chót, streak, lịch sử kỳ, thưởng có thể nhận và thưởng đã nhận. | Mỗi thao tác hiển thị trạng thái ký ví, chờ xác nhận, thành công hoặc lỗi. |
-
-**Chọn tối đa một tính năng cộng điểm sau khi luồng chính chạy ổn.** Nếu muốn giữ điểm khác biệt từ đề xuất BA, ưu tiên **Friend Groups**. Dùng mã mời, hiển thị trạng thái đạt mục tiêu của các thành viên và tính streak nhóm bằng số kỳ liên tiếp tất cả thành viên đạt mục tiêu. Thành viên mới được tính từ kỳ tiếp theo. Quyền truy cập nhóm và cách hiển thị tên ví thuộc lớp ứng dụng. Các lựa chọn cộng điểm khác là một adapter Aave hoặc BENQI trên mainnet fork, NFT milestone, hoặc nhắc gửi qua Telegram.
-
-| Ý tưởng BA | Hướng phát triển sau MVP |
-| --- | --- |
-| Base interest + bonus interest | Khi có nguồn yield thật, thiết kế phần base theo mức đóng góp vốn và phần bonus theo streak. Chốt tỷ lệ và nguồn trả trước khi triển khai. |
-| Auto-saving, nhiệm vụ, freeze/revive, lucky wheel | Auto-saving cần cơ chế ủy quyền và hủy lịch. Freeze/revive cần định nghĩa ảnh hưởng lên streak và điều kiện nhận thưởng. Nhiệm vụ và lucky wheel cần ngân sách thưởng riêng theo luật được công bố. |
-| Sponsored challenges, yield optimization | Thử ngân sách tài trợ cố định cho thử thách trước. Tích hợp một lending adapter trên fork rồi mới xem xét phân bổ giữa nhiều giao thức. |
-| Doanh thu | BA dùng tài trợ thử thách làm giả thuyết chính. Hoa hồng giới thiệu, phí theo yield và phí theo TVL là giả thuyết để kiểm chứng với đối tác. Luồng Fuji gồm gửi, rút và claim với phí gas testnet. |
-
-## 2. Luật tính tiền và streak
-
-- **Epoch** là một kỳ tiết kiệm chung. Cấu hình chuẩn là `7 days`. Bản Fuji dùng trong buổi demo có thể triển khai riêng với kỳ `180 seconds` và gắn nhãn **Demo mode**. `startAt` và `epochDuration` cố định sau khi deploy. Với thời điểm `t >= startAt`, kỳ hiện tại là `(t - startAt) / epochDuration` lấy phần nguyên. Mọi kỳ dùng khoảng `[start, end)` theo `block.timestamp`. Trước `startAt`, giao diện hiển thị trạng thái chờ mở và contract từ chối đặt mục tiêu hoặc gửi tiền.
-- **Mục tiêu** phải lớn hơn 0. Lần đặt đầu tiên có hiệu lực trong kỳ đang mở. Các lần đổi sau áp dụng từ kỳ kế tiếp. Nếu đổi nhiều lần trong cùng kỳ, lần cuối quyết định mục tiêu kỳ kế tiếp. Lưu lịch sử mức mục tiêu theo kỳ có hiệu lực để kỳ chốt muộn vẫn dùng đúng mục tiêu cũ.
-- **Tiến độ kỳ** bằng `max(0, tổng gửi qua vault − tổng rút gốc qua vault trong kỳ)`. Cộng được nhiều lần gửi. Ví dụ gửi 5 rồi rút 1 trong cùng kỳ thì tiến độ còn 4, kể cả khi khoản rút đến từ số dư cũ. Luật này ngăn dùng một khoản tiền để gửi, rút rồi gửi lại cho đủ mục tiêu. Claim thưởng và chuyển ERC-20 trực tiếp vào địa chỉ vault nằm ngoài tiến độ.
-- **Chốt kỳ** dựa trên mục tiêu và giao dịch đã ghi cho đúng kỳ. Đạt mục tiêu thì `streak = streak_trước + 1` và `weight = streak`; thiếu mục tiêu thì cả hai về 0. Ví chưa kích hoạt mục tiêu trong kỳ có trọng số 0. Kỳ đã chốt giữ nguyên kết quả dù ví rút gốc hoặc mất streak ở kỳ sau.
-- **Quyền nhận thưởng** phát sinh khi kỳ được chốt. Thưởng đã ghi nhận có thể claim sau, kể cả khi ví rút hết gốc hoặc streak về 0. Dashboard tách `claimableYield` và `claimedYield` để thể hiện số chờ nhận và số đã về ví.
-
-Tính toán token bằng số nguyên theo đơn vị nhỏ nhất. Với `mUSDC` 6 chữ số thập phân, 5 mUSDC được ghi là `5_000_000`.
-
-```text
-budget = mockYieldCuaKy + rolloverTuKyTruoc
-reward[wallet] = floor(budget * weight[wallet] / totalWeight)
-rollover = budget - sum(reward)
-```
-
-Khi `totalWeight = 0`, chuyển toàn bộ `budget` sang kỳ sau. Nếu ngân sách kỳ bằng 0, streak vẫn được chốt bình thường. Ví dụ ngân sách 3 mUSDC và trọng số `2, 1, 0` cho thưởng lần lượt `2, 1, 0 mUSDC`. Dùng `Math.mulDiv` để tính theo đơn vị token và làm tròn xuống.
-
-## 3. Thiết kế contract và API cho frontend
-
-| Thành phần | Trách nhiệm | Hàm tối thiểu |
-| --- | --- | --- |
-| `MockUSDC` | ERC-20 thử nghiệm 6 decimals. Deployer mint token demo vào các ví và dùng một phần để cấp ngân sách thưởng. | ERC-20 chuẩn, `mint(to, amount)` có quyền minter. |
-| `StreakVault` | Giữ gốc, lưu mục tiêu theo kỳ, tiền gửi/rút từng kỳ, streak và kết quả từng ví. | `setWeeklyTarget(amount)`, `deposit(amount)`, `withdraw(amount)`, `getAccount(wallet)`, `getEpochStatus(wallet, epoch)`, `currentEpoch()`, `epochEnd(epoch)`. Hàm `settleEpoch(epoch)` chỉ gọi được từ distributor. |
-| `MockYieldSource` | Nhận token tài trợ theo kỳ qua `fundEpoch` trước thời điểm kỳ kết thúc. Chuyển ngân sách của kỳ sang distributor khi chốt. | `fundEpoch(epoch, amount)`, `release(epoch)` chỉ cho distributor và chỉ giải ngân một lần. |
-| `YieldDistributor` | Chốt lần lượt các kỳ đã kết thúc, lấy trọng số từ vault, ghi số thưởng, quản lý rollover và claim. | `nextEpochToFinalize()`, `finalizeEpoch(epoch)`, `claimYield()`, `claimableYield(wallet)`, `claimedYield(wallet)`, `rewardOf(wallet, epoch)`. |
-
-**Luồng chốt kỳ.** Bất kỳ ví nào cũng có thể gọi `finalizeEpoch(epoch)` khi đồng thời thỏa `epoch == nextEpochToFinalize` và `block.timestamp >= epochEnd(epoch)`. Distributor gọi vault chốt streak, nhận token từ mock source, ghi khoản thưởng theo từng ví và tăng con trỏ kỳ trong cùng một giao dịch. Giao dịch revert thì toàn bộ lần chốt rollback. Nếu bỏ qua nhiều kỳ, chốt lần lượt từ kỳ cũ nhất. Giao dịch gửi/rút luôn ghi vào kỳ theo timestamp của block, kể cả khi các kỳ cũ đang chờ chốt.
-
-**State và giới hạn demo.** Dùng danh sách tối đa 20 ví kích hoạt mục tiêu, ghi mỗi ví một lần lúc đặt mục tiêu đầu tiên. Kết quả mỗi kỳ xét trên ví đã kích hoạt tại kỳ đó. Lưu mục tiêu theo các mốc kỳ có hiệu lực, tra ngược mốc gần nhất bằng tìm kiếm nhị phân. Đo gas chốt kỳ với đủ 20 ví trước khi deploy. Vault ERC-20 tùy chỉnh phù hợp với số dư gốc riêng và thưởng theo streak. ERC-4626 là tùy chọn cần đánh giá nếu bổ sung share token sau này.
-
-**Bất biến khi code.** Vault giữ ít nhất số mUSDC bằng `totalPrincipal`. Distributor giữ ít nhất tổng `claimableYield` cộng `rollover` sau khi chốt. `withdraw` chỉ ghi giảm gốc của `msg.sender`, còn `claimYield` xóa khoản chờ nhận trước khi chuyển token. Dùng `SafeERC20`, Checks-Effects-Interactions và `ReentrancyGuard` cho các đường chuyển token. Khởi tạo liên kết distributor một lần trong vault và mock source. Gốc của người dùng chỉ đi ra qua `withdraw` do chính ví sở hữu gọi.
-
-**Events để bàn giao ABI.** `TargetScheduled`, `Deposited`, `Withdrawn`, `AccountEpochSettled`, `EpochFinalized`, `YieldClaimed`. Các event tài khoản ghi địa chỉ ví và các event theo kỳ ghi ID kỳ. IT contract bàn giao cả kiểu dữ liệu trả về của `getAccount` và `getEpochStatus`, gồm gốc, mục tiêu hiện tại, mục tiêu đang chờ, tổng gửi/rút của kỳ, `settled`, `qualified` và streak lúc chốt. UI đọc `rewardOf` cho lịch sử yield theo kỳ.
-
-## 4. Hướng dẫn thực hiện
-
-### A. Dựng repo và chạy local
-
-Stack đề xuất là **Solidity + Foundry + OpenZeppelin Contracts**, và **Next.js App Router + TypeScript + Wagmi/Viem**. Bản demo dùng ví trình duyệt qua injected connector. Embedded wallet có thể tích hợp sau khi luồng ký giao dịch đã ổn. Chuẩn bị Git, Foundry (`forge`, `cast`, `anvil`), Node.js ≥ 20.9 và npm.
-
-Cấu trúc repo cần tạo:
-
-```text
-contracts/
-  src/MockUSDC.sol
-  src/StreakVault.sol
-  src/MockYieldSource.sol
-  src/YieldDistributor.sol
-  script/Deploy.s.sol
-  test/
-web/
-  app/
-  lib/contracts/
-  .env.example
-README.md
-```
-
-Chạy ở repo mới để tạo khung:
-
-```bash
-git init
-forge init contracts --no-git
+# 2. Terminal 2 — deploy + seed
 cd contracts
-forge install OpenZeppelin/openzeppelin-contracts --no-git
-cd ..
-npx create-next-app@latest web --ts --tailwind --app --use-npm --yes
-cd web
-npm install wagmi viem @tanstack/react-query
+forge script script/Deploy.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
+DEMO_WALLETS=0x70997970C51812dc3A010C7d01b50e0d17dc79C8 forge script script/Seed.s.sol --rpc-url http://127.0.0.1:8545 --broadcast
+
+# 3. Terminal 3 — frontend
+cd web && npm i && npm run dev   # mở http://localhost:3000
 ```
 
-Thống nhất version dependency khi tạo repo, commit `package-lock.json` và ghim phiên bản OpenZeppelin đã kiểm thử. Sau khi viết contract, chạy `forge test -vvv` và `forge test --gas-report` trong `contracts/`. Dùng `anvil` ở terminal riêng để deploy local, với RPC `http://127.0.0.1:8545` và chain ID `31337`. Test thời gian bằng `vm.warp` trong Foundry hoặc RPC của Anvil khi diễn tập local.
+Địa chỉ local được ghi vào `contracts/deployments/31337.json` — frontend tự đọc. Với Fuji, các địa chỉ ở bảng trên được hardcode làm fallback trong `web/lib/config.ts` (vẫn có thể override bằng `.env.local`, file này đã nằm trong `.gitignore`).
 
-### B. Deploy Fuji
-
-1. Thêm mạng **Avalanche Fuji C-Chain**, chain ID **43113**, RPC `https://api.avax-test.network/ext/bc/C/rpc`. Chuẩn bị test AVAX cho deployer và ba ví demo qua Avalanche Builder Hub. Explorer `https://testnet.snowtrace.io/` dùng để mở giao dịch từ dashboard.
-2. Viết `Deploy.s.sol:Deploy` để đọc `EPOCH_SECONDS` và `START_DELAY_SECONDS`, tính `startAt`, deploy token → vault → mock source → distributor, rồi đăng ký distributor vào vault và mock source. Script dùng `vm.startBroadcast()` và in địa chỉ contract. Lưu địa chỉ và ABI theo từng chain. Đặt `EPOCH_SECONDS=604800` cho bản tuần hoặc `180` cho buổi demo.
-3. Dùng các lệnh sau từ thư mục `contracts/` sau khi script đã có. Nhập khóa của ví testnet vào keystore cục bộ. Điền `DEPLOYER_ADDRESS` bằng địa chỉ công khai của cùng ví trước khi chạy. Chạy thử bằng cách bỏ cờ `--broadcast`, rồi chạy lại với cờ này khi mô phỏng thành công.
+## Test & bảo mật
 
 ```bash
-cast wallet import fuji-deployer --interactive
-export FUJI_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
-export EPOCH_SECONDS=180
-export START_DELAY_SECONDS=180
-forge script script/Deploy.s.sol:Deploy \
-  --rpc-url "$FUJI_RPC_URL" \
-  --account fuji-deployer \
-  --sender "$DEPLOYER_ADDRESS" \
-  --broadcast
+cd contracts && forge test     # 42 test: vault, distributor, faucet, check-in, goal, NFT
 ```
 
-4. Mint đủ mUSDC cho các ví demo. Deployer gọi `approve` cho mock source, sau đó `fundEpoch(0, 2_000_000)` và `fundEpoch(1, 3_000_000)` trước hạn của từng kỳ. Kiểm tra ba ví đã có test AVAX và dashboard đang dùng đúng bộ địa chỉ Fuji.
+- Báo cáo audit: [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) (Slither 0 High/Medium, PoC PRNG trên fork, checklist pre-mainnet).
+- Hồ sơ thiết kế: [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) (Design Thinking, WCAG 2.2 AA, Nielsen heuristics).
 
-### C. Nối frontend
+## Cấu trúc repo
 
-IT contract bàn giao ABI JSON và địa chỉ deploy cho IT frontend. Frontend có thể dựng UI với adapter dữ liệu mẫu trước, sau đó nối Wagmi bằng cùng kiểu dữ liệu.
-
-```dotenv
-NEXT_PUBLIC_CHAIN_ID=43113
-NEXT_PUBLIC_RPC_URL=https://api.avax-test.network/ext/bc/C/rpc
-NEXT_PUBLIC_TOKEN_ADDRESS=
-NEXT_PUBLIC_VAULT_ADDRESS=
-NEXT_PUBLIC_DISTRIBUTOR_ADDRESS=
+```
+contracts/
+  src/            # 8 core contract + interfaces/
+  script/         # Deploy.s.sol, Seed.s.sol, export-abi.mjs
+  test/           # 4 suite (BaseTest + StreakVault + YieldDistributor + Core8)
+  deployments/    # địa chỉ theo chainId
+web/
+  app/            # landing + shell (Next.js 14, App Router)
+  components/cozy # 4 màn core: Dashboard, Goals, Rewards, Hồ sơ + nhà 3D (Three.js)
+  lib/            # abis.ts (8 ABI, ~57KB), config, hooks
+  public/identities/ # bộ nhân vật SVG
+docs/             # SECURITY_AUDIT.md, DESIGN_SYSTEM.md
 ```
 
-Điền địa chỉ vào `web/.env.local`, giữ bộ tên biến trong `web/.env.example`, chạy `npm ci` rồi `npm run dev` tại `web/`. Đặt khóa ví trong keystore, bên ngoài biến cấu hình public của Next.js.
+Frontend: Next.js 14 + wagmi/viem + React Three Fiber. Nhà 3D isometric mọc tầng theo streak, âm thanh WebAudio tổng hợp, skeleton loading, aria-live cho giao dịch, theme ngày/đêm.
 
-1. **Kết nối ví và đọc chain.** Cho chuyển mạng khi sai chain. Đọc mục tiêu, số dư gốc, số dư token, allowance, kỳ hiện tại, hạn chốt và số thưởng. Dùng `parseUnits` / `formatUnits` và `bigint` cho số tiền.
-2. **Gửi, rút và claim.** Nếu allowance thiếu, gọi `approve(vault, amount)` và chờ receipt thành công trước khi gọi `deposit`. Với mỗi giao dịch, đợi receipt rồi đọc lại dữ liệu. Hiện nguyên nhân lỗi phù hợp như thiếu test AVAX, thiếu mUSDC, số rút vượt gốc hoặc người dùng từ chối ký.
-3. **Lịch streak.** Hiển thị kỳ đang mở, kỳ đủ/thiếu mục tiêu đã chốt và kỳ đã hết hạn đang chờ chốt. Dùng giờ của block để xác định kỳ và giữ đồng hồ đếm ngược ở mức hiển thị. Thêm nút **Chốt kỳ** khi `nextEpochToFinalize` đã hết hạn và nút **Nhận thưởng** khi số chờ nhận dương. Lịch sử ghi số được phân bổ từng kỳ, trạng thái claim lấy từ khoản chờ nhận và tổng đã claim.
+## Ghi chú
 
-## 5. Phân công 3 người
-
-| Người | Trách nhiệm chính | Bàn giao |
-| --- | --- | --- |
-| **BA** | Xác nhận luật mục tiêu, epoch, reset, rút gốc, chia thưởng và backlog từ ý tưởng ban đầu. Viết tiêu chí nghiệm thu, chuẩn bị ba ví thử và kịch bản pitch. | Bảng input/kết quả mong đợi theo kỳ, checklist nghiệm thu, kịch bản demo và pitch. |
-| **IT 1 — Contract** | Viết Foundry contracts, kiểm thử giới hạn kỳ và dòng tiền. Viết script deploy, nạp ngân sách và kiểm tra gas chốt kỳ. | Interface và ABI sơ bộ ngay ngày đầu, sau đó ABI đã build, địa chỉ Fuji, hash deploy và hướng dẫn seed demo. |
-| **IT 2 — Frontend** | Dựng mobile web, cấu hình ví, đọc contract, nối giao dịch và hiện lịch streak. Chuẩn bị web demo và dẫn link explorer. | App dùng đúng ABI, địa chỉ và chain ID, dashboard có đầy đủ luồng gửi, rút, chốt và claim. |
-
-| Mốc tính từ ngày bắt đầu | Kết quả cần có |
-| --- | --- |
-| Ngày 1 | BA chốt bảng luật. Hai IT ký thống nhất tên hàm, kiểu dữ liệu, event và các lỗi cần hiển thị. Frontend bắt đầu với dữ liệu mẫu. |
-| Ngày 2–3 | Contract test được đặt mục tiêu, gửi, rút, streak tăng/reset, chia và claim. Frontend ráp luồng ví và dashboard trên Anvil. |
-| Ngày 4–5 | Deploy Fuji, nối ABI và địa chỉ thật, kiểm thử luồng ba ví. BA chạy checklist trên bản demo. |
-| Ngày 6–7 | Sửa lỗi, diễn tập và ghi hình dự phòng. Chỉ nhận thêm một tính năng cộng điểm khi checklist MVP đã đạt. |
-
-## 6. Kịch bản demo và tiêu chí nộp
-
-Dùng ba ví **An**, **Bình**, **Chi**. Chuẩn bị kỳ demo ngắn trên Fuji và diễn tập trước bằng Anvil. Nạp riêng 2 mUSDC mock yield cho kỳ 0 và 3 mUSDC cho kỳ 1.
-
-| Kỳ | Giao dịch | Streak cuối kỳ (An, Bình, Chi) | Thưởng kỳ (mUSDC) |
-| --- | --- | --- | --- |
-| 0 | An, Bình đặt mục tiêu 5, mỗi người gửi 5. Chi chưa tham gia. | `1, 1, 0` | `1, 1, 0` |
-| 1 | An gửi 5. Bình bỏ kỳ. Chi đặt mục tiêu 5 và gửi 5. | `2, 0, 1` | `2, 0, 1` |
-
-Sau khi chốt kỳ 1, cho Bình rút **5 mUSDC tiền gốc** và claim **1 mUSDC thưởng kỳ 0**. Cho An claim **3 mUSDC** từ hai kỳ. Hiện số dư trước/sau và giao dịch Fuji để đối chiếu.
-
-- [ ] Forge test đạt các ca gửi nhiều lần, đổi mục tiêu kỳ sau, giao dịch đúng ranh giới kỳ, gửi rồi rút để kiểm tra tiến độ ròng, bỏ nhiều kỳ, kích hoạt mục tiêu muộn và rút trong lúc kỳ chờ chốt.
-- [ ] Kiểm thử chốt sai kỳ, chốt trùng, claim trùng, chốt khi ngân sách bằng 0, rollover khi tổng trọng số bằng 0 và phần dư làm tròn. Đối chiếu tổng tiền claimable và rollover với số dư distributor.
-- [ ] Kiểm thử 20 ví, kiểm tra gas chốt kỳ và thử một ví rút vượt gốc của chính mình. Đối chiếu `totalPrincipal` với số dư vault sau chuỗi gửi/rút.
-- [ ] UI đã chạy trên Fuji với dữ liệu thật, xử lý sai mạng và giao dịch thất bại. Có địa chỉ deploy, link giao dịch và clip demo dự phòng của một lượt chạy thực tế.
-
-## Tài liệu triển khai
-
-- [Avalanche Fuji C-Chain và hướng dẫn thêm mạng](https://build.avax.network/academy/blockchain/x402-payment-infrastructure/04-x402-on-avalanche/02-network-setup) · [Avalanche Builder Hub Console](https://build.avax.network/console)
-- [Cài Foundry](https://www.getfoundry.sh/introduction/installation) · [Anvil và local fork](https://www.getfoundry.sh/anvil) · [OpenZeppelin ERC-20](https://docs.openzeppelin.com/contracts/5.x/api/token/erc20)
-- [Cài Next.js](https://nextjs.org/docs/app/getting-started/installation) · [Chờ transaction receipt với Wagmi](https://wagmi.sh/react/api/hooks/useWaitForTransactionReceipt) · [Viem chains](https://viem.sh/docs/chains/introduction)
-
-## Kịch bản demo 3 phút (Final Demo Day)
-
-> Mục tiêu: đi đủ **ý chính → cảm xúc → bằng chứng on-chain** trong 3 phút. Chuẩn bị sẵn 2 ví (An "ngườ chăm", Bình "ngườ hay quên") đã nạp AVAX faucet + mUSDC.
-
-**0:00–0:30 — Vấn đề & giải pháp.** "Ngườ trẻ khó giữ thói quen gửi tiền đều. Cozy Save game hoá bằng streak: gửi đủ mỗi kỳ → streak tăng, thưởng lãi tăng, nhà 3D mọc tầng. Bỏ kỳ → streak về 0. Tiền gốc luôn của bạn, rút anytime." Mở landing → nhấn nút **Xem thử giao diện** để giám khảo thấy app ngay không cần ví.
-
-**0:30–1:30 — Vòng đờ streak trên Fuji.** Kết nối ví An:
-1. Tab **Mục tiêu**: đặt mục tiêu 5 mUSDC/tuần — "thay đổi áp dụng từ kỳ sau, không thể sửa kỳ đang chạy".
-2. Tab **Nhà**: gửi 5 mUSDC → **âm thanh arpeggio, mưa vàng, tòa nhà nhảy tầng ngay trước mắt** (kỳ Fuji 3 phút).
-3. Tab **Chơi**: điểm danh, quay vòng quay on-chain, chờ chốt kỳ công khai → claim thưởng — mỗi bước bấm **Xem giao dịch trên Snowtrace**.
-4. Bình bỏ kỳ → tab Nhà: nút **đóng băng kỳ** (tính năng 54) giữ chuỗi an toàn — "thất bại có phí, nhưng rẻ hơn mất streak".
-
-**1:30–2:30 — Hệ sinh thái mở rộng.** Lướt nhanh: **Bảng vàng** (điểm = streak × tổng gửi, đọc thẳng từ vault), hụi điện tử, xổ số tiết kiệm, ngài vàng, bang hội chiến, pet, sưu tập tem — "25+ hợp đồng, tất cả đối chiếu được on-chain, không server nào giữ tiền ngườ dùng".
-
-**2:30–3:00 — Vì sao Avalanche.** Finalize: chốt kỳ là giao dịch công khai ai cũng gọi được; phí gas ~ không đáng kể trên Fuji; kiến trúc mở rộng sang L1 của riêng mình khi cần. Kết: "Cozy Save biến kỷ luật tài chính thành một trò chơi ngườ Việt chơi mỗi tuần."
-
-**Gợi ý trả lờ giám khảo:**
-- *An toàn tiền ngườ dùng?* Vault tách biệt, gốc rút được anytime, mọi thao tác event trên Snowtrace; không custodial.
-- *Khác gì hũ heo điện tử web2?* Streak + yield thật từ nguồn lãi (mock lending → Aave v3 khi mainnet), 25+ cơ chế on-chain không thể làm web2.
-- *Scale thế nào?* Kỳ ngắn 3 phút chỉ để demo; production 1 tuần/kỳ. Nhóm nhóm qua StreakGroups, bang hội qua GuildWars đã có sẵn.
+- Testnet demo: kỳ 180 giây trên Fuji deployment hiện tại (giá trị `epochSeconds` trong `deployments/43113.json`); production nên 1 tuần/kỳ.
+- `?demo=1` xem giao diện với dữ liệu mẫu không cần ví (ẩn khỏi UI mặc định).
+- Mainnet roadmap: VRF cho mọi cơ chế ngẫu nhiên, audit độc lập cấp 2, timelock admin — chi tiết trong báo cáo bảo mật.

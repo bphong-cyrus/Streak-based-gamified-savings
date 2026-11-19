@@ -14,6 +14,9 @@ export interface TxState {
   error: string | null;
   /** Thông báo mô phỏng khi đang ở chế độ demo (không phải lỗi). */
   info?: string | null;
+  /** Vị trí bước hiện tại / tổng số bước (1-based) cho tx stepper. */
+  stepIndex?: number;
+  stepTotal?: number;
 }
 
 export interface TxLogEntry {
@@ -22,7 +25,7 @@ export interface TxLogEntry {
   at: number;
 }
 
-/** Nhật ký giao dịch thành công gần đây — lưu localStorage, hiển thị ở tab Tôi. */
+/** Nhật ký giao dịch thành công gần đây — lưu localStorage, hiển thị ở tab Hồ sơ. */
 export function readTxLog(): TxLogEntry[] {
   if (typeof window === "undefined") return [];
   try {
@@ -38,7 +41,7 @@ function pushTxLog(entry: TxLogEntry) {
   window.dispatchEvent(new Event("cozy-txlog"));
 }
 
-/** Gói writeContractAsync + chờ receipt, trả về trạng thái để hiển thị. Tự chuyển chain nếu ví đang sai mạng. */
+/** Gói writeContractAsync + chờ receipt, trả về trạng thái stepper để hiển thị. Tự chuyển chain nếu ví đang sai mạng. */
 export function useTx() {
   const { writeContractAsync } = useWriteContract();
   const { switchChainAsync } = useSwitchChain();
@@ -49,18 +52,17 @@ export function useTx() {
     async (label: string, calls: Array<{ label: string; call: Parameters<typeof writeContractAsync>[0] }>) => {
       setState({ step: null, hash: null, error: null });
       if (isDemoMode()) {
-        // Chế độ demo: không ví nên không ký được — báo thân thiện thay vì lỗi cryptic
         setState({ step: null, hash: null, error: null, info: "Chế độ demo — giao dịch chỉ mô phỏng. Kết nối ví để thực hiện thật." });
         return false;
       }
       try {
-        // Ép đúng mạng trước khi gửi — tránh lỗi "Unsupported Network" của MetaMask
         if (currentChainId !== targetChainId) {
           setState((s) => ({ ...s, step: "Đang chuyển sang Avalanche Fuji…" }));
           await switchChainAsync({ chainId: targetChainId, ...fuji });
         }
-        for (const c of calls) {
-          setState((s) => ({ ...s, step: c.label }));
+        for (let i = 0; i < calls.length; i++) {
+          const c = calls[i];
+          setState((s) => ({ ...s, step: c.label, stepIndex: i + 1, stepTotal: calls.length }));
           const hash = await writeContractAsync(c.call);
           setState((s) => ({ ...s, hash }));
           await waitForTransactionReceipt(wagmiConfig, {
@@ -76,6 +78,7 @@ export function useTx() {
         sfx.success();
         return true;
       } catch (e) {
+        sfx.error();
         const err = e as BaseError;
         const raw = err.message ?? "";
         const msg =
@@ -85,7 +88,6 @@ export function useTx() {
               ? "Kết nối RPC Fuji bị gián đoạn — thử lại sau vài giây (giao dịch có thể đã thực hiện, kiểm tra Snowtrace trước khi gửi lại)."
               : (err.shortMessage ?? err.message);
         setState({ step: null, hash: null, error: `${label}: ${msg}` });
-        sfx.error();
         return false;
       }
     },
@@ -95,10 +97,11 @@ export function useTx() {
   return { run, ...state };
 }
 
+/** Stepper trạng thái giao dịch: Approve (bước 1/n) -> ... -> Success kèm link Snowtrace. */
 export function TxFeedback({ state }: { state: TxState }) {
   if (state.info && !state.step && !state.error) {
     return (
-      <div role="status" aria-live="polite" className="mt-3 rounded-xl border-2 border-cocoa-700/30 bg-cream-200/70 px-3 py-2 text-sm font-semibold text-cocoa-600">
+      <div role="status" aria-live="polite" className="mt-3 rounded-xl border border-cocoa-700/20 bg-white/70 px-3 py-2 text-sm font-semibold text-cocoa-600">
         {state.info}
       </div>
     );
@@ -108,19 +111,28 @@ export function TxFeedback({ state }: { state: TxState }) {
     <div
       role="status"
       aria-live="polite"
-      className={`mt-3 rounded-xl border px-3 py-2 text-sm ${
-        state.error ? "border-red-500/40 bg-red-500/10 text-red-300" : "border-mint-500/40 bg-mint-500/10 text-mint-400"
+      className={`mt-3 rounded-xl border px-3 py-2.5 text-sm ${
+        state.error ? "border-red-500/40 bg-red-500/10 text-red-300" : "border-leaf-500/40 bg-leaf-500/10 text-cocoa-700"
       }`}
     >
       {state.error ?? (
-        <span className="flex items-center gap-2">
-          <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-mint-400 border-t-transparent" />
-          {state.step}…
-        </span>
+        <div className="flex items-center gap-2.5">
+          <span className="flex flex-col items-center gap-0.5">
+            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-leaf-500 border-t-transparent" />
+          </span>
+          <div>
+            {state.stepTotal && state.stepTotal > 1 ? (
+              <div className="font-cozy text-xs font-extrabold uppercase tracking-wide text-leaf-600">
+                Bước {state.stepIndex}/{state.stepTotal}
+              </div>
+            ) : null}
+            <div className="font-semibold">{state.step}…</div>
+          </div>
+        </div>
       )}
       {state.hash && !state.error && (
         <a
-          className="mt-1 block truncate text-xs underline opacity-80"
+          className="mt-1 block truncate text-xs font-bold underline opacity-80"
           href={explorerTx(state.hash)}
           target="_blank"
           rel="noreferrer"

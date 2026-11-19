@@ -6,24 +6,17 @@ import { fmt, shortAddr } from "@/lib/format";
 import { IdentityAvatar, identityOf, useIdentityIndex, pickIdentity, IDENTITIES } from "@/lib/identity";
 import type { ThemeMode } from "@/components/cozy/useThemeLanding";
 import type { VaultData } from "@/lib/useVaultData";
-import { ShopPanel } from "@/components/cozy/ShopTab";
 import { RecentTxPanel } from "@/components/cozy/RecentTxPanel";
-import { MeExtras } from "@/components/cozy/MeExtras";
 import { Icon } from "@/components/cozy/icons";
-import type { ShopItemView } from "@/lib/useGemsData";
 
 interface Props {
   data: VaultData;
   theme: ThemeMode;
   onThemeChange: (t: ThemeMode) => void;
-  themes: ShopItemView[];
-  decors: ShopItemView[];
-  gemsBalance: bigint;
-  gemsAllowance: bigint;
 }
 
-/** Tab Me: hồ sơ, chọn nhân vật, cửa hàng, bộ sưu tập & cài đặt. */
-export function MeTab({ data, theme, onThemeChange, themes, decors, gemsBalance, gemsAllowance }: Props) {
+/** Tab Hồ sơ: danh tính, giao dịch gần đây (Snowtrace), giao diện, địa chỉ contract. */
+export function MeTab({ data, theme, onThemeChange }: Props) {
   const { disconnect } = useDisconnect();
   const { address, tokenBalance, claimed, account } = data;
   const current = useIdentityIndex(address);
@@ -33,7 +26,7 @@ export function MeTab({ data, theme, onThemeChange, themes, decors, gemsBalance,
   }
 
   return (
-    <div className="space-y-3 px-4 pb-28 pt-2 md:columns-2 md:gap-3 md:[&>*]:mb-3 md:[&>*]:break-inside-avoid">
+    <div className="space-y-3 px-4 pb-28 pt-2">
       {/* hồ sơ */}
       <div className="card-cream p-4 text-center">
         <div className="mx-auto w-fit">
@@ -52,9 +45,14 @@ export function MeTab({ data, theme, onThemeChange, themes, decors, gemsBalance,
         </button>
       </div>
 
+      {/* giao dịch gần đây */}
+      <RecentTxPanel />
+
       {/* chọn identity */}
       <div className="card-cream p-4">
-        <h4 className="flex items-center gap-1.5 font-cozy font-bold"><Icon name="cat" size={18} className="text-cocoa-600" /> Chọn nhân vật của bạn</h4>
+        <h4 className="flex items-center gap-1.5 font-cozy font-bold">
+          <Icon name="cat" size={18} className="text-cocoa-600" /> Chọn nhân vật của bạn
+        </h4>
         <p className="text-xs font-semibold text-cocoa-500">
           Chạm vào nhân vật để chọn làm avatar — lựa chọn lưu trên trình duyệt của bạn.
         </p>
@@ -64,7 +62,7 @@ export function MeTab({ data, theme, onThemeChange, themes, decors, gemsBalance,
             return (
               <button
                 key={id.key}
-                className={`rounded-xl border-2 p-1.5 text-center transition active:translate-y-0.5 ${mine ? "border-leaf-500 bg-leaf-300/30 shadow-chunkySm" : "border-cream-300 bg-white/70 hover:border-lavender-400"}`}
+                className={`rounded-xl border-[1.5px] p-1.5 text-center transition active:scale-95 ${mine ? "border-leaf-500 bg-leaf-300/20" : "border-cream-300 bg-white/70 hover:border-lavender-400"}`}
                 onClick={() => select(i)}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -85,32 +83,31 @@ export function MeTab({ data, theme, onThemeChange, themes, decors, gemsBalance,
         </div>
       </div>
 
-      {/* nhật ký giao dịch gần đây */}
-      <RecentTxPanel />
-
-      {/* cửa hàng + bộ sưu tập */}
-      <ShopPanel themes={themes} decors={decors} gemsBalance={gemsBalance} gemsAllowance={gemsAllowance} hasWallet={!!address} />
-      <MeExtras data={data} />
-
       {/* giao diện day/night */}
       <div className="card-cream p-4">
-        <h4 className="flex items-center gap-1.5 font-cozy font-bold"><Icon name="sun" size={18} className="text-cocoa-600" /> Giao diện</h4>
+        <h4 className="flex items-center gap-1.5 font-cozy font-bold">
+          <Icon name="sun" size={18} className="text-cocoa-600" /> Giao diện
+        </h4>
         <div className="mt-2 grid grid-cols-2 gap-2">
           <button
-            className={`rounded-xl border-[3px] py-3 font-cozy font-bold transition ${
-              theme === "day" ? "border-cocoa-700/80 bg-leaf-400 text-white shadow-chunkySm" : "border-cream-300 bg-white text-cocoa-500"
+            className={`rounded-xl border-[1.5px] py-3 font-cozy font-bold transition ${
+              theme === "day" ? "border-leaf-500 bg-leaf-300/25 text-cocoa-700" : "border-cream-300 bg-white text-cocoa-500"
             }`}
             onClick={() => onThemeChange("day")}
           >
-            <span className="inline-flex items-center gap-1.5"><Icon name="sun" size={16} /> Ban ngày</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Icon name="sun" size={16} /> Ban ngày
+            </span>
           </button>
           <button
-            className={`rounded-xl border-[3px] py-3 font-cozy font-bold transition ${
-              theme === "night" ? "border-cocoa-700/80 bg-lavender-500 text-white shadow-chunkySm" : "border-cream-300 bg-white text-cocoa-500"
+            className={`rounded-xl border-[1.5px] py-3 font-cozy font-bold transition ${
+              theme === "night" ? "border-leaf-500 bg-leaf-300/25 text-cocoa-700" : "border-cream-300 bg-white text-cocoa-500"
             }`}
             onClick={() => onThemeChange("night")}
           >
-            <span className="inline-flex items-center gap-1.5"><Icon name="moon" size={16} /> Ban đêm</span>
+            <span className="inline-flex items-center gap-1.5">
+              <Icon name="moon" size={16} /> Ban đêm
+            </span>
           </button>
         </div>
         <p className="mt-2 text-xs font-semibold text-cocoa-500">
@@ -120,7 +117,9 @@ export function MeTab({ data, theme, onThemeChange, themes, decors, gemsBalance,
 
       {/* thông tin on-chain */}
       <div className="card-cream p-4">
-        <h4 className="flex items-center gap-1.5 font-cozy font-bold"><Icon name="bank" size={18} className="text-cocoa-600" /> Trên chuỗi (Fuji Testnet)</h4>
+        <h4 className="flex items-center gap-1.5 font-cozy font-bold">
+          <Icon name="bank" size={18} className="text-cocoa-600" /> Trên chuỗi (Fuji Testnet)
+        </h4>
         <dl className="mt-2 space-y-1.5 text-xs font-semibold text-cocoa-500">
           <div className="flex justify-between gap-2">
             <dt>Số dư mUSDC</dt>
@@ -130,18 +129,17 @@ export function MeTab({ data, theme, onThemeChange, themes, decors, gemsBalance,
             [
               ["Vault (gốc & streak)", contracts.vault],
               ["Distributor (thưởng)", contracts.distributor],
+              ["DailyCheckIn (điểm danh)", contracts.dailyCheckIn],
+              ["SavingsGoal (mục tiêu)", contracts.goal],
+              ["StreakNFT (huy hiệu)", contracts.nft],
+              ["FaucetDrip (vòi mới)", contracts.faucetDrip],
               ["Token mUSDC", contracts.token],
             ] as const
           ).map(([label, addr]) => (
             <div key={label} className="flex justify-between gap-2">
               <dt>{label}</dt>
               <dd>
-                <a
-                  className="underline"
-                  href={`https://testnet.snowtrace.io/address/${addr}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
+                <a className="underline" href={`https://testnet.snowtrace.io/address/${addr}`} target="_blank" rel="noreferrer">
                   {shortAddr(addr)}
                 </a>
               </dd>
@@ -149,7 +147,7 @@ export function MeTab({ data, theme, onThemeChange, themes, decors, gemsBalance,
           ))}
         </dl>
         <p className="mt-3 text-[11px] font-semibold text-cocoa-500">
-          Mỗi giao dịch trong app đều kèm link Snowtrace để đối chiếu khi demo.
+          Mọi giao dịch trong app đều kèm link Snowtrace để đối chiếu khi demo — không server nào giữ tiền ngườ dùng.
         </p>
       </div>
     </div>
