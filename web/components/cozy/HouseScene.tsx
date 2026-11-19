@@ -38,6 +38,108 @@ function usePalette(night: boolean) {
   );
 }
 
+/** Nguồn ngẫu nhiên xác định (texture ổn định giữa các render). */
+function mulberry(seed: number) {
+  return () => {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+type TexKind = "plaster" | "tiles" | "grass" | "dirt";
+
+/** Texture procedural 128px: plaster có vân, ngói chồng lớp, cỏ speckle, đất vạch tầng. */
+function useCanvasTexture(kind: TexKind, color: string, repeat = 2) {
+  return useMemo(() => {
+    const c = document.createElement("canvas");
+    c.width = c.height = 128;
+    const ctx = c.getContext("2d")!;
+    const rand = mulberry(kind.length * 977 + color.charCodeAt(3) * 31);
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, 128, 128);
+
+    if (kind === "tiles") {
+      // hàng ngói chồng: mỗi hàng 16px, hàng lẻ lệch nửa viên
+      for (let y = 0; y < 128; y += 16) {
+        const off = (y / 16) % 2 === 0 ? 0 : 16;
+        for (let x = -32; x < 128; x += 32) {
+          const g = ctx.createLinearGradient(0, y, 0, y + 15);
+          g.addColorStop(0, color);
+          g.addColorStop(1, shade(color, 0.82));
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.roundRect(x + off, y, 30, 15, 4);
+          ctx.fill();
+          ctx.fillStyle = shade(color, 0.68);
+          ctx.fillRect(x + off, y + 13, 30, 2.5);
+        }
+      }
+    } else if (kind === "dirt") {
+      // tầng đất nâu xen kẽ + hạt sỏi
+      for (let y = 0; y < 128; y += 14) {
+        ctx.fillStyle = rand() > 0.5 ? shade(color, 0.92) : shade(color, 1.06);
+        ctx.fillRect(0, y, 128, 14);
+      }
+      for (let i = 0; i < 160; i++) {
+        ctx.fillStyle = rand() > 0.5 ? shade(color, 0.75) : shade(color, 1.18);
+        const r = 1 + rand() * 2;
+        ctx.beginPath();
+        ctx.arc(rand() * 128, rand() * 128, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      // plaster & grass: speckle sáng/tối
+      for (let i = 0; i < (kind === "grass" ? 380 : 220); i++) {
+        const g = rand() > 0.5 ? 1.12 : 0.88;
+        ctx.fillStyle = shade(color, g);
+        const r = kind === "grass" ? 1 + rand() * 2.2 : 1 + rand() * 3;
+        ctx.beginPath();
+        ctx.arc(rand() * 128, rand() * 128, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (kind === "grass") {
+        // ngọn cỏ nhỏ
+        ctx.strokeStyle = shade(color, 0.8);
+        ctx.lineWidth = 1.2;
+        for (let i = 0; i < 90; i++) {
+          const x = rand() * 128;
+          const y = rand() * 128;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + (rand() - 0.5) * 3, y - 4 - rand() * 3);
+          ctx.stroke();
+        }
+      }
+      if (kind === "plaster") {
+        // vệt ố mờ lớn cho tường có chiều sâu
+        for (let i = 0; i < 6; i++) {
+          ctx.fillStyle = `rgba(70,56,39,${0.03 + rand() * 0.04})`;
+          ctx.beginPath();
+          ctx.ellipse(rand() * 128, rand() * 128, 12 + rand() * 22, 8 + rand() * 14, rand(), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    t.repeat.set(repeat, repeat);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, color, repeat]);
+}
+
+/** Tối màu hex đi một hệ số (dùng cho texture). */
+function shade(hex: string, f: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = (v: number) => Math.max(0, Math.min(255, Math.round(v * f)));
+  return `#${((ch((n >> 16) & 255) << 16) | (ch((n >> 8) & 255) << 8) | ch(n & 255)).toString(16).padStart(6, "0")}`;
+}
+
 /** Căn camera isometric nhìn về giữa tòa nhà. */
 function CameraRig({ targetY }: { targetY: number }) {
   const { camera } = useThree();
@@ -83,38 +185,68 @@ function Window({ x, y, z, lit, color }: { x: number; y: number; z: number; lit:
         <boxGeometry args={[0.48, 0.03, 0.02]} />
         <meshStandardMaterial color="#fff6e0" />
       </mesh>
+      {/* cửa chớp hai bên */}
+      <mesh castShadow position={[-0.44, 0, 0]}>
+        <boxGeometry args={[0.18, 0.6, 0.05]} />
+        <meshStandardMaterial color="#7fbf95" />
+      </mesh>
+      <mesh castShadow position={[0.44, 0, 0]}>
+        <boxGeometry args={[0.18, 0.6, 0.05]} />
+        <meshStandardMaterial color="#7fbf95" />
+      </mesh>
+      {/* ngạch cửa sổ lồi ra */}
+      <mesh castShadow position={[0, 0.36, 0.02]}>
+        <boxGeometry args={[0.7, 0.06, 0.08]} />
+        <meshStandardMaterial color="#fff6e0" />
+      </mesh>
     </group>
   );
 }
 
-/** Một tầng nhà. */
+/** Một tầng nhà: tường plaster có vân, cửa vòm, phào trắng. */
 function Floor({ n, y, color, night }: { n: number; y: number; color: string; night: boolean }) {
+  const wallTex = useCanvasTexture("plaster", night ? shade(color, 0.55) : color, 2);
   return (
     <group position={[0, y, 0]}>
       <mesh castShadow receiveShadow position={[0, 0.5, 0]}>
         <boxGeometry args={[3.4, 1, 3.4]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial map={wallTex} color="#ffffff" />
       </mesh>
       {/* phào tầng */}
       <mesh castShadow position={[0, 1.0, 0]}>
         <boxGeometry args={[3.55, 0.08, 3.55]} />
         <meshStandardMaterial color="#fff6e0" />
       </mesh>
-      {/* cửa tầng trệt */}
+      {/* cửa vòm tầng trệt */}
       {n === 1 && (
         <group position={[0, 0, 1.72]}>
+          {/* khung cửa vòm trắng */}
+          <mesh castShadow position={[0, 0.42, -0.01]}>
+            <boxGeometry args={[0.84, 0.92, 0.08]} />
+            <meshStandardMaterial color="#fff6e0" />
+          </mesh>
+          <mesh position={[0, 0.85, -0.01]} rotation={[0, 0, Math.PI]}>
+            <circleGeometry args={[0.42, 20, 0, Math.PI]} />
+            <meshStandardMaterial color="#fff6e0" side={THREE.DoubleSide} />
+          </mesh>
+          {/* cánh cửa */}
           <mesh castShadow position={[0, 0.42, 0]}>
             <boxGeometry args={[0.72, 0.85, 0.08]} />
             <meshStandardMaterial color="#8a6238" />
           </mesh>
+          <mesh position={[0, 0.85, 0]} rotation={[0, 0, Math.PI]}>
+            <circleGeometry args={[0.36, 20, 0, Math.PI]} />
+            <meshStandardMaterial color="#8a6238" side={THREE.DoubleSide} />
+          </mesh>
+          {/* tay nắm */}
           <mesh position={[0.22, 0.42, 0.06]}>
             <sphereGeometry args={[0.045, 12, 12]} />
-            <meshStandardMaterial color="#ffd166" />
+            <meshStandardMaterial color="#ffd166" metalness={0.6} roughness={0.3} />
           </mesh>
-          {/* bậc thềm */}
-          <mesh receiveShadow position={[0, -0.42, 0.25]}>
-            <boxGeometry args={[1.1, 0.14, 0.6]} />
-            <meshStandardMaterial color="#e0c690" />
+          {/* bậc thềm đá */}
+          <mesh receiveShadow position={[0, -0.42, 0.3]}>
+            <boxGeometry args={[1.3, 0.14, 0.7]} />
+            <meshStandardMaterial color="#c9c2b4" />
           </mesh>
         </group>
       )}
@@ -129,10 +261,21 @@ function Floor({ n, y, color, night }: { n: number; y: number; color: string; ni
   );
 }
 
-/** Mái chóp kim tự tháp + ống khói + cờ. */
+/** Mái ngói gable 2 mái: slope box có texture ngói chồng, đầu hồi plaster, ridge cap, ống khói, cờ. */
 function Roof({ y, color, night }: { y: number; color: string; night: boolean }) {
   const flag = useRef<THREE.Mesh>(null);
   const smoke = useRef<THREE.Group>(null);
+  const tilesTex = useCanvasTexture("tiles", color, 3);
+  const gableColor = night ? "#4a3f8c" : "#f5e6cf";
+  const gableTex = useCanvasTexture("plaster", gableColor, 1.5);
+
+  // Hình học mái: nửa rộng 2.0, cao 1.5 → slope dài 2.5, nghiêng atan(1.5/2) = 36.87°
+  const HALF_W = 2.0;
+  const ROOF_H = 1.5;
+  const SLOPE = Math.hypot(HALF_W, ROOF_H);
+  const ANGLE = Math.atan2(ROOF_H, HALF_W);
+  const DEPTH = 4.0;
+
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
     if (flag.current) flag.current.rotation.y = Math.sin(t * 2.2) * 0.18;
@@ -146,23 +289,37 @@ function Roof({ y, color, night }: { y: number; color: string; night: boolean })
       });
     }
   });
+
   return (
     <group position={[0, y, 0]}>
-      <mesh castShadow position={[0, 0.8, 0]} rotation={[0, Math.PI / 4, 0]}>
-        <coneGeometry args={[2.85, 1.7, 4]} />
-        <meshStandardMaterial color={color} flatShading />
+      {/* hai mái dốc */}
+      <mesh castShadow position={[-HALF_W / 2, ROOF_H / 2, 0]} rotation={[0, 0, ANGLE]}>
+        <boxGeometry args={[SLOPE + 0.15, 0.09, DEPTH]} />
+        <meshStandardMaterial map={tilesTex} color="#ffffff" />
       </mesh>
-      {/* ống khói */}
-      <mesh castShadow position={[0.95, 1.35, -0.55]}>
+      <mesh castShadow position={[HALF_W / 2, ROOF_H / 2, 0]} rotation={[0, 0, -ANGLE]}>
+        <boxGeometry args={[SLOPE + 0.15, 0.09, DEPTH]} />
+        <meshStandardMaterial map={tilesTex} color="#ffffff" />
+      </mesh>
+      {/* đầu hồi hai bên (tam giác plaster) */}
+      <Gable x={-1.7} halfW={HALF_W} roofH={ROOF_H} depth={3.4} tex={gableTex} flip={false} />
+      <Gable x={1.7} halfW={HALF_W} roofH={ROOF_H} depth={3.4} tex={gableTex} flip />
+      {/* ridge cap dọc đỉnh mái */}
+      <mesh castShadow position={[0, ROOF_H, 0]}>
+        <boxGeometry args={[0.18, 0.18, DEPTH + 0.1]} />
+        <meshStandardMaterial color={shade(color, 0.75)} />
+      </mesh>
+      {/* ống khói bám trên mái phải */}
+      <mesh castShadow position={[1.0, ROOF_H * 0.75, -0.8]}>
         <boxGeometry args={[0.42, 0.9, 0.42]} />
         <meshStandardMaterial color="#ff9fb2" />
       </mesh>
-      <mesh castShadow position={[0.95, 1.84, -0.55]}>
+      <mesh castShadow position={[1.0, ROOF_H * 0.75 + 0.49, -0.8]}>
         <boxGeometry args={[0.52, 0.12, 0.52]} />
         <meshStandardMaterial color="#f26d8d" />
       </mesh>
       {/* khói bay */}
-      <group ref={smoke} position={[0.95, 1.95, -0.55]}>
+      <group ref={smoke} position={[1.0, ROOF_H * 0.75 + 0.6, -0.8]}>
         {[0, 1, 2].map((i) => (
           <mesh key={i}>
             <sphereGeometry args={[1, 10, 10]} />
@@ -170,16 +327,34 @@ function Roof({ y, color, night }: { y: number; color: string; night: boolean })
           </mesh>
         ))}
       </group>
-      {/* cột cờ cắm trên đỉnh mái + lá cờ */}
-      <mesh castShadow position={[-0.7, 2.12, 0.4]}>
+      {/* cột cờ cắm trên đỉnh ridge + lá cờ */}
+      <mesh castShadow position={[-0.7, ROOF_H + 0.5, 0.4]}>
         <cylinderGeometry args={[0.03, 0.03, 1.1, 8]} />
         <meshStandardMaterial color="#8a7256" />
       </mesh>
-      <mesh ref={flag} position={[-0.38, 2.5, 0.4]}>
+      <mesh ref={flag} position={[-0.38, ROOF_H + 0.9, 0.4]}>
         <boxGeometry args={[0.62, 0.36, 0.03]} />
         <meshStandardMaterial color="#f26d8d" />
       </mesh>
     </group>
+  );
+}
+
+/** Đầu hồi tam giác của mái gable — nằm ở mặt x của khối nhà. */
+function Gable({ x, halfW, roofH, depth, tex, flip }: { x: number; halfW: number; roofH: number; depth: number; tex: THREE.Texture; flip: boolean }) {
+  const shape = useMemo(() => {
+    const sh = new THREE.Shape();
+    sh.moveTo(-depth / 2, 0);
+    sh.lineTo(depth / 2, 0);
+    sh.lineTo(0, roofH);
+    sh.closePath();
+    return sh;
+  }, [depth, roofH]);
+  return (
+    <mesh castShadow position={[x, 0, 0]} rotation={[0, flip ? -Math.PI / 2 : Math.PI / 2, 0]}>
+      <shapeGeometry args={[shape]} />
+      <meshStandardMaterial map={tex} color="#ffffff" side={THREE.DoubleSide} />
+    </mesh>
   );
 }
 
@@ -374,11 +549,70 @@ export interface HouseSceneProps {
 }
 
 /** Cảnh 3D: đảo cỏ + tòa nhà low-poly mái chóp + cư dân mèo. */
+/** Lối đi đá từ cửa ra mép đảo. */
+function PathStones({ color }: { color: string }) {
+  const stones = [
+    [0, 2.6, 0.55], [0.25, 3.1, 0.5], [-0.15, 3.6, 0.45], [0.2, 4.0, 0.4],
+  ] as const;
+  return (
+    <group>
+      {stones.map(([x, z, r], i) => (
+        <mesh key={i} receiveShadow position={[x, 0.03, z]} scale={[1, 0.25, 1]}>
+          <cylinderGeometry args={[r, r, 0.12, 8]} />
+          <meshStandardMaterial color={color} flatShading />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** Hàng rào gỗ mini quanh rìa trước đảo. */
+function Fence({ night }: { night: boolean }) {
+  const wood = night ? "#4a3628" : "#a97b4f";
+  const posts: Array<{ x: number; z: number }> = [];
+  for (let i = 0; i < 7; i++) {
+    const a = Math.PI * 0.15 + (i / 6) * Math.PI * 0.7;
+    posts.push({ x: Math.sin(a) * 3.9, z: Math.cos(a) * 3.9 });
+  }
+  return (
+    <group>
+      {posts.map((p, i) => (
+        <mesh key={i} castShadow position={[p.x, 0.22, p.z]}>
+          <boxGeometry args={[0.09, 0.44, 0.09]} />
+          <meshStandardMaterial color={wood} />
+        </mesh>
+      ))}
+      {/* hai thanh ngang vòng cung */}
+      {posts.slice(0, -1).map((p, i) => {
+        const n = posts[i + 1];
+        const mx = (p.x + n.x) / 2, mz = (p.z + n.z) / 2;
+        const len = Math.hypot(n.x - p.x, n.z - p.z);
+        const rot = Math.atan2(n.x - p.x, n.z - p.z);
+        return (
+          <group key={`r${i}`}>
+            <mesh castShadow position={[mx, 0.32, mz]} rotation={[0, rot, 0]}>
+              <boxGeometry args={[0.05, 0.06, len]} />
+              <meshStandardMaterial color={wood} />
+            </mesh>
+            <mesh castShadow position={[mx, 0.16, mz]} rotation={[0, rot, 0]}>
+              <boxGeometry args={[0.05, 0.06, len]} />
+              <meshStandardMaterial color={wood} />
+            </mesh>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
 export function HouseScene({ floors, night, building, celebrating }: HouseSceneProps) {
   const p = usePalette(night);
   const total = Math.max(1, floors);
   const floorH = 1.08;
   const houseH = total * floorH + 0.15;
+  const grassTex = useCanvasTexture("grass", p.grassTop, 4);
+  const dirtTex = useCanvasTexture("dirt", p.dirt, 2);
+  const pathColor = night ? "#6b7194" : "#c9c2b4";
 
   return (
     <Canvas
@@ -390,29 +624,37 @@ export function HouseScene({ floors, night, building, celebrating }: HouseSceneP
       gl={{ alpha: true, antialias: true }}
     >
       <CameraRig targetY={Math.max(2.2, houseH * 0.55)} />
-      <ambientLight intensity={night ? 0.45 : 0.75} color={night ? "#6b76c9" : "#fff4e0"} />
+      {/* Ánh sáng tự nhiên: bầu trờ/đất + nắng ấm + rim light */}
+      <hemisphereLight args={[night ? "#3a4080" : "#bcd9ff", night ? "#2a2118" : "#7a6248", night ? 0.5 : 0.75]} />
+      <ambientLight intensity={night ? 0.3 : 0.35} color={night ? "#6b76c9" : "#fff4e0"} />
       <directionalLight
         castShadow
         position={[6, 12, 6]}
-        intensity={night ? 0.5 : 1.1}
-        color={night ? "#9aa5e8" : "#fff2d8"}
-        shadow-mapSize={[1024, 1024]}
+        intensity={night ? 0.55 : 1.15}
+        color={night ? "#9aa5e8" : "#ffedc8"}
+        shadow-mapSize={[2048, 2048]}
         shadow-camera-left={-8}
         shadow-camera-right={8}
         shadow-camera-top={10}
         shadow-camera-bottom={-4}
+        shadow-bias={-0.0004}
       />
+      <directionalLight position={[-7, 4, -5]} intensity={night ? 0.12 : 0.25} color={night ? "#4a5ba8" : "#cfe4ff"} />
       {night && <pointLight position={[0, 1.2, 2.6]} intensity={2.2} color="#ffbf3f" distance={5} />}
 
-      {/* hòn đảo bệ: mặt cỏ + thân đất */}
+      {/* hòn đảo bệ: mặt cỏ speckle + thân đất vạch tầng */}
       <mesh receiveShadow position={[0, -0.55, 0]}>
         <cylinderGeometry args={[4.4, 4.9, 1.1, 10]} />
-        <meshStandardMaterial color={p.dirt} flatShading />
+        <meshStandardMaterial map={dirtTex} color="#ffffff" />
       </mesh>
       <mesh receiveShadow position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[4.42, 36]} />
-        <meshStandardMaterial color={p.grassTop} />
+        <meshStandardMaterial map={grassTex} color="#ffffff" />
       </mesh>
+
+      {/* lối đi đá + hàng rào */}
+      <PathStones color={pathColor} />
+      <Fence night={night} />
 
       {/* các tầng */}
       {Array.from({ length: total }, (_, i) => (
