@@ -3,10 +3,11 @@
 import { useMemo, useState } from "react";
 import { useAccount, useReadContracts } from "wagmi";
 import { contracts, isConfigured } from "@/lib/config";
-import { streakVaultAbi, streakGroupsAbi, freezeGiftAbi } from "@/lib/abis";
+import { streakVaultAbi, streakGroupsAbi, freezeGiftAbi, mentorHubAbi } from "@/lib/abis";
 import { fmt, shortAddr } from "@/lib/format";
 import { IdentityAvatar, identityOf } from "@/lib/identity";
 import { TxFeedback, useTx } from "@/components/useTx";
+import { FeatureCard, Stat } from "@/components/cozy/panel";
 import type { VaultData } from "@/lib/useVaultData";
 
 const FLOOR_COLORS = ["#ffd9a8", "#ffc9d4", "#c9bdf5", "#bfe8c9", "#fde9a9", "#bfe3f2"];
@@ -50,7 +51,7 @@ export function GroupTab({ data }: { data: VaultData }) {
       <div className="card-cream p-4">
         <h3 className="font-cozy text-lg font-bold">🏢 Tòa nhà chung</h3>
         <p className="mt-0.5 text-xs font-semibold text-cocoa-500">
-          {members.length} cư dân · tiền của từng ngườii vẫn thuộc về họ, nhóm chỉ để cùng nhau giữ nhịp gửi đều.
+          {members.length} cư dân · tiền của từng ngườ vẫn thuộc về họ, nhóm chỉ để cùng nhau giữ nhịp gửi đều.
         </p>
         <div className="mt-2 grid grid-cols-3 gap-2 text-center">
           <div className="rounded-xl border-2 border-cream-300 bg-white/80 p-2">
@@ -72,7 +73,7 @@ export function GroupTab({ data }: { data: VaultData }) {
       <div className="card-cream p-4">
         <h4 className="mb-2 font-cozy font-bold">🐈 Các tầng trong nhà</h4>
         {members.length === 0 ? (
-          <p className="text-sm font-semibold text-cocoa-500">Chưa có cư dân nào. Hãy là ngườii đầu tiên!</p>
+          <p className="text-sm font-semibold text-cocoa-500">Chưa có cư dân nào. Hãy là ngườ đầu tiên!</p>
         ) : (
           <div className="flex flex-col-reverse gap-1.5">
             {members.map((m, idx) => {
@@ -101,7 +102,12 @@ export function GroupTab({ data }: { data: VaultData }) {
                     <div className="font-cozy text-sm font-extrabold text-blush-500">🔥 {m.streak.toString()}</div>
                     <div className="text-[10px] font-bold uppercase text-cocoa-500">tuần</div>
                   </div>
-                  {giftLive && address && m.address !== address && <FreezeGiftButton to={m.address} />}
+                  {giftLive && address && m.address !== address && (
+                    <div className="flex shrink-0 flex-col gap-1">
+                      <FreezeGiftButton to={m.address} />
+                      <InsuranceGiftButton to={m.address} />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -113,6 +119,8 @@ export function GroupTab({ data }: { data: VaultData }) {
           </p>
         )}
       </div>
+
+      <MentorHubCard />
 
       {groupsLive ? (
         <GroupsPanel />
@@ -147,12 +155,43 @@ function FreezeGiftButton({ to }: { to: string }) {
   return (
     <div className="shrink-0">
       <button
-        className="rounded-xl border-2 border-sky-400/60 bg-sky-200/60 px-2 py-1 text-xs font-extrabold text-sky-700 active:translate-y-0.5"
+        className="w-full rounded-xl border-2 border-sky-400/60 bg-sky-200/60 px-2 py-1 text-xs font-extrabold text-sky-700 active:translate-y-0.5"
         disabled={tx.step !== null}
         title="Tặng Streak Freeze kỳ này"
         onClick={gift}
       >
-        {tx.step ? "…" : "❄️ Tặng"}
+        {tx.step ? "…" : "❄️ Tặng freeze"}
+      </button>
+      <TxFeedback state={{ step: tx.step, hash: tx.hash, error: tx.error }} />
+    </div>
+  );
+}
+
+/** Nút tặng insurance kỳ hiện tại cho một ví (FreezeGift.giftInsurance). */
+function InsuranceGiftButton({ to }: { to: string }) {
+  const tx = useTx();
+  async function gift() {
+    await tx.run("Tặng Streak Insurance", [
+      {
+        label: `Đang tặng insurance cho ${shortAddr(to)}…`,
+        call: {
+          address: contracts.freezeGift,
+          abi: freezeGiftAbi,
+          functionName: "giftInsurance",
+          args: [to as `0x${string}`],
+        },
+      },
+    ]);
+  }
+  return (
+    <div className="shrink-0">
+      <button
+        className="w-full rounded-xl border-2 border-lavender-400/60 bg-lavender-300/50 px-2 py-1 text-xs font-extrabold text-lavender-500 active:translate-y-0.5"
+        disabled={tx.step !== null}
+        title="Tặng Streak Insurance kỳ này"
+        onClick={gift}
+      >
+        {tx.step ? "…" : "🛡️ Tặng insurance"}
       </button>
       <TxFeedback state={{ step: tx.step, hash: tx.hash, error: tx.error }} />
     </div>
@@ -323,5 +362,76 @@ function GroupView({ groupId }: { groupId: bigint }) {
         })}
       </ul>
     </div>
+  );
+}
+
+/** MentorHub: chọn mentor một lần duy nhất, báo cáo mốc streak để mentor nhận thưởng. */
+function MentorHubCard() {
+  const tx = useTx();
+  const { address } = useAccount();
+  const live = isConfigured(contracts.mentorHub);
+  const [mentorAddr, setMentorAddr] = useState("");
+
+  const state = useReadContracts({
+    contracts: live && address
+      ? [
+          { address: contracts.mentorHub, abi: mentorHubAbi, functionName: "mentorOf", args: [address] },
+          { address: contracts.mentorHub, abi: mentorHubAbi, functionName: "menteeCount", args: [address] },
+          { address: contracts.mentorHub, abi: mentorHubAbi, functionName: "milestonesEarned", args: [address] },
+          { address: contracts.mentorHub, abi: mentorHubAbi, functionName: "earnings", args: [address] },
+          { address: contracts.mentorHub, abi: mentorHubAbi, functionName: "prizePool", args: [] },
+        ]
+      : [],
+    query: { refetchInterval: 15_000, enabled: live && !!address },
+  });
+  const myMentor = (state.data?.[0]?.result as string | undefined) ?? "0x0000000000000000000000000000000000000000";
+  const mentees = (state.data?.[1]?.result as bigint | undefined) ?? 0n;
+  const milestones = (state.data?.[2]?.result as bigint | undefined) ?? 0n;
+  const earnings = (state.data?.[3]?.result as bigint | undefined) ?? 0n;
+  const pool = (state.data?.[4]?.result as bigint | undefined) ?? 0n;
+
+  if (!live) return null;
+
+  async function call(fn: string, args: (string | bigint)[], label: string) {
+    const ok = await tx.run(label, [{ label, call: { address: contracts.mentorHub, abi: mentorHubAbi, functionName: fn, args } }]);
+    if (ok && fn === "setMentor") setMentorAddr("");
+  }
+
+  return (
+    <FeatureCard icon="grad" title="Mentor tiết kiệm" desc="Gắn mentor một lần duy nhất — mỗi mốc streak bạn đạt, mentor nhận thưởng từ quỹ">
+      <div className="grid grid-cols-3 gap-2">
+        <Stat label="Mentor của bạn" value={myMentor === "0x0000000000000000000000000000000000000000" ? "Chưa có" : shortAddr(myMentor)} tone="text-lavender-500" />
+        <Stat label="Học trò của bạn" value={mentees.toString()} />
+        <Stat label="Quỹ thưởng" value={fmt(pool)} tone="text-leaf-600" />
+      </div>
+      {mentees > 0n && (
+        <p className="mt-2 text-[11px] font-semibold text-cocoa-500">
+          Bạn là mentor: {milestones.toString()} mốc học trò đạt · thu nhập chờ nhận {fmt(earnings)} mUSDC
+        </p>
+      )}
+      {myMentor === "0x0000000000000000000000000000000000000000" ? (
+        <div className="mt-2 flex gap-2">
+          <input
+            className="input-cozy flex-1 font-mono text-xs"
+            placeholder="Địa chỉ mentor của bạn"
+            value={mentorAddr}
+            onChange={(e) => setMentorAddr(e.target.value)}
+          />
+          <button className="btn-cozy shrink-0" disabled={tx.step !== null || !mentorAddr || !address} onClick={() => call("setMentor", [mentorAddr as `0x${string}`], "Đang gắn mentor…")}>
+            Gắn
+          </button>
+        </div>
+      ) : (
+        <div className="mt-2 flex gap-2">
+          <button className="btn-cream flex-1" disabled={tx.step !== null} onClick={() => call("reportMilestone", [], "Đang báo mốc streak cho mentor…")}>
+            Báo mốc streak
+          </button>
+          <button className="btn-cozy flex-1" disabled={tx.step !== null || earnings === 0n} onClick={() => call("claimEarnings", [], "Đang nhận thu nhập mentor…")}>
+            Nhận {fmt(earnings)}
+          </button>
+        </div>
+      )}
+      <TxFeedback state={tx} />
+    </FeatureCard>
   );
 }

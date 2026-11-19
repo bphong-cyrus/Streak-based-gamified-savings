@@ -6,10 +6,11 @@ import { ConnectButton } from "@/components/ConnectButton";
 import { Sky } from "@/components/cozy/Sky";
 import { HomeTab } from "@/components/cozy/HomeTab";
 import { GoalsTab } from "@/components/cozy/GoalsTab";
-import { RewardsTab } from "@/components/cozy/RewardsTab";
+import { PlayTab } from "@/components/cozy/PlayTab";
+import { ToolsTab } from "@/components/cozy/ToolsTab";
 import { GroupTab } from "@/components/cozy/GroupTab";
 import { MeTab } from "@/components/cozy/MeTab";
-import { ShopTab } from "@/components/cozy/ShopTab";
+import { Icon, type IconName } from "@/components/cozy/icons";
 import { IdentityAvatar } from "@/lib/identity";
 import { useVaultData, type VaultData } from "@/lib/useVaultData";
 import { useGemsData } from "@/lib/useGemsData";
@@ -17,15 +18,15 @@ import { shortAddr } from "@/lib/format";
 import { targetChainId } from "@/lib/config";
 import type { ThemeMode } from "@/components/cozy/useThemeLanding";
 
-type TabKey = "home" | "goals" | "group" | "rewards" | "shop" | "me";
+type TabKey = "home" | "goals" | "group" | "play" | "tools" | "me";
 
-const TABS: Array<{ key: TabKey; icon: string; label: string }> = [
-  { key: "home", icon: "🏠", label: "Nhà" },
-  { key: "goals", icon: "🎯", label: "Mục tiêu" },
-  { key: "group", icon: "👥", label: "Nhóm" },
-  { key: "rewards", icon: "🎁", label: "Quà" },
-  { key: "shop", icon: "🛍️", label: "Cửa hàng" },
-  { key: "me", icon: "😺", label: "Tôi" },
+const TABS: Array<{ key: TabKey; icon: IconName; label: string }> = [
+  { key: "home", icon: "home", label: "Nhà" },
+  { key: "goals", icon: "target", label: "Mục tiêu" },
+  { key: "group", icon: "users", label: "Nhóm" },
+  { key: "play", icon: "gamepad", label: "Chơi" },
+  { key: "tools", icon: "wrench", label: "Tiện ích" },
+  { key: "me", icon: "cat", label: "Tôi" },
 ];
 
 interface CozyAppProps {
@@ -70,7 +71,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
     return (
       <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
         <div className="card-cream w-full max-w-sm p-6 text-center">
-          <div className="text-4xl">🗺️</div>
+          <div className="mx-auto w-fit"><Icon name="flag" size={40} className="text-cocoa-500" /></div>
           <h2 className="mt-2 font-cozy text-xl font-bold">Bạn đang ở mạng khác</h2>
           <p className="mt-1 text-sm font-semibold text-cocoa-500">
             Cozy Save xây nhà trên Avalanche Fuji C-Chain (chain ID {targetChainId}).
@@ -102,7 +103,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
                   </span>
                 </>
               ) : (
-                "Tiết kiệm mọc nhà 🏡"
+                "Tiết kiệm mọc nhà"
               )}
             </div>
           </div>
@@ -113,11 +114,11 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
             onClick={() => onThemeChange(night ? "day" : "night")}
             title={night ? "Chuyển ban ngày" : "Chuyển ban đêm"}
           >
-            {night ? "☀️" : "🌙"}
+            <Icon name={night ? "sun" : "moon"} size={19} />
           </button>
           {demoData ? (
             <span className="rounded-full border-2 border-cocoa-700/50 bg-cream-100 px-3 py-1.5 font-cozy text-xs font-extrabold text-cocoa-600 shadow-chunkySm">
-              🎀 Demo
+              Demo
             </span>
           ) : (
             <ConnectButton />
@@ -130,7 +131,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
           className="mx-4 mt-1 flex w-[calc(100%-2rem)] items-center justify-between rounded-xl border-2 border-dashed border-cocoa-700/40 bg-cream-100/90 px-3 py-1.5 text-left text-xs font-bold text-cocoa-600"
           onClick={onExitDemo}
         >
-          <span>👀 Demo với dữ liệu mẫu — giao dịch sẽ không thực hiện được</span>
+          <span>Demo với dữ liệu mẫu — giao dịch sẽ không thực hiện được</span>
           <span className="pl-2 underline">Thoát</span>
         </button>
       )}
@@ -149,19 +150,19 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
         )}
         {tab === "goals" && <GoalsTab data={data} />}
         {tab === "group" && <GroupTab data={data} />}
-        {tab === "rewards" && (
-          <RewardsTab data={data} missions={gemsData.missions} gemsBalance={gemsData.gemsBalance} />
-        )}
-        {tab === "shop" && (
-          <ShopTab
+        {tab === "play" && <PlayTab data={data} missions={gemsData.missions} gemsBalance={gemsData.gemsBalance} />}
+        {tab === "tools" && <ToolsTab />}
+        {tab === "me" && (
+          <MeTab
+            data={data}
+            theme={theme}
+            onThemeChange={onThemeChange}
             themes={gemsData.themes}
             decors={gemsData.decors}
             gemsBalance={gemsData.gemsBalance}
             gemsAllowance={gemsData.gemsAllowance}
-            hasWallet={!!data.address}
           />
         )}
-        {tab === "me" && <MeTab data={data} theme={theme} onThemeChange={onThemeChange} />}
       </main>
 
       {/* bottom nav */}
@@ -175,7 +176,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
               }`}
               onClick={() => setTab(t.key)}
             >
-              <span className="text-lg leading-none">{t.icon}</span>
+              <Icon name={t.icon} size={21} className={tab === t.key ? "text-white" : "text-cocoa-600"} />
               <span className={`text-[10px] font-bold ${tab === t.key ? "text-white" : "text-cocoa-600"}`}>
                 {t.label}
               </span>

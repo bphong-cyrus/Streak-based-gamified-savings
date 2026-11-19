@@ -5,6 +5,7 @@ import { contracts } from "@/lib/config";
 import { mockUSDCAbi, streakVaultAbi } from "@/lib/abis";
 import { parseAmount, fmt } from "@/lib/format";
 import { useTx, TxFeedback } from "@/components/useTx";
+import { Icon } from "@/components/cozy/icons";
 import type { VaultData } from "@/lib/useVaultData";
 
 interface Props {
@@ -73,13 +74,13 @@ export function DepositSheet({ data, open, onClose, onDeposited }: Props) {
             className={`flex-1 rounded-xl border-[3px] py-2 font-cozy font-bold transition ${mode === "deposit" ? "border-cocoa-700/80 bg-leaf-400 text-white shadow-chunkySm" : "border-cream-300 bg-white text-cocoa-500"}`}
             onClick={() => setMode("deposit")}
           >
-            💰 Gửi tuần này
+            <span className="inline-flex items-center gap-1.5"><Icon name="wallet" size={16} /> Gửi tuần này</span>
           </button>
           <button
             className={`flex-1 rounded-xl border-[3px] py-2 font-cozy font-bold transition ${mode === "withdraw" ? "border-cocoa-700/80 bg-blush-400 text-white shadow-chunkySm" : "border-cream-300 bg-white text-cocoa-500"}`}
             onClick={() => setMode("withdraw")}
           >
-            🏧 Rút gốc
+            <span className="inline-flex items-center gap-1.5"><Icon name="hatch" size={16} /> Rút gốc</span>
           </button>
         </div>
 
@@ -122,7 +123,7 @@ export function DepositSheet({ data, open, onClose, onDeposited }: Props) {
         </div>
 
         <button className="btn-cozy mt-4 w-full" disabled={busy || !parseAmount(amount)} onClick={submit}>
-          {mode === "deposit" ? "🏗️ Gửi & xây tầng" : "Rút về ví"}
+          {mode === "deposit" ? <span className="inline-flex items-center gap-1.5"><Icon name="hammer" size={17} /> Gửi & xây tầng</span> : "Rút về ví"}
         </button>
 
         <TxFeedback state={{ step, hash, error }} />

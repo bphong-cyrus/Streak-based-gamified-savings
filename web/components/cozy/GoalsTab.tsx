@@ -2,10 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { useAccount, useReadContracts } from "wagmi";
-import { contracts } from "@/lib/config";
-import { streakVaultAbi, yieldDistributorAbi, autoSaverAbi, mockUSDCAbi } from "@/lib/abis";
+import { contracts, isConfigured } from "@/lib/config";
+import { streakVaultAbi, yieldDistributorAbi, autoSaverAbi, mockUSDCAbi, goalTemplatesAbi } from "@/lib/abis";
 import { fmt, parseAmount } from "@/lib/format";
 import { TxFeedback, useTx } from "@/components/useTx";
+import { FeatureCard } from "@/components/cozy/panel";
+import { Icon } from "@/components/cozy/icons";
 import { estimateApy } from "@/components/cozy/HomeTab";
 import type { VaultData } from "@/lib/useVaultData";
 
@@ -42,7 +44,7 @@ export function GoalsTab({ data }: { data: VaultData }) {
     <div className="space-y-3 px-4 pb-28 pt-2">
       {/* đặt mục tiêu */}
       <div className="card-cream p-4">
-        <h3 className="font-cozy text-lg font-bold">🎯 Mục tiêu tuần</h3>
+        <h3 className="flex items-center gap-1.5 font-cozy text-lg font-bold"><Icon name="target" size={20} className="text-cocoa-600" /> Mục tiêu tuần</h3>
         <p className="mt-0.5 text-xs font-semibold text-cocoa-500">
           {account?.activated ? "Thay đổi áp dụng từ kỳ kế tiếp." : "Lần đầu đặt có hiệu lực ngay kỳ này."} Hiện tại:{" "}
           {fmt(weeklyTarget)} mUSDC/tuần
@@ -365,6 +367,92 @@ function EpochHistory({ currentEpoch }: { currentEpoch: bigint | undefined }) {
           );
         })}
       </ul>
+
+      {/* mẫu mục tiêu cộng đồng */}
+      <GoalTemplatesCard />
     </div>
+  );
+}
+
+/** Mẫu mục tiêu cộng đồng: tạo, dùng lại kế hoạch của ngườ khác — tác giả nhận 5 Paws mỗi lượt dùng. */
+function GoalTemplatesCard() {
+  const tx = useTx();
+  const { address } = useAccount();
+  const live = isConfigured(contracts.goalTemplates);
+  const [name, setName] = useState("");
+  const [weekly, setWeekly] = useState("");
+  const [total, setTotal] = useState("");
+
+  const countState = useReadContracts({
+    contracts: live ? [{ address: contracts.goalTemplates, abi: goalTemplatesAbi, functionName: "templateCount", args: [] }] : [],
+    query: { refetchInterval: 30_000, enabled: live },
+  });
+  const count = Number((countState.data?.[0]?.result as bigint | undefined) ?? 0n);
+
+  const listState = useReadContracts({
+    contracts: live
+      ? Array.from({ length: Math.min(count, 8) }, (_, i) => ({
+          address: contracts.goalTemplates,
+          abi: goalTemplatesAbi,
+          functionName: "templates",
+          args: [BigInt(i + 1)],
+        }))
+      : [],
+    query: { refetchInterval: 30_000, enabled: live && count > 0 },
+  });
+  const templates = Array.from({ length: Math.min(count, 8) }, (_, i) => listState.data?.[i]?.result as
+    | { id: bigint; author: string; name: string; weeklyTarget: bigint; totalGoal: bigint; useCount: bigint }
+    | undefined).filter((t): t is NonNullable<typeof t> => !!t);
+
+  if (!live) return null;
+
+  async function create() {
+    const w = parseAmount(weekly);
+    const t = parseAmount(total);
+    if (!name || !w || !t) return;
+    const ok = await tx.run("Tạo mẫu mục tiêu", [
+      { label: "Đang lưu mẫu on-chain…", call: { address: contracts.goalTemplates, abi: goalTemplatesAbi, functionName: "createTemplate", args: [name, w, t] } },
+    ]);
+    if (ok) {
+      setName("");
+      setWeekly("");
+      setTotal("");
+    }
+  }
+  async function use(id: bigint) {
+    await tx.run("Dùng mẫu mục tiêu", [
+      { label: "Đang áp mẫu vào vault của bạn…", call: { address: contracts.goalTemplates, abi: goalTemplatesAbi, functionName: "useTemplate", args: [id] } },
+    ]);
+  }
+
+  return (
+    <FeatureCard icon="layout" title="Mẫu mục tiêu cộng đồng" desc="Ngườ khác chia kế hoạch, bạn một chạm áp dùng — tác giả được thưởng 5 Paws">
+      {templates.length > 0 && (
+        <ul className="space-y-1.5">
+          {templates.map((t) => (
+            <li key={t.id.toString()} className="flex items-center justify-between gap-2 rounded-xl border-2 border-cream-300 bg-white/80 px-3 py-2">
+              <div className="min-w-0">
+                <div className="truncate font-cozy text-sm font-bold text-cocoa-700">{t.name}</div>
+                <div className="text-[11px] font-semibold text-cocoa-500">
+                  {fmt(t.weeklyTarget)}/tuần · tổng {fmt(t.totalGoal)} mUSDC · {t.useCount.toString()} lượt dùng
+                </div>
+              </div>
+              <button className="btn-cozy shrink-0 !px-3 !py-1.5 text-xs" disabled={tx.step !== null || !address} onClick={() => use(t.id)}>
+                Dùng
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-2 grid grid-cols-[1fr_80px_80px_auto] gap-2">
+        <input className="input-cozy" placeholder="Tên mẫu" value={name} onChange={(e) => setName(e.target.value)} />
+        <input className="input-cozy" inputMode="decimal" placeholder="/tuần" value={weekly} onChange={(e) => setWeekly(e.target.value)} />
+        <input className="input-cozy" inputMode="decimal" placeholder="Tổng" value={total} onChange={(e) => setTotal(e.target.value)} />
+        <button className="btn-cozy shrink-0" disabled={tx.step !== null || !name || !parseAmount(weekly) || !parseAmount(total)} onClick={create}>
+          Tạo
+        </button>
+      </div>
+      <TxFeedback state={tx} />
+    </FeatureCard>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Building } from "@/components/cozy/Building";
 import { DepositSheet } from "@/components/cozy/DepositSheet";
 import { fmt } from "@/lib/format";
@@ -8,6 +8,7 @@ import { fmtGems } from "@/lib/useGemsData";
 import { contracts, isConfigured } from "@/lib/config";
 import { faucetDripAbi } from "@/lib/abis";
 import { TxFeedback, useTx } from "@/components/useTx";
+import { Icon } from "@/components/cozy/icons";
 import type { VaultData } from "@/lib/useVaultData";
 
 /** Nút nhận mUSDC miễn phí cho ví mới — gọi FaucetDrip (tự đặt mục tiêu đầu luôn). */
@@ -30,7 +31,7 @@ function FaucetButton() {
   return (
     <div className="mt-2">
       <button className="btn-cream w-full" disabled={tx.step !== null} onClick={drip}>
-        🚰 Nhận 5 mUSDC miễn phí (ví mới)
+        <Icon name="droplet" size={17} className="inline -mt-0.5" /> Nhận 5 mUSDC miễn phí (ví mới)
       </button>
       <TxFeedback state={{ step: tx.step, hash: tx.hash, error: tx.error }} />
     </div>
@@ -53,7 +54,7 @@ function Tile({
   sub,
   tone,
 }: {
-  icon: string;
+  icon: ReactNode;
   label: string;
   value: string;
   sub?: string;
@@ -61,8 +62,8 @@ function Tile({
 }) {
   return (
     <div className="rounded-2xl border-2 border-cream-300 bg-cream-100/95 p-2.5 shadow-chunkySm">
-      <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-cocoa-500">
-        <span>{icon}</span>
+      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-cocoa-500">
+        <span className="text-cocoa-600">{icon}</span>
         <span className="truncate">{label}</span>
       </div>
       <div className={`mt-0.5 font-cozy text-lg font-extrabold leading-tight ${tone ?? "text-cocoa-700"}`}>{value}</div>
@@ -129,16 +130,16 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
     <div className="px-4 pb-28 pt-2">
       {/* 4 chỉ số tóm tắt */}
       <div className="grid grid-cols-2 gap-2">
-        <Tile icon="🏦" label="Tiết kiệm" value={`${fmt(account.principal)}`} sub="mUSDC" />
-        <Tile icon="📈" label="Lãi tích lũy" value={`+${fmt(interestTotal)}`} sub={`~${apy.toFixed(1)}% APY (ước tính)`} tone="text-leaf-600" />
-        <Tile icon="🔥" label="Chuỗi kiên trì" value={`${account.streak} tuần`} sub={goalDone ? "Đạt phong độ cao!" : "Cố lên nào!"} tone="text-blush-500" />
-        <Tile icon="🐾" label="Điểm Paws" value={fmtGems(gemsBalance)} sub="Đổi nội thất nhà" tone="text-lavender-500" />
+        <Tile icon={<Icon name="bank" size={16} />} label="Tiết kiệm" value={`${fmt(account.principal)}`} sub="mUSDC" />
+        <Tile icon={<Icon name="chart" size={16} />} label="Lãi tích lũy" value={`+${fmt(interestTotal)}`} sub={`~${apy.toFixed(1)}% APY (ước tính)`} tone="text-leaf-600" />
+        <Tile icon={<Icon name="flame" size={16} />} label="Chuỗi kiên trì" value={`${account.streak} tuần`} sub={goalDone ? "Đạt phong độ cao!" : "Cố lên nào!"} tone="text-blush-500" />
+        <Tile icon={<Icon name="paw" size={16} />} label="Điểm Paws" value={fmtGems(gemsBalance)} sub="Đổi nội thất nhà" tone="text-lavender-500" />
       </div>
 
       {/* tiến độ tuần này */}
       <div className="card-cream mt-2 p-3">
         <div className="flex items-center justify-between text-xs font-bold text-cocoa-500">
-          <span className="flex items-center gap-1">🎯 Mục tiêu tuần này</span>
+          <span className="flex items-center gap-1"><Icon name="target" size={14} /> Mục tiêu tuần này</span>
           <span className="font-cozy text-sm text-cocoa-700">
             {fmt(progress)} / {fmt(target)} mUSDC
           </span>
@@ -150,7 +151,7 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
               style={{ width: `${pct}%` }}
             />
           </div>
-          <span className="text-lg">{goalDone ? "✅" : "⏳"}</span>
+          <span className="text-lg">{goalDone ? <Icon name="check" size={20} className="text-leaf-600" /> : <Icon name="clock" size={20} className="text-cocoa-500" />}</span>
         </div>
         <p className="mt-1.5 text-xs font-semibold text-cocoa-500">
           {target === 0n
@@ -231,10 +232,10 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
       {/* countdown + CTA */}
       <div className="mx-auto mt-3 max-w-xs text-center">
         <div className="inline-flex items-center gap-2 rounded-full border-2 border-cocoa-700/40 bg-white/80 px-4 py-1.5 font-cozy text-sm font-bold text-cocoa-700">
-          ⏰ Còn {countdown} để giữ chuỗi
+          <Icon name="clock" size={15} /> Còn {countdown} để giữ chuỗi
         </div>
         <button className="btn-cozy mt-3 w-full text-lg" onClick={() => setSheetOpen(true)}>
-          {goalDone ? "💰 Gửi thêm" : `🏗️ Gửi ${fmt(remaining)} mUSDC hoàn thành tầng`}
+          {goalDone ? "Gửi thêm" : `Gửi ${fmt(remaining)} mUSDC hoàn thành tầng`}
         </button>
         {!account.activated && (
           <>
@@ -246,7 +247,7 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
 
       {/* băng tin thị trường */}
       <div className="mx-auto mt-3 flex max-w-xs items-center gap-2 rounded-xl border-2 border-cocoa-700/30 bg-white/70 px-3 py-1.5 text-[11px] font-semibold text-cocoa-600">
-        <span>📊</span>
+        <Icon name="chart" size={15} className="shrink-0" />
         <span className="truncate">Lãi suất USDC Lending (mock): 6.2% APY · Aave v3 tham chiếu</span>
       </div>
 

@@ -6,15 +6,23 @@ import { fmt, shortAddr } from "@/lib/format";
 import { IdentityAvatar, identityOf, useIdentityIndex, pickIdentity, IDENTITIES } from "@/lib/identity";
 import type { ThemeMode } from "@/components/cozy/useThemeLanding";
 import type { VaultData } from "@/lib/useVaultData";
+import { ShopPanel } from "@/components/cozy/ShopTab";
+import { MeExtras } from "@/components/cozy/MeExtras";
+import { Icon } from "@/components/cozy/icons";
+import type { ShopItemView } from "@/lib/useGemsData";
 
 interface Props {
   data: VaultData;
   theme: ThemeMode;
   onThemeChange: (t: ThemeMode) => void;
+  themes: ShopItemView[];
+  decors: ShopItemView[];
+  gemsBalance: bigint;
+  gemsAllowance: bigint;
 }
 
-/** Tab Me: hồ sơ, chọn nhân vật, cài đặt giao diện, thông tin ví & hợp đồng. */
-export function MeTab({ data, theme, onThemeChange }: Props) {
+/** Tab Me: hồ sơ, chọn nhân vật, cửa hàng, bộ sưu tập & cài đặt. */
+export function MeTab({ data, theme, onThemeChange, themes, decors, gemsBalance, gemsAllowance }: Props) {
   const { disconnect } = useDisconnect();
   const { address, tokenBalance, claimed, account } = data;
   const current = useIdentityIndex(address);
@@ -39,13 +47,13 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
           🔥 Streak dài nhất hiện tại: {account?.streak.toString() ?? 0} tuần · 🌱 Đã nhận {fmt(claimed)} mUSDC lãi
         </p>
         <button className="btn-cream mt-3" onClick={() => disconnect()}>
-          🔌 Ngắt kết nối ví
+          <Icon name="x" size={15} className="inline -mt-0.5" /> Ngắt kết nối ví
         </button>
       </div>
 
       {/* chọn identity */}
       <div className="card-cream p-4">
-        <h4 className="font-cozy font-bold">🧸 Chọn nhân vật của bạn</h4>
+        <h4 className="flex items-center gap-1.5 font-cozy font-bold"><Icon name="cat" size={18} className="text-cocoa-600" /> Chọn nhân vật của bạn</h4>
         <p className="text-xs font-semibold text-cocoa-500">
           Chạm vào nhân vật để chọn làm avatar — lựa chọn lưu trên trình duyệt của bạn.
         </p>
@@ -76,9 +84,13 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
         </div>
       </div>
 
+      {/* cửa hàng + bộ sưu tập */}
+      <ShopPanel themes={themes} decors={decors} gemsBalance={gemsBalance} gemsAllowance={gemsAllowance} hasWallet={!!address} />
+      <MeExtras data={data} />
+
       {/* giao diện day/night */}
       <div className="card-cream p-4">
-        <h4 className="font-cozy font-bold">🎨 Giao diện</h4>
+        <h4 className="flex items-center gap-1.5 font-cozy font-bold"><Icon name="sun" size={18} className="text-cocoa-600" /> Giao diện</h4>
         <div className="mt-2 grid grid-cols-2 gap-2">
           <button
             className={`rounded-xl border-[3px] py-3 font-cozy font-bold transition ${
@@ -86,7 +98,7 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
             }`}
             onClick={() => onThemeChange("day")}
           >
-            ☀️ Ban ngày
+            <span className="inline-flex items-center gap-1.5"><Icon name="sun" size={16} /> Ban ngày</span>
           </button>
           <button
             className={`rounded-xl border-[3px] py-3 font-cozy font-bold transition ${
@@ -94,7 +106,7 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
             }`}
             onClick={() => onThemeChange("night")}
           >
-            🌙 Ban đêm
+            <span className="inline-flex items-center gap-1.5"><Icon name="moon" size={16} /> Ban đêm</span>
           </button>
         </div>
         <p className="mt-2 text-xs font-semibold text-cocoa-500">
@@ -104,7 +116,7 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
 
       {/* thông tin on-chain */}
       <div className="card-cream p-4">
-        <h4 className="font-cozy font-bold">⛓️ Trên chuỗi (Fuji Testnet)</h4>
+        <h4 className="flex items-center gap-1.5 font-cozy font-bold"><Icon name="bank" size={18} className="text-cocoa-600" /> Trên chuỗi (Fuji Testnet)</h4>
         <dl className="mt-2 space-y-1.5 text-xs font-semibold text-cocoa-500">
           <div className="flex justify-between gap-2">
             <dt>Số dư mUSDC</dt>

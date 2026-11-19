@@ -21,6 +21,49 @@ function shade(hex: string, f: number): string {
 
 const OUTLINE = "rgba(70,56,39,0.75)";
 
+/** Hòn đảo bệ isometric 2.5D: mặt trên cỏ, hai mặt hông đất — tòa nhà "đứng" lên trên. */
+function Ground({ night }: { night: boolean }) {
+  const grass = night ? "#4e8570" : "#8fddaa";
+  const grassLight = night ? "#5d977f" : "#a8ecc2";
+  const soilL = night ? "#5f4634" : "#b08154";
+  const soilR = night ? "#4c3729" : "#90653c";
+  const stone = night ? "#6b7194" : "#c9c2b4";
+  return (
+    <svg
+      viewBox="0 0 380 220"
+      width="380"
+      height="220"
+      className="absolute left-1/2 block"
+      style={{ bottom: -14, transform: "translateX(calc(-50% + 6px))", zIndex: 0 }}
+      aria-hidden
+    >
+      {/* mặt hông trái (đất) */}
+      <polygon points="22,100 190,178 190,208 22,130" fill={soilL} stroke={OUTLINE} strokeWidth="3" strokeLinejoin="round" />
+      {/* mặt hông phải (đất) */}
+      <polygon points="190,178 358,100 358,130 190,208" fill={soilR} stroke={OUTLINE} strokeWidth="3" strokeLinejoin="round" />
+      {/* mặt trên (cỏ) */}
+      <polygon points="190,14 358,100 190,178 22,100" fill={grass} stroke={OUTLINE} strokeWidth="3" strokeLinejoin="round" />
+      {/* vệt cỏ sáng + lối mòn */}
+      <polygon points="150,52 232,74 178,102 96,78" fill={grassLight} opacity="0.9" />
+      <polygon points="118,96 190,124 168,136 96,106" fill={night ? "#477a66" : "#7ecf9c"} opacity="0.9" />
+      {/* đá trang trí */}
+      <ellipse cx="270" cy="118" rx="14" ry="7" fill={stone} stroke={OUTLINE} strokeWidth="2.5" />
+      <ellipse cx="112" cy="72" rx="9" ry="4.5" fill={stone} stroke={OUTLINE} strokeWidth="2.5" />
+      {/* cụm hoa nhỏ trên mặt cỏ */}
+      {[
+        { x: 310, y: 96, c: "#ff9fb2" },
+        { x: 66, y: 96, c: "#ffd166" },
+        { x: 236, y: 148, c: "#c9bdf5" },
+      ].map((f, i) => (
+        <g key={i}>
+          <circle cx={f.x} cy={f.y} r="4.5" fill={f.c} stroke={OUTLINE} strokeWidth="2" />
+          <circle cx={f.x} cy={f.y} r="1.4" fill="#fff6e0" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
 interface FloorProps {
   num: number;
   color: string;
@@ -210,6 +253,8 @@ export function Building({ floors, night, building, celebrating, goalDone }: Bui
 
   return (
     <div className="relative mx-auto w-fit -translate-x-5">
+      {/* hòn đảo bệ isometric nằm sau tòa nhà */}
+      <Ground night={night} />
       {/* confetti khi vừa xây xong */}
       {celebrating &&
         ["#ff9fb2", "#7fd8a4", "#a794e6", "#ffd166", "#63b8f0"].map((c, i) => (

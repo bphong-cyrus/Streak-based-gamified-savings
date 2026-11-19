@@ -13,8 +13,8 @@ interface Props {
   hasWallet: boolean;
 }
 
-/** Tab Cửa hàng: mở khóa theme và đồ trang trí bằng Paws. */
-export function ShopTab({ themes, decors, gemsBalance, gemsAllowance, hasWallet }: Props) {
+/** Panel Cửa hàng: mở khóa theme và đồ trang trí bằng Paws (nằm trong tab Tôi). */
+export function ShopPanel({ themes, decors, gemsBalance, gemsAllowance, hasWallet }: Props) {
   const { run, step, hash, error } = useTx();
 
   async function buy(item: ShopItemView, isTheme: boolean) {
@@ -66,7 +66,7 @@ export function ShopTab({ themes, decors, gemsBalance, gemsAllowance, hasWallet 
   }
 
   return (
-    <div className="space-y-3 px-4 pb-28 pt-2">
+    <div className="space-y-3">
       <div className="card-cream flex items-center justify-between p-4">
         <div>
           <h3 className="font-cozy text-lg font-bold">🛍️ Cửa hàng</h3>

@@ -5,6 +5,8 @@ import { useAccount } from "wagmi";
 import { ConnectButton } from "@/components/ConnectButton";
 import { CozyApp } from "@/components/cozy/CozyApp";
 import { Sky } from "@/components/cozy/Sky";
+import { Building } from "@/components/cozy/Building";
+import { Icon } from "@/components/cozy/icons";
 import { useCozyTheme } from "@/components/cozy/useThemeLanding";
 import { buildMockData } from "@/lib/mockData";
 import { IDENTITIES } from "@/lib/identity";
@@ -43,9 +45,11 @@ function Landing({ night, onTryDemo }: { night: boolean; onTryDemo: () => void }
         </p>
       </div>
 
-      {/* tòa nhà minh họa */}
-      <div className="mt-4 text-7xl" style={{ filter: "drop-shadow(0 6px 4px rgba(0,0,0,0.25))" }}>
-        {night ? "🌃" : "🏡"}
+      {/* tòa nhà minh họa 2.5D — đúng component dùng trong app, thu nhỏ lại */}
+      <div className="mt-2 h-[300px] w-full overflow-hidden">
+        <div className="flex justify-center" style={{ transform: "scale(0.58)", transformOrigin: "top center" }}>
+          <Building floors={3} night={night} building={false} celebrating={false} goalDone={false} />
+        </div>
       </div>
 
       {/* dàn nhân vật chibi sinh động */}
@@ -72,15 +76,17 @@ function Landing({ night, onTryDemo }: { night: boolean; onTryDemo: () => void }
         </p>
       </div>
 
-      <div className="card-cream mt-6 w-full space-y-2 p-4 text-sm font-semibold text-cocoa-600">
+      <div className="card-cream mt-4 w-full space-y-2 p-4 text-sm font-semibold text-cocoa-600">
         {[
-          ["🏗️", "Gửi đủ mục tiêu mỗi tuần → +1 tầng nhà"],
-          ["🔥", "Streak càng dài → phần thưởng lãi càng lớn"],
-          ["💸", "Tiền gốc luôn của bạn, rút anytime"],
-          ["👥", "Cùng bạn bè giữ nhịp, không lo mất streak"],
+          ["hammer", "Gửi đủ mục tiêu mỗi tuần → +1 tầng nhà"],
+          ["flame", "Streak càng dài → phần thưởng lãi càng lớn"],
+          ["wallet", "Tiền gốc luôn của bạn, rút anytime"],
+          ["users", "Cùng bạn bè giữ nhịp, không lo mất streak"],
         ].map(([icon, text]) => (
-          <div key={text} className="flex items-center gap-2">
-            <span>{icon}</span>
+          <div key={text} className="flex items-center gap-2.5">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 border-cocoa-700/30 bg-white/80 text-cocoa-600">
+              <Icon name={icon as "hammer"} size={16} />
+            </span>
             <span>{text}</span>
           </div>
         ))}
@@ -89,7 +95,7 @@ function Landing({ night, onTryDemo }: { night: boolean; onTryDemo: () => void }
       <div className="mt-6 flex flex-col items-center gap-3">
         <ConnectButton />
         <button className="btn-cream !py-2 text-sm" onClick={onTryDemo}>
-          ✨ Xem thử giao diện (không cần ví)
+          Xem thử giao diện (không cần ví)
         </button>
       </div>
       <p className="mt-3 text-center text-xs font-bold text-white/80 drop-shadow-[0_1px_0_rgba(70,56,39,0.5)]">
