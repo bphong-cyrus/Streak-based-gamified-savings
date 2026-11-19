@@ -27,20 +27,11 @@ interface BuildingProps {
 /** Tòa nhà 3D isometric (Three.js): đảo cỏ, mái chóp, ống khói, cư dân mèo. */
 export function Building({ floors, night, building, celebrating, goalDone }: BuildingProps) {
   const total = Math.max(1, floors);
-  const height = 360 + Math.min(total, 14) * 58;
+  const height = 420 + Math.min(total, 16) * 62;
 
   return (
-    <div className="relative mx-auto" style={{ width: 380, height }}>
+    <div className="relative mx-auto overflow-visible" style={{ width: 420, height }}>
       <HouseScene floors={floors} night={night} building={building} goalDone={goalDone} celebrating={celebrating} />
-
-      {/* biển Floor nổi trên cùng */}
-      <div
-        className="absolute left-1/2 z-30 -translate-x-1/2 rounded-2xl border-[3px] bg-cream-100 px-5 py-1.5 text-center"
-        style={{ borderColor: "rgba(70,56,39,0.75)", boxShadow: "0 3px 0 rgba(70,56,39,0.4)", top: 132 }}
-      >
-        <div className="font-cozy text-[10px] font-bold uppercase tracking-wide text-cocoa-500">Floor</div>
-        <div className="font-cozy text-2xl font-extrabold leading-none text-cocoa-700">{building ? total + 1 : total}</div>
-      </div>
 
       {/* confetti khi vừa xây xong */}
       {celebrating &&

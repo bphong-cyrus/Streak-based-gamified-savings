@@ -144,15 +144,15 @@ function shade(hex: string, f: number): string {
 function CameraRig({ targetY }: { targetY: number }) {
   const { camera } = useThree();
   useEffect(() => {
-    camera.position.set(11, 10, 11);
+    camera.position.set(9, 8, 9);
     camera.lookAt(0, targetY, 0);
   }, [camera, targetY]);
-  // Lắc nhẹ quanh trục để cảnh sống động
+  // Lắc nhẹ quanh trục để cảnh sống động nhưng vẫn ổn định
   useFrame(({ clock }) => {
-    const a = Math.sin(clock.getElapsedTime() * 0.22) * 0.35;
-    const r = Math.hypot(11, 11);
-    const b = Math.atan2(11, 11) + a * 0.06;
-    camera.position.set(Math.cos(b) * r, 10, Math.sin(b) * r);
+    const a = Math.sin(clock.getElapsedTime() * 0.18) * 0.25;
+    const r = Math.hypot(9, 9);
+    const b = Math.atan2(9, 9) + a * 0.05;
+    camera.position.set(Math.cos(b) * r, 8 + Math.sin(clock.getElapsedTime() * 0.12) * 0.15, Math.sin(b) * r);
     camera.lookAt(0, targetY, 0);
   });
   return null;
@@ -328,11 +328,11 @@ function Roof({ y, color, night }: { y: number; color: string; night: boolean })
         ))}
       </group>
       {/* cột cờ cắm trên đỉnh ridge + lá cờ */}
-      <mesh castShadow position={[-0.7, ROOF_H + 0.5, 0.4]}>
-        <cylinderGeometry args={[0.03, 0.03, 1.1, 8]} />
+      <mesh castShadow position={[-0.7, ROOF_H + 0.35, 0.4]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.9, 8]} />
         <meshStandardMaterial color="#8a7256" />
       </mesh>
-      <mesh ref={flag} position={[-0.38, ROOF_H + 0.9, 0.4]}>
+      <mesh ref={flag} position={[-0.38, ROOF_H + 0.75, 0.4]}>
         <boxGeometry args={[0.62, 0.36, 0.03]} />
         <meshStandardMaterial color="#f26d8d" />
       </mesh>
@@ -617,7 +617,7 @@ export function HouseScene({ floors, night, building, celebrating }: HouseSceneP
   return (
     <Canvas
       orthographic
-      camera={{ position: [11, 10, 11], zoom: 44, near: 0.1, far: 100 }}
+      camera={{ position: [9, 8, 9], zoom: 56, near: 0.1, far: 100 }}
       shadows
       dpr={[1, 2]}
       style={{ background: "transparent" }}
@@ -641,6 +641,12 @@ export function HouseScene({ floors, night, building, celebrating }: HouseSceneP
       />
       <directionalLight position={[-7, 4, -5]} intensity={night ? 0.12 : 0.25} color={night ? "#4a5ba8" : "#cfe4ff"} />
       {night && <pointLight position={[0, 1.2, 2.6]} intensity={2.2} color="#ffbf3f" distance={5} />}
+
+      {/* bóng đổ mềm bên dưới đảo */}
+      <mesh position={[0, -1.18, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[4.2, 32]} />
+        <meshBasicMaterial color={night ? "#0b0d22" : "#3d6b52"} transparent opacity={0.28} />
+      </mesh>
 
       {/* hòn đảo bệ: mặt cỏ speckle + thân đất vạch tầng */}
       <mesh receiveShadow position={[0, -0.55, 0]}>

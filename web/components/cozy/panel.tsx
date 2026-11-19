@@ -86,9 +86,9 @@ export function Stat({ label, value, tone }: { label: string; value: string | un
     <div className="text-center">
       <div className="text-[10px] font-bold uppercase tracking-wide text-cocoa-500/90">{label}</div>
       {value === undefined ? (
-        <div className="skeleton mx-auto mt-1.5 h-5 w-3/4" aria-hidden />
+        <div className="mx-auto mt-0.5 font-cozy text-lg font-extrabold leading-tight text-cocoa-400">—</div>
       ) : (
-        <div className={`mt-0.5 font-cozy text-lg font-extrabold leading-tight ${tone ?? "text-cocoa-700"}`}>{value}</div>
+        <div className={`mt-0.5 font-cozy text-lg font-extrabold leading-tight tabular-nums ${tone ?? "text-cocoa-700"}`}>{value}</div>
       )}
     </div>
   );

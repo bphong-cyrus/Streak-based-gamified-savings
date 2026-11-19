@@ -13,18 +13,22 @@ import type { VaultData } from "@/lib/useVaultData";
 /** Tab Rewards: huy hiệu streak (StreakNFT), điểm danh mỗi ngày, nhận lãi. */
 export function RewardsTab({ data }: { data: VaultData }) {
   return (
-    <div className="space-y-3 px-4 pb-28 pt-2">
-      <BadgesCard data={data} />
-      <CheckInCard />
-      <YieldCard data={data} />
+    <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+      <div className="space-y-3">
+        <BadgesCard data={data} />
+        <CheckInCard />
+      </div>
+      <div className="space-y-3">
+        <YieldCard data={data} />
+      </div>
     </div>
   );
 }
 
 const TIERS = [
-  { tier: 3n, label: "3 tuần", desc: "Khởi đầu bền bỉ" },
-  { tier: 7n, label: "7 tuần", desc: "Một quý kiên trì" },
-  { tier: 30n, label: "30 tuần", desc: "Huyền thoại cozy" },
+  { tier: 3n, label: "3 tuần", desc: "Khởi đầu bền bỉ", icon: "sprout" as const, color: "#7fd8a4" },
+  { tier: 7n, label: "7 tuần", desc: "Một quý kiên trì", icon: "flame" as const, color: "#f26d8d" },
+  { tier: 30n, label: "30 tuần", desc: "Huyền thoại cozy", icon: "crown" as const, color: "#a794e6" },
 ];
 
 /** Huy hiệu StreakNFT theo mốc 3 / 7 / 30 tuần streak. */
@@ -46,12 +50,15 @@ function BadgesCard({ data }: { data: VaultData }) {
   });
   const eligible = (state.data?.[0]?.result as bigint | undefined) ?? 0n;
   const owned = (i: number) => ((state.data?.[i + 1]?.result as bigint | undefined) ?? 0n) > 0n;
+  const loading = state.isLoading;
 
   async function mint() {
     await tx.run("Nhận huy hiệu streak", [
       { label: "Đang mint NFT huy hiệu…", call: { address: contracts.nft, abi: streakNFTAbi, functionName: "mint", args: [] } },
     ]);
   }
+
+  const canMint = eligible > 0n && !owned(TIERS.findIndex((t) => t.tier === eligible));
 
   return (
     <FeatureCard
@@ -63,32 +70,42 @@ function BadgesCard({ data }: { data: VaultData }) {
         {TIERS.map((t, i) => {
           const has = owned(i);
           const canUnlock = !has && eligible >= t.tier;
-          const isNext = !has && !canUnlock && (i === 0 || owned(i - 1));
+          const locked = !has && !canUnlock;
+          const weeksLeft = locked ? Math.max(0, Number(t.tier - streak)) : 0;
           return (
             <div
               key={t.tier.toString()}
-              className={`flex flex-col items-center rounded-2xl border-[1.5px] px-2 py-3 text-center ${
+              className={`flex flex-col items-center rounded-2xl border-[1.5px] px-2 py-3 text-center transition ${
                 has
-                  ? "border-lavender-400 bg-lavender-300/25"
+                  ? "border-lavender-400 bg-lavender-300/25 shadow-sm"
                   : canUnlock
-                    ? "border-leaf-500 bg-leaf-300/20"
-                    : "border-cream-300 bg-white/60 opacity-70"
+                    ? "border-leaf-500 bg-leaf-300/20 shadow-sm"
+                    : "border-cream-300 bg-white/60 opacity-75"
               }`}
             >
-              <span className={`flex h-12 w-12 items-center justify-center rounded-full border-2 ${has ? "border-lavender-400 bg-white text-lavender-500" : canUnlock ? "border-leaf-500 bg-white text-leaf-600" : "border-cream-300 bg-white/80 text-cocoa-400"}`}>
-                <Icon name="flame" size={26} />
+              <span
+                className={`flex h-12 w-12 items-center justify-center rounded-full border-2 ${
+                  has ? "border-lavender-400 bg-white text-lavender-500" : canUnlock ? "border-leaf-500 bg-white text-leaf-600" : "border-cream-300 bg-white/80 text-cocoa-400"
+                }`}
+                style={{ boxShadow: has || canUnlock ? `0 0 0 3px ${t.color}33` : undefined }}
+              >
+                <Icon name={t.icon} size={26} />
               </span>
               <div className="mt-1.5 font-cozy text-sm font-extrabold text-cocoa-700">{t.label}</div>
               <div className="text-[10px] font-semibold leading-tight text-cocoa-500">{t.desc}</div>
-              <div className={`mt-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase ${has ? "bg-lavender-400 text-white" : canUnlock ? "bg-leaf-400 text-white" : "bg-cream-200 text-cocoa-500"}`}>
-                {has ? "Đã sở hữu" : canUnlock ? "Có thể nhận" : isNext ? `còn ${Number(t.tier - streak)} tuần` : "Khoá"}
+              <div
+                className={`mt-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase ${
+                  has ? "bg-lavender-400 text-white" : canUnlock ? "bg-leaf-400 text-white" : "bg-cream-200 text-cocoa-500"
+                }`}
+              >
+                {loading ? "…" : has ? "Đã sở hữu" : canUnlock ? "Có thể nhận" : weeksLeft === 0 ? "Đã mở khóa" : `còn ${weeksLeft} tuần`}
               </div>
             </div>
           );
         })}
       </div>
-      {eligible > 0n && !owned(TIERS.findIndex((t) => t.tier === eligible)) && (
-        <button className="btn-cozy mt-3 w-full" disabled={tx.step !== null || !address} onClick={mint}>
+      {address && canMint && (
+        <button className="btn-cozy mt-3 w-full active:translate-y-[2px] active:border-b-2" disabled={tx.step !== null} onClick={mint}>
           Nhận huy hiệu {eligible.toString()} tuần ngay
         </button>
       )}
@@ -124,6 +141,7 @@ function CheckInCard() {
   const reward = (state.data?.[3]?.result as bigint | undefined) ?? 0n;
   const pool = (state.data?.[4]?.result as bigint | undefined) ?? 0n;
   const canCheckIn = todayDay !== undefined && lastDay !== todayDay;
+  const loading = state.isLoading;
 
   async function doCheckIn() {
     await tx.run("Điểm danh", [
@@ -134,12 +152,16 @@ function CheckInCard() {
   return (
     <FeatureCard icon="calendar" title="Điểm danh mỗi ngày" desc="mUSDC thật mỗi ngày — chuỗi càng dài thưởng càng lớn (tối đa gấp đôi)">
       <div className="grid grid-cols-3 gap-2">
-        <Stat label="Chuỗi ngày" value={address ? streak.toString() : undefined} tone="text-blush-500" />
-        <Stat label="Thưởng hôm nay" value={address ? `${fmt(reward)} mUSDC` : undefined} tone="text-leaf-600" />
-        <Stat label="Pool còn" value={address ? `${fmt(pool)} mUSDC` : undefined} />
+        <Stat label="Chuỗi ngày" value={loading ? "…" : address ? streak.toString() : "—"} tone="text-blush-500" />
+        <Stat label="Thưởng hôm nay" value={loading ? "…" : address ? `${fmt(reward)} mUSDC` : "—"} tone="text-leaf-600" />
+        <Stat label="Pool còn" value={loading ? "…" : address ? `${fmt(pool)} mUSDC` : "—"} />
       </div>
-      <button className="btn-cozy mt-3 w-full" disabled={tx.step !== null || !address || !canCheckIn} onClick={doCheckIn}>
-        {canCheckIn ? "Điểm danh ngay" : "Đã điểm danh hôm nay"}
+      <button
+        className="btn-cozy mt-3 w-full active:translate-y-[2px] active:border-b-2"
+        disabled={tx.step !== null || !address || !canCheckIn}
+        onClick={doCheckIn}
+      >
+        {address ? (canCheckIn ? "Điểm danh ngay" : "Đã điểm danh hôm nay") : "Kết nối ví để điểm danh"}
       </button>
       <TxFeedback state={tx} />
     </FeatureCard>
@@ -173,7 +195,7 @@ function YieldCard({ data }: { data: VaultData }) {
         <Stat label="Đã nhận" value={`${fmt(claimed)} mUSDC`} />
         <Stat label="Ngân sách kỳ này" value={`${fmt(currentBudget)} mUSDC`} />
       </div>
-      <button className="btn-cozy mt-3 w-full" disabled={busy || !claimable || claimable === 0n} onClick={claimYield}>
+      <button className="btn-cozy mt-3 w-full active:translate-y-[2px] active:border-b-2" disabled={busy || !claimable || claimable === 0n} onClick={claimYield}>
         Nhận lãi về ví
       </button>
       <TxFeedback state={claim} />
@@ -181,7 +203,7 @@ function YieldCard({ data }: { data: VaultData }) {
         <p className="text-xs font-semibold text-cocoa-500">
           Chốt kỳ là hành động công khai — ai gọi cũng được{rollover !== undefined && rollover > 0n ? ` · Rollover chờ chia: ${fmt(rollover)} mUSDC` : ""}.
         </p>
-        <button className="btn-cream mt-2 w-full" disabled={busy || !canFinalize} onClick={finalizeEpoch}>
+        <button className="btn-cream mt-2 w-full active:translate-y-[1px] active:border-b-2" disabled={busy || !canFinalize} onClick={finalizeEpoch}>
           {canFinalize ? `Chốt kỳ #${nextEpochToFinalize}` : "Chưa đến hạn chốt kỳ"}
         </button>
         <TxFeedback state={finalize} />

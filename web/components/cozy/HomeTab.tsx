@@ -19,7 +19,6 @@ interface Props {
   building: boolean;
   celebrateKey: number;
   onDepositStart: () => void;
-  /** demo với dữ liệu mẫu — nút gửi tiền đổi thành mô phỏng kịch bản pitch */
   isDemo?: boolean;
 }
 
@@ -42,7 +41,7 @@ function Tile({
         <span className="text-cocoa-500">{icon}</span>
         <span className="truncate">{label}</span>
       </div>
-      <div className={`mt-0.5 font-cozy text-xl font-extrabold leading-tight ${tone ?? "text-cocoa-700"}`}>{value}</div>
+      <div className={`mt-0.5 font-cozy text-xl font-extrabold leading-tight tabular-nums ${tone ?? "text-cocoa-700"}`}>{value}</div>
       {sub && <div className="text-[11px] font-semibold text-cocoa-500">{sub}</div>}
     </div>
   );
@@ -178,107 +177,152 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, i
   const isNewWallet = !account.activated;
 
   const vw = typeof window !== "undefined" ? window.innerWidth : 420;
-  const sectionW = Math.min(660, vw - 16);
-  const available = typeof window !== "undefined" ? Math.min(window.innerHeight * 0.6, 620) : 480;
-  const fit = natural > 0 ? Math.min(1.9, Math.max(0.35, available / natural)) : 1;
-  const autoScale = natural > 0 ? Math.max(0.35, Math.min(1.9, sectionW / 380, (available / natural) * 1.25)) : 1;
+  const sectionW = Math.min(840, vw - 24);
+  const available = typeof window !== "undefined" ? Math.min(window.innerHeight * 0.55, 560) : 480;
+  const autoScale = natural > 0 ? Math.max(0.45, Math.min(1.6, sectionW / 420, (available / natural) * 1.15)) : 1;
+  const fit = autoScale;
   const scale = zoom ?? autoScale;
 
   return (
-    <div className="px-4 pb-28 pt-2">
-      {/* Streak hero */}
-      <div className="card-cream relative overflow-hidden p-4">
-        <div className="pointer-events-none absolute -right-6 -top-8 opacity-[0.08]">
-          <Icon name="flame" size={150} className="text-blush-500" />
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-b from-blush-400 to-blush-500 text-white shadow-md">
-              <Icon name="flame" size={30} />
-            </span>
-            <div>
-              <div className="font-cozy text-4xl font-extrabold leading-none text-cocoa-700">
-                {account.streak.toString()}
-                <span className="ml-1.5 text-base font-bold text-cocoa-500">tuần liên tiếp</span>
-              </div>
-              <div className="mt-1 text-xs font-semibold text-cocoa-500">
-                Bỏ kỳ là streak về 0 — gửi đủ {fmt(target)} mUSDC để giữ chuỗi
+    <div className="space-y-3 lg:grid lg:grid-cols-12 lg:gap-4 lg:space-y-0">
+      {/* Cột trái — HUD: Streak hero + stats (desktop: 4 cột; mobile: full) */}
+      <div className="space-y-3 lg:col-span-4">
+        {/* Streak hero */}
+        <div className="card-cream relative overflow-hidden p-4">
+          <div className="pointer-events-none absolute -right-6 -top-8 opacity-[0.08]">
+            <Icon name="flame" size={150} className="text-blush-500" />
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-b from-blush-400 to-blush-500 text-white shadow-md">
+                <Icon name="flame" size={30} />
+              </span>
+              <div>
+                <div className="font-cozy text-4xl font-extrabold leading-none text-cocoa-700 tabular-nums">
+                  {account.streak.toString()}
+                  <span className="ml-1.5 text-base font-bold text-cocoa-500">tuần</span>
+                </div>
+                <div className="mt-1 text-xs font-semibold text-cocoa-500">liên tiếp</div>
               </div>
             </div>
-          </div>
-          <div
-            className={`shrink-0 rounded-full border px-3 py-1.5 text-center font-cozy text-sm font-bold ${
-              urgent ? "animate-pulse border-blush-500 bg-blush-400 text-white" : "border-cocoa-700/20 bg-white/80 text-cocoa-700"
-            }`}
-          >
-            <Icon name="clock" size={14} className="mr-1 inline -mt-0.5" />
-            {countdown}
-          </div>
-        </div>
-        {/* tiến độ tuần */}
-        <div className="mt-3">
-          <div className="flex items-center justify-between text-xs font-bold text-cocoa-500">
-            <span className="flex items-center gap-1"><Icon name="target" size={13} /> Mục tiêu kỳ này</span>
-            <span className="font-cozy text-sm text-cocoa-700">{fmt(progress)} / {fmt(target)} mUSDC · {pct}%</span>
-          </div>
-          <div className="mt-1.5 h-3.5 overflow-hidden rounded-full bg-cocoa-700/10" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tiến độ mục tiêu kỳ này">
             <div
-              className={`h-full rounded-full transition-all duration-700 ${goalDone ? "bg-gradient-to-r from-leaf-400 to-leaf-500" : "bg-gradient-to-r from-blush-400 to-blush-300"}`}
-              style={{ width: `${pct}%` }}
-            />
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-center font-cozy text-sm font-bold ${
+                urgent ? "animate-pulse border-blush-500 bg-blush-400 text-white" : "border-cocoa-700/20 bg-white/80 text-cocoa-700"
+              }`}
+            >
+              <Icon name="clock" size={14} className="mr-1 inline -mt-0.5" />
+              {countdown}
+            </div>
+          </div>
+          <div className="mt-3">
+            <div className="flex items-center justify-between text-xs font-bold text-cocoa-500">
+              <span className="flex items-center gap-1"><Icon name="target" size={13} /> Mục tiêu kỳ này</span>
+              <span className="font-cozy text-sm text-cocoa-700 tabular-nums">{fmt(progress)} / {fmt(target)} mUSDC · {pct}%</span>
+            </div>
+            <div className="mt-1.5 h-3.5 overflow-hidden rounded-full bg-cocoa-700/10" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tiến độ mục tiêu kỳ này">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${goalDone ? "bg-gradient-to-r from-leaf-400 to-leaf-500" : "bg-gradient-to-r from-blush-400 to-blush-300"}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Heatmap 12 kỳ */}
-      <div className="mt-3">
-        <StreakHeatmap data={data} />
-      </div>
-
-      {/* 3 chỉ số */}
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <Tile icon={<Icon name="bank" size={16} />} label="Tiết kiệm" value={`${fmt(account.principal)}`} sub="mUSDC · rút anytime" />
-        <Tile icon={<Icon name="chart" size={16} />} label="Lãi tích lũy" value={`+${fmt(interestTotal)}`} sub={`Chờ nhận ${fmt(claimable)} mUSDC`} tone="text-leaf-600" />
-        <Tile icon={<Icon name="target" size={16} />} label="Số kỳ đã tham gia" value={account.currentEpoch.toString()} sub={`Lv.${1 + Math.floor(floors / 2)} · ${account.depositCount?.toString() ?? "0"} lần gửi`} />
-        <Tile icon={<Icon name="wallet" size={16} />} label="Ví của bạn" value={`${fmt(tokenBalance, 2)}`} sub="mUSDC khả dụng" />
-      </div>
-
-      {/* tòa nhà 3D + màn ăn mừng */}
-      <div className="relative mt-4" style={{ height: natural * scale }}>
-        <div className="absolute -right-1 top-1/2 z-40 flex -translate-y-1/2 flex-col gap-2">
-          <button className="btn-cream !px-0 !py-0 font-cozy text-lg font-extrabold" style={{ width: 44, height: 44 }} disabled={scale >= 2.2} onClick={() => setZoom(Math.min(2.2, scale + 0.15))} title="Phóng to" aria-label="Phóng to tòa nhà">+</button>
-          <button className="btn-cream !px-0 !py-0 font-cozy text-lg font-extrabold" style={{ width: 44, height: 44 }} disabled={scale <= 0.4} onClick={() => setZoom(Math.max(0.4, scale - 0.15))} title="Thu nhỏ" aria-label="Thu nhỏ tòa nhà">−</button>
-          <button className="btn-cream !px-0 !py-0 text-sm font-extrabold" style={{ width: 44, height: 44 }} onClick={() => setZoom(fit)} title="Vừa khung hình" aria-label="Vừa khung hình">⛶</button>
+        {/* 4 chỉ số */}
+        <div className="grid grid-cols-2 gap-2">
+          <Tile icon={<Icon name="bank" size={16} />} label="Tiết kiệm" value={`${fmt(account.principal)}`} sub="mUSDC · rút anytime" />
+          <Tile icon={<Icon name="chart" size={16} />} label="Lãi tích lũy" value={`+${fmt(interestTotal)}`} sub={`Chờ nhận ${fmt(claimable)} mUSDC`} tone="text-leaf-600" />
+          <Tile icon={<Icon name="target" size={16} />} label="Số kỳ đã tham gia" value={account.currentEpoch.toString()} sub={`Lv.${1 + Math.floor(floors / 2)} · ${account.depositCount?.toString() ?? "0"} lần gửi`} />
+          <Tile icon={<Icon name="wallet" size={16} />} label="Ví của bạn" value={`${fmt(tokenBalance, 2)}`} sub="mUSDC khả dụng" />
         </div>
-        <div ref={wrapRef} className="mx-auto w-fit" style={{ transform: `scale(${scale})`, transformOrigin: "top center" }}>
-          <Building key={celebrateKey} floors={floors} night={night} building={building} celebrating={celebrateKey > 0} goalDone={goalDone} />
-          {showParty && !building && (
-            <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center">
-              <div className="rounded-2xl border-[3px] border-cocoa-700/70 bg-cream-100 px-4 py-2 text-center font-cozy text-lg font-extrabold text-cocoa-700 shadow-chunky" style={{ animation: "bannerPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-                🎉 TẦNG MỚI HOÀN THÀNH!
-              </div>
-              <div className="big-jump mt-4 text-6xl" style={{ filter: "drop-shadow(0 4px 3px rgba(0,0,0,0.3))" }}>🐈</div>
-              <div className="mt-3 rounded-full border-2 border-leaf-500/50 bg-leaf-300/60 px-3 py-1 font-cozy text-xs font-extrabold text-leaf-600" style={{ animation: "bannerPop 0.5s 0.35s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-                +1 🔥 Chuỗi kiên trì · +1 🏗️ Tầng mới
-              </div>
+
+        {/* Heatmap 12 kỳ */}
+        <div className="hidden lg:block">
+          <StreakHeatmap data={data} />
+        </div>
+      </div>
+
+      {/* Cột giữa — Nhà 3D */}
+      <div className="relative lg:col-span-5">
+        <div className="relative flex flex-col items-center justify-center rounded-[24px] border border-[#eadfc6] bg-[#fffdf7]/70 p-3 shadow-sm backdrop-blur-sm">
+          {/* Badge Floor gọn ở trên */}
+          <div className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-2xl border border-cocoa-700/15 bg-white/95 px-4 py-1 shadow-sm backdrop-blur-sm">
+            <div className="font-cozy text-[10px] font-bold uppercase tracking-wide text-cocoa-500">Tầng</div>
+            <div className="text-center font-cozy text-xl font-extrabold leading-none text-cocoa-700 tabular-nums">{building ? floors + 1 : floors}</div>
+          </div>
+
+          <div
+            className="relative w-full overflow-visible"
+            style={{ height: Math.max(280, (natural || 360) * scale + 40) }}
+          >
+            <div
+              ref={wrapRef}
+              className="absolute left-1/2 top-1/2 w-fit -translate-x-1/2 -translate-y-1/2"
+              style={{ transform: `translate(-50%, -50%) scale(${scale})` }}
+            >
+              <Building key={celebrateKey} floors={floors} night={night} building={building} celebrating={celebrateKey > 0} goalDone={goalDone} />
+              {showParty && !building && (
+                <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center">
+                  <div className="rounded-2xl border-[3px] border-cocoa-700/70 bg-cream-100 px-4 py-2 text-center font-cozy text-lg font-extrabold text-cocoa-700 shadow-chunky" style={{ animation: "bannerPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                    🎉 TẦNG MỚI HOÀN THÀNH!
+                  </div>
+                  <div className="big-jump mt-4 text-6xl" style={{ filter: "drop-shadow(0 4px 3px rgba(0,0,0,0.3))" }}>🐈</div>
+                  <div className="mt-3 rounded-full border-2 border-leaf-500/50 bg-leaf-300/60 px-3 py-1 font-cozy text-xs font-extrabold text-leaf-600" style={{ animation: "bannerPop 0.5s 0.35s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+                    +1 🔥 Chuỗi kiên trì · +1 🏗️ Tầng mới
+                  </div>
+                </div>
+              )}
             </div>
+          </div>
+        </div>
+
+        {/* CTA chính + freeze — mobile full width; desktop có thể ở dưới nhà */}
+        <div className="mx-auto mt-3 max-w-xs text-center lg:max-w-sm">
+          {isNewWallet && !isDemo ? (
+            <FaucetCard />
+          ) : (
+            <button className="btn-cozy w-full text-lg active:translate-y-[2px] active:border-b-2" onClick={() => (isDemo ? onDepositStart() : setSheetOpen(true))}>
+              {isDemo ? "Mô phỏng gửi tiền — xem tòa nhà lớn lên" : goalDone ? "Gửi thêm" : `Gửi ${fmt(remaining)} mUSDC hoàn thành tầng`}
+            </button>
+          )}
+          {urgent && !isNewWallet && <FreezeEpochButton />}
+          {!account.activated && !isDemo && (
+            <p className="mt-2 text-xs font-semibold text-cocoa-500">Nhận 5 mUSDC miễn phí ở trên để bắt đầu xây nhà nhé!</p>
           )}
         </div>
       </div>
 
-      {/* CTA + empty state ví mới + đóng băng khi sắp hết hạn */}
-      <div className="mx-auto mt-3 max-w-xs text-center">
-        {isNewWallet && !isDemo ? (
-          <FaucetCard />
-        ) : (
-          <button className="btn-cozy mt-3 w-full text-lg" onClick={() => (isDemo ? onDepositStart() : setSheetOpen(true))}>
-            {isDemo ? "Mô phỏng gửi tiền — xem tòa nhà lớn lên" : goalDone ? "Gửi thêm" : `Gửi ${fmt(remaining)} mUSDC hoàn thành tầng`}
-          </button>
-        )}
-        {urgent && !isNewWallet && <FreezeEpochButton />}
-        {!account.activated && !isDemo && (
-          <p className="mt-2 text-xs font-semibold text-cocoa-500">Nhận 5 mUSDC miễn phí ở trên để bắt đầu xây nhà nhé!</p>
-        )}
+      {/* Cột phải — Controls + heatmap mobile (desktop: zoom, quick actions) */}
+      <div className="space-y-3 lg:col-span-3">
+        <div className="card-cream p-4">
+          <h4 className="font-cozy text-sm font-bold text-cocoa-600">Điều khiển tòa nhà</h4>
+          <div className="mt-2 flex items-center justify-center gap-2">
+            <button
+              className="btn-cream h-11 w-11 !p-0 text-lg font-extrabold active:translate-y-[2px] active:border-b-2"
+              disabled={scale >= 2.2}
+              onClick={() => setZoom(Math.min(2.2, scale + 0.15))}
+              title="Phóng to"
+              aria-label="Phóng to tòa nhà"
+            >+</button>
+            <button
+              className="btn-cream h-11 w-11 !p-0 text-lg font-extrabold active:translate-y-[2px] active:border-b-2"
+              disabled={scale <= 0.4}
+              onClick={() => setZoom(Math.max(0.4, scale - 0.15))}
+              title="Thu nhỏ"
+              aria-label="Thu nhỏ tòa nhà"
+            >−</button>
+            <button
+              className="btn-cream h-11 px-3 text-sm font-extrabold active:translate-y-[2px] active:border-b-2"
+              onClick={() => setZoom(fit)}
+              title="Vừa khung hình"
+              aria-label="Vừa khung hình"
+            >⛶ Vừa khung</button>
+          </div>
+        </div>
+
+        <div className="lg:hidden">
+          <StreakHeatmap data={data} />
+        </div>
       </div>
 
       <DepositSheet data={data} open={sheetOpen} onClose={() => setSheetOpen(false)} onDeposited={onDepositStart} />
@@ -304,7 +348,7 @@ function FaucetCard() {
       <p className="mt-1 text-sm font-semibold text-cocoa-500">
         Nhận <strong>5 mUSDC</strong> gửi thẳng vào tòa nhà + mục tiêu kỳ đầu được đặt sẵn — bấm một nút là xong.
       </p>
-      <button className="btn-cozy mt-3 w-full" disabled={tx.step !== null} onClick={drip}>
+      <button className="btn-cozy mt-3 w-full active:translate-y-[2px] active:border-b-2" disabled={tx.step !== null} onClick={drip}>
         Nhận 5 mUSDC miễn phí & bắt đầu
       </button>
       <TxFeedback state={tx} />
@@ -335,7 +379,7 @@ function FreezeEpochButton() {
 
   return (
     <div className="mt-2">
-      <button className="btn-cream w-full !py-2 text-sm" disabled={tx.step !== null} onClick={freeze}>
+      <button className="btn-cream w-full !py-2 text-sm active:translate-y-[2px] active:border-b-2" disabled={tx.step !== null} onClick={freeze}>
         <Icon name="snow" size={15} className="inline -mt-0.5" /> Đóng băng kỳ này ({fmt(fee)} mUSDC) — giữ chuỗi an toàn
       </button>
       <TxFeedback state={tx} />

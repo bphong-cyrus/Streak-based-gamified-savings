@@ -41,6 +41,62 @@ function pushTxLog(entry: TxLogEntry) {
   window.dispatchEvent(new Event("cozy-txlog"));
 }
 
+/** Decode lỗi Solidity / ví thành tiếng Việt gọn gàng, không đổ raw hex ra UI. */
+function decodeError(err: BaseError): string {
+  const raw = err.message ?? "";
+  const short = err.shortMessage ?? "";
+
+  // Wallet / RPC
+  if (err.name === "UserRejectedRequestError" || raw.includes("User denied") || raw.includes("rejected")) {
+    return "Bạn đã từ chối ký giao dịch.";
+  }
+  if (raw.includes("HTTP request failed") || raw.includes("fetch")) {
+    return "Kết nối RPC Fuji bị gián đoạn — thử lại sau vài giây (giao dịch có thể đã thực hiện, kiểm tra Snowtrace trước khi gửi lại).";
+  }
+  if (raw.includes("insufficient funds")) {
+    return "Không đủ AVAX để trả phí gas.";
+  }
+
+  // Custom errors 8 core contracts
+  const checks = [
+    { key: "AlreadyCheckedIn", vi: "Bạn đã điểm danh hôm nay rồi." },
+    { key: "AlreadyDripped", vi: "Ví này đã nhận vòi nước rồi." },
+    { key: "EpochCapReached", vi: "Vòi nước đã đạt giới hạn kỳ này — thử lại kỳ sau." },
+    { key: "NotActivatedAlready", vi: "Chưa đến giờ mở kỳ đầu tiên." },
+    { key: "GoalAlreadySet", vi: "Bạn đã có một mục tiêu đang chạy." },
+    { key: "GoalNotActive", vi: "Mục tiêu không còn hiệu lực hoặc chưa đạt." },
+    { key: "StreakNotReached", vi: "Chưa đủ streak để nhận huy hiệu này." },
+    { key: "AlreadyMinted", vi: "Bạn đã sở hữu huy hiệu này rồi." },
+    { key: "NotOperator", vi: "Không có quyền thực hiện thao tác này." },
+    { key: "NotInitializer", vi: "Hàm chỉ được gọi một lần bởi deployer." },
+    { key: "NotDistributor", vi: "Chỉ distributor mới được chốt kỳ." },
+    { key: "DistributorAlreadySet", vi: "Distributor đã được thiết lập trước đó." },
+    { key: "InsufficientPrincipal", vi: "Không đủ gốc trong tòa nhà để rút." },
+    { key: "MaxParticipantsReached", vi: "Đã đạt số ngườ tham gia tối đa của kỳ." },
+    { key: "EpochOutOfOrder", vi: "Chốt kỳ phải theo thứ tự — không được bỏ qua kỳ." },
+    { key: "EpochNotEnded", vi: "Kỳ chưa kết thúc, chưa thể chốt." },
+    { key: "AlreadyReleased", vi: "Ngân sách kỳ này đã được giải ngân." },
+    { key: "FundingClosed", vi: "Đã quá hạn để nạp ngân sách cho kỳ này." },
+    { key: "DepositBelowMinimum", vi: "Số tiền gửi thấp hơn mức tối thiểu." },
+    { key: "DepositOverEpochLimit", vi: "Số tiền gửi vượt quá giới hạn mỗi kỳ." },
+    { key: "NothingToClaim", vi: "Hiện không có lãi nào để nhận." },
+    { key: "InvalidReferrer", vi: "Mã giới thiệu không hợp lệ." },
+    { key: "AlreadyFrozen", vi: "Bạn đã đóng băng kỳ này rồi." },
+    { key: "AlreadyInsured", vi: "Bạn đã mua bảo hiểm kỳ này rồi." },
+    { key: "NothingToRevive", vi: "Không có streak nào cần hồi sinh." },
+    { key: "ReviveWindowClosed", vi: "Đã quá thờ hạn để hồi sinh streak." },
+    { key: "NotStarted", vi: "Chưa đến giờ mở kỳ đầu tiên." },
+    { key: "ZeroAmount", vi: "Số tiền phải lớn hơn 0." },
+    { key: "ZeroAddress", vi: "Địa chỉ không hợp lệ." },
+  ];
+  const haystack = `${short} ${raw}`.toLowerCase();
+  for (const c of checks) {
+    if (haystack.includes(c.key.toLowerCase())) return c.vi;
+  }
+
+  return short || raw || "Đã có lỗi xảy ra — kiểm tra Snowtrace hoặc thử lại.";
+}
+
 /** Gói writeContractAsync + chờ receipt, trả về trạng thái stepper để hiển thị. Tự chuyển chain nếu ví đang sai mạng. */
 export function useTx() {
   const { writeContractAsync } = useWriteContract();
@@ -80,14 +136,7 @@ export function useTx() {
       } catch (e) {
         sfx.error();
         const err = e as BaseError;
-        const raw = err.message ?? "";
-        const msg =
-          err.name === "UserRejectedRequestError" || raw.includes("User denied")
-            ? "Bạn đã từ chối ký giao dịch."
-            : raw.includes("HTTP request failed")
-              ? "Kết nối RPC Fuji bị gián đoạn — thử lại sau vài giây (giao dịch có thể đã thực hiện, kiểm tra Snowtrace trước khi gửi lại)."
-              : (err.shortMessage ?? err.message);
-        setState({ step: null, hash: null, error: `${label}: ${msg}` });
+        setState({ step: null, hash: null, error: `${label}: ${decodeError(err)}` });
         return false;
       }
     },
@@ -135,7 +184,7 @@ export function TxFeedback({ state }: { state: TxState }) {
           className="mt-1 block truncate text-xs font-bold underline opacity-80"
           href={explorerTx(state.hash)}
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
         >
           Xem giao dịch: {state.hash}
         </a>

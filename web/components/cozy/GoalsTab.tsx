@@ -10,13 +10,48 @@ import { FeatureCard, Stat, FieldLabel, ActionRow } from "@/components/cozy/pane
 import { Icon } from "@/components/cozy/icons";
 import type { VaultData } from "@/lib/useVaultData";
 
+const PRESETS = [5, 10, 25, 50];
+
 /** Tab Mục tiêu: đặt mục tiêu tuần (vault), mục tiêu tiết kiệm (SavingsGoal), cơ chế chia thưởng. */
 export function GoalsTab({ data }: { data: VaultData }) {
   return (
-    <div className="space-y-3 px-4 pb-28 pt-2">
-      <WeeklyTargetCard data={data} />
-      <SavingsGoalCard data={data} />
-      <RewardMechanismCard data={data} />
+    <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+      <div className="space-y-3">
+        <ActiveGoalBanner data={data} />
+        <WeeklyTargetCard data={data} />
+      </div>
+      <div className="space-y-3">
+        <SavingsGoalCard data={data} />
+        <RewardMechanismCard data={data} />
+      </div>
+    </div>
+  );
+}
+
+/** Banner mục tiêu đang chạy — luôn hiện đầu trang khi đã có mục tiêu. */
+function ActiveGoalBanner({ data }: { data: VaultData }) {
+  const { account } = data;
+  const target = account?.currentTarget ?? 0n;
+  const progress = account?.currentProgress ?? 0n;
+  const pct = target > 0n ? Math.min(100, Number((progress * 100n) / target)) : 0;
+  if (!target) return null;
+  return (
+    <div className="card-cream p-4">
+      <div className="flex items-center justify-between">
+        <h3 className="flex items-center gap-1.5 font-cozy text-lg font-bold">
+          <Icon name="rocket" size={20} className="text-lavender-500" /> Mục tiêu kỳ này
+        </h3>
+        <span className="font-cozy text-sm font-extrabold text-cocoa-700 tabular-nums">{pct}%</span>
+      </div>
+      <div className="mt-2 h-4 overflow-hidden rounded-full bg-cocoa-700/10">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-lavender-400 to-lavender-300 transition-all duration-700"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="mt-2 text-xs font-semibold text-cocoa-500">
+        {fmt(progress)} / {fmt(target)} mUSDC · còn {fmt(target > progress ? target - progress : 0n)} mUSDC nữa
+      </p>
     </div>
   );
 }
@@ -45,6 +80,17 @@ function WeeklyTargetCard({ data }: { data: VaultData }) {
         {account?.activated ? "Thay đổi áp dụng từ kỳ kế tiếp." : "Lần đầu đặt có hiệu lực ngay kỳ này."} Hiện tại:{" "}
         {fmt(account?.currentTarget ?? 0n)} mUSDC/tuần
       </p>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {PRESETS.map((p) => (
+          <button
+            key={p}
+            className="rounded-lg border border-[#e3d5b8] bg-white px-2.5 py-1 text-xs font-extrabold text-cocoa-600 shadow-sm transition hover:border-lavender-400 hover:bg-lavender-300/15 active:translate-y-[1px]"
+            onClick={() => setInput(String(p))}
+          >
+            {p} mUSDC
+          </button>
+        ))}
+      </div>
       <ActionRow>
         <div className="relative mt-2 flex-1">
           <input
@@ -56,7 +102,7 @@ function WeeklyTargetCard({ data }: { data: VaultData }) {
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-cocoa-500">mUSDC</span>
         </div>
-        <button className="btn-cozy mt-2 shrink-0" disabled={step !== null || !parseAmount(input)} onClick={setTarget}>
+        <button className="btn-cozy mt-2 shrink-0 active:translate-y-[2px] active:border-b-2" disabled={step !== null || !parseAmount(input)} onClick={setTarget}>
           Lưu
         </button>
       </ActionRow>
@@ -106,7 +152,7 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
         <div>
           <div className="flex items-center justify-between text-xs font-bold text-cocoa-500">
             <span>Gốc hiện tại / mục tiêu</span>
-            <span className="font-cozy text-sm text-cocoa-700">
+            <span className="font-cozy text-sm text-cocoa-700 tabular-nums">
               {fmt(g.progress)} / {fmt(g.targetAmount)} mUSDC · {pct}%
             </span>
           </div>
@@ -121,7 +167,7 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
               Hạn: trước kỳ #{g.deadlineEpoch.toString()} · {g.reached ? "Đã đạt — chiến tích on-chain!" : "Còn cố lên!"}
             </span>
             {!g.reached && g.progress >= g.targetAmount && (
-              <button className="btn-cozy shrink-0 !px-3 !py-1.5 text-xs" disabled={tx.step !== null} onClick={() =>
+              <button className="btn-cozy shrink-0 !px-3 !py-1.5 text-xs active:translate-y-[1px] active:border-b-2" disabled={tx.step !== null} onClick={() =>
                 tx.run("Ghi nhận đạt mục tiêu", [
                   { label: "Đang ghi nhận GoalReached…", call: { address: contracts.goal, abi: savingsGoalAbi, functionName: "checkReached", args: [] } },
                 ])
@@ -131,7 +177,7 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
             )}
           </div>
           <button
-            className="btn-cream mt-2 w-full !py-1.5 text-xs"
+            className="btn-cream mt-2 w-full !py-1.5 text-xs active:translate-y-[1px] active:border-b-2"
             disabled={tx.step !== null}
             onClick={() =>
               tx.run("Huỷ mục tiêu", [
@@ -146,6 +192,17 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
         <div className="space-y-2.5">
           <div>
             <FieldLabel>Mốc gốc muốn đạt (mUSDC)</FieldLabel>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {PRESETS.map((p) => (
+                <button
+                  key={p}
+                  className="rounded-lg border border-[#e3d5b8] bg-white px-2.5 py-1 text-xs font-extrabold text-cocoa-600 shadow-sm transition hover:border-lavender-400 hover:bg-lavender-300/15 active:translate-y-[1px]"
+                  onClick={() => setAmount(String(p))}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
             <ActionRow>
               <input className="input-cozy mt-1 flex-1" inputMode="decimal" placeholder="VD: 50" value={amount} onChange={(e) => setAmount(e.target.value)} />
             </ActionRow>
@@ -161,7 +218,7 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
                 onChange={(e) => setDeadline(e.target.value.replace(/[^0-9]/g, ""))}
               />
               <button
-                className="btn-cozy mt-1 shrink-0"
+                className="btn-cozy mt-1 shrink-0 active:translate-y-[2px] active:border-b-2"
                 disabled={tx.step !== null || !parseAmount(amount) || !deadline || BigInt(deadline) <= currentEpoch}
                 onClick={setGoal}
               >

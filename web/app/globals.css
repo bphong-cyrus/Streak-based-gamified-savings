@@ -114,8 +114,13 @@ body {
 /* Card: be mat trang mem, vien 1px nhat, shadow mem dai — fintech modern
    thay cho kieu border 3px + shadow cung (nhin nhu do choi) */
 .card-cream {
-  @apply rounded-[20px] border border-[#eadfc6] bg-[#fffdf7] text-cocoa-700;
+  @apply rounded-[20px] border border-[#eadfc6] border-b-[3px] bg-[#fffdf7] text-cocoa-700;
   box-shadow: 0 1px 2px rgba(70, 56, 39, 0.04), 0 8px 24px -8px rgba(70, 56, 39, 0.12);
+}
+
+.card-cream:active {
+  transform: translateY(1px);
+  border-bottom-width: 2px;
 }
 
 .chunky {
