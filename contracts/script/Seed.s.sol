@@ -4,25 +4,35 @@ pragma solidity ^0.8.24;
 import {Script, console2} from "forge-std/Script.sol";
 import {MockUSDC} from "../src/MockUSDC.sol";
 import {MockYieldSource} from "../src/MockYieldSource.sol";
+import {DailyCheckIn} from "../src/DailyCheckIn.sol";
+import {FaucetDrip} from "../src/FaucetDrip.sol";
 
-/// @notice Seed demo: mint mUSDC cho các ví demo và nạp ngân sách mock yield cho kỳ 0, 1.
+/// @notice Seed demo: mint mUSDC cho ví demo, nạp pool yield kỳ đầu + pool điểm danh + faucet.
 /// Đọc địa chỉ từ deployments/<chainId>.json.
 /// Env:
-///   DEMO_WALLETS       danh sách địa chỉ, phân tách bằng dấu phẩy (An,Bình,Chi)
-///   DEMO_MINT_AMOUNT   số mUSDC mint cho mỗi ví, đơn vị nhỏ nhất (mặc định 100_000_000 = 100 mUSDC)
-///   FUND_EPOCH0        mặc định 2_000_000 (2 mUSDC)
-///   FUND_EPOCH1        mặc định 3_000_000 (3 mUSDC)
+///   DEMO_WALLETS       địa chỉ phân tách dấu phẩy
+///   DEMO_MINT_AMOUNT   mỗi ví, đơn vị nhỏ nhất (mặc định 100_000_000 = 100 mUSDC)
+///   FUND_EPOCH0/EPOCH1/EPOCH2  ngân sách yield (mặc định 2/3/5 mUSDC)
+///   FUND_CHECKIN       pool thưởng điểm danh (mặc định 10 mUSDC)
+///   FUND_FAUCET        pool vòi nước (mặc định 100 mUSDC)
 contract Seed is Script {
     function run() external {
         string memory path = string.concat(vm.projectRoot(), "/deployments/", vm.toString(block.chainid), ".json");
         string memory json = vm.readFile(path);
         MockUSDC token = MockUSDC(vm.parseJsonAddress(json, ".token"));
         MockYieldSource source = MockYieldSource(vm.parseJsonAddress(json, ".yieldSource"));
+        DailyCheckIn checkIn = DailyCheckIn(vm.parseJsonAddress(json, ".dailyCheckIn"));
+        FaucetDrip faucet = FaucetDrip(vm.parseJsonAddress(json, ".faucetDrip"));
 
         address[] memory wallets = vm.envOr("DEMO_WALLETS", ",", new address[](0));
         uint256 mintAmount = vm.envOr("DEMO_MINT_AMOUNT", uint256(100_000_000));
-        uint256 fund0 = vm.envOr("FUND_EPOCH0", uint256(2_000_000));
-        uint256 fund1 = vm.envOr("FUND_EPOCH1", uint256(3_000_000));
+        uint256 fundCheckIn = vm.envOr("FUND_CHECKIN", uint256(10_000_000));
+        uint256 fundFaucet = vm.envOr("FUND_FAUCET", uint256(100_000_000));
+        uint256[3] memory funds = [
+            vm.envOr("FUND_EPOCH0", uint256(2_000_000)),
+            vm.envOr("FUND_EPOCH1", uint256(3_000_000)),
+            vm.envOr("FUND_EPOCH2", uint256(5_000_000))
+        ];
 
         vm.startBroadcast();
         for (uint256 i; i < wallets.length; ++i) {
@@ -30,14 +40,27 @@ contract Seed is Script {
             console2.log("Minted to", wallets[i], mintAmount);
         }
 
-        uint256 totalFund = fund0 + fund1;
-        if (totalFund > 0) {
-            token.mint(msg.sender, totalFund);
-            token.approve(address(source), totalFund);
-            if (fund0 > 0) source.fundEpoch(0, fund0);
-            if (fund1 > 0) source.fundEpoch(1, fund1);
-            console2.log("Funded epoch 0:", fund0);
-            console2.log("Funded epoch 1:", fund1);
+        uint256 totalYield = funds[0] + funds[1] + funds[2];
+        uint256 total = totalYield + fundCheckIn + fundFaucet;
+        if (total > 0) {
+            token.mint(msg.sender, total);
+            if (totalYield > 0) {
+                token.approve(address(source), totalYield);
+                if (funds[0] > 0) source.fundEpoch(0, funds[0]);
+                if (funds[1] > 0) source.fundEpoch(1, funds[1]);
+                if (funds[2] > 0) source.fundEpoch(2, funds[2]);
+                console2.log("Funded yield epochs:", totalYield);
+            }
+            if (fundCheckIn > 0) {
+                token.approve(address(checkIn), fundCheckIn);
+                checkIn.fund(fundCheckIn);
+                console2.log("Funded check-in pool:", fundCheckIn);
+            }
+            if (fundFaucet > 0) {
+                token.approve(address(faucet), fundFaucet);
+                faucet.fund(fundFaucet);
+                console2.log("Funded faucet:", fundFaucet);
+            }
         }
         vm.stopBroadcast();
     }

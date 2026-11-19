@@ -16,3 +16,6 @@ Thumbs.db
 .vscode/
 .idea/
 contracts/broadcast/*/43113/
+*.recovery.lock
+contracts/abi/
+contracts/out/
