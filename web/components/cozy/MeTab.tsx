@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useDisconnect } from "wagmi";
 import { contracts } from "@/lib/config";
 import { fmt, shortAddr } from "@/lib/format";
-import { IdentityAvatar, identityOf, useIdentityIndex, pickIdentity, IDENTITIES } from "@/lib/identity";
+import { IdentityAvatar, useIdentityIndex, pickIdentity, IDENTITIES } from "@/lib/identity";
+import { isDemoMode } from "@/lib/demo";
+import { resetOnboarding } from "@/components/cozy/Onboarding";
 import type { ThemeMode } from "@/components/cozy/useThemeLanding";
 import type { VaultData } from "@/lib/useVaultData";
 import { RecentTxPanel } from "@/components/cozy/RecentTxPanel";
@@ -16,69 +18,81 @@ interface Props {
   onThemeChange: (t: ThemeMode) => void;
 }
 
-/** Tab Hồ sơ: danh tính, giao dịch gần đây (Snowtrace), giao diện, địa chỉ contract. */
 export function MeTab({ data, theme, onThemeChange }: Props) {
   const { disconnect } = useDisconnect();
   const { address, tokenBalance, claimed, account } = data;
   const currentIdx = useIdentityIndex(address);
   const currentIdentity = IDENTITIES[currentIdx] ?? IDENTITIES[0];
+  const isDemo = isDemoMode();
 
   function select(i: number) {
     pickIdentity(address, i);
   }
 
   return (
-    <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
-      <div className="space-y-3">
-        {/* hồ sơ */}
-        <div className="card-cream p-4 text-center">
-          <div className="mx-auto w-fit">
-            <IdentityAvatar address={address} className="h-24 w-24" />
+    <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
+      <div className="space-y-4">
+        {/* Hồ sơ gọn */}
+        <div className="card p-4">
+          <div className="flex items-center gap-4">
+            <IdentityAvatar address={address} className="h-16 w-16" index={currentIdx} />
+            <div className="flex-1">
+              <h3 className="font-cozy text-xl font-extrabold text-ink">{currentIdentity.name}</h3>
+              <p className="text-sm font-semibold text-ink-soft">{currentIdentity.vi}</p>
+              {!isDemo && address && (
+                <p className="mt-0.5 font-mono text-xs font-semibold text-ink-muted">{shortAddr(address)}</p>
+              )}
+            </div>
+            {!isDemo && address && (
+              <button className="btn-secondary !h-9 !px-3 !py-1.5 text-xs" onClick={() => disconnect()}>
+                Ngắt
+              </button>
+            )}
           </div>
-          <h3 className="mt-2 font-cozy text-xl font-extrabold">{shortAddr(address)}</h3>
-          <p className="font-cozy text-sm font-bold text-lavender-500">
-            {currentIdentity.icon} {currentIdentity.name}
-          </p>
-          <p className="text-xs font-semibold text-cocoa-500">{currentIdentity.vi}</p>
-          <p className="mt-1 text-xs font-semibold text-cocoa-500">
-            🔥 Streak dài nhất hiện tại: {account?.streak.toString() ?? 0} tuần · 🌱 Đã nhận {fmt(claimed)} mUSDC lãi
-          </p>
-          <button className="btn-cream mt-3 active:translate-y-[1px] active:border-b-2" onClick={() => disconnect()}>
-            <Icon name="x" size={15} className="inline -mt-0.5" /> Ngắt kết nối ví
-          </button>
+          <div className="mt-4 flex items-center gap-4 border-t border-border pt-3">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">Chuỗi hiện tại</div>
+              <div className="font-cozy text-lg font-extrabold tabular-nums text-ink">{account?.streak.toString() ?? 0} tuần</div>
+            </div>
+            <div className="h-8 w-px bg-border" />
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">Đã nhận lãi</div>
+              <div className="font-cozy text-lg font-extrabold tabular-nums text-cta">+{fmt(claimed)} mUSDC</div>
+            </div>
+            <div className="h-8 w-px bg-border" />
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">Số dư ví</div>
+              <div className="font-cozy text-lg font-extrabold tabular-nums text-ink">{fmt(tokenBalance, 2)} mUSDC</div>
+            </div>
+          </div>
         </div>
 
-        {/* chọn identity */}
-        <div className="card-cream p-4">
-          <h4 className="flex items-center gap-1.5 font-cozy font-bold">
-            <Icon name="cat" size={18} className="text-cocoa-600" /> Chọn nhân vật của bạn
+        {/* Chọn nhân vật */}
+        <div className="card p-4">
+          <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
+            <Icon name="cat" size={18} className="text-ink-soft" /> Chọn nhân vật
           </h4>
-          <p className="text-xs font-semibold text-cocoa-500">
-            Chạm vào nhân vật để chọn làm avatar — lựa chọn lưu trên trình duyệt của bạn.
-          </p>
-          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+          <p className="text-xs font-semibold text-ink-soft">Chạm vào nhân vật để chọn làm avatar — lưu trên trình duyệt của bạn.</p>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {IDENTITIES.map((id, i) => {
               const mine = i === currentIdx;
               return (
                 <button
                   key={id.key}
-                  className={`rounded-xl border-[1.5px] p-1.5 text-center transition active:scale-95 focus-visible:ring-2 focus-visible:ring-leaf-400 focus-visible:ring-offset-1 ${
-                    mine ? "border-leaf-500 bg-leaf-300/20" : "border-cream-300 bg-white/70 hover:border-lavender-400"
+                  className={`rounded-xl border p-2 text-center transition active:scale-95 ${
+                    mine ? "border-cta bg-cta/5" : "border-border bg-surface hover:border-cta/50"
                   }`}
                   onClick={() => select(i)}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`/identities/${id.key}.svg`}
                     alt={id.name}
                     className="mx-auto h-20 w-auto object-contain"
                     draggable={false}
                   />
-                  <div className="mt-0.5 truncate text-[10px] font-bold text-cocoa-600">
-                    {id.icon} {id.name.replace("The ", "")}
-                  </div>
-                  <div className="truncate text-[9px] font-semibold text-cocoa-500">{id.vi}</div>
-                  {mine && <div className="text-[9px] font-extrabold text-leaf-600">✓ Đang dùng</div>}
+                  <div className="mt-1 truncate text-[10px] font-bold text-ink">{id.name}</div>
+                  <div className="truncate text-[9px] font-semibold text-ink-soft">{id.vi}</div>
+                  {mine && <div className="mt-0.5 text-[9px] font-extrabold text-cta">Đang dùng</div>}
                 </button>
               );
             })}
@@ -86,19 +100,34 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
         </div>
       </div>
 
-      <div className="space-y-3">
-        {/* giao dịch gần đây */}
+      <div className="space-y-4">
         <RecentTxPanel />
 
-        {/* giao diện day/night */}
-        <div className="card-cream p-4">
-          <h4 className="flex items-center gap-1.5 font-cozy font-bold">
-            <Icon name="sun" size={18} className="text-cocoa-600" /> Giao diện
+        <div className="card p-4">
+          <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
+            <Icon name="book" size={18} className="text-ink-soft" /> Hướng dẫn
           </h4>
-          <div className="mt-2 grid grid-cols-2 gap-2">
+          <p className="mt-1 text-xs font-semibold text-ink-soft">Bạn có thể xem lại bài hướng dẫn 3 bước bất cứ lúc nào.</p>
+          <button
+            className="btn-secondary mt-3 w-full"
+            onClick={() => {
+              resetOnboarding();
+              window.location.reload();
+            }}
+          >
+            Xem lại hướng dẫn
+          </button>
+        </div>
+
+        {/* Giao diện */}
+        <div className="card p-4">
+          <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
+            <Icon name="sun" size={18} className="text-ink-soft" /> Giao diện
+          </h4>
+          <div className="mt-3 grid grid-cols-2 gap-3">
             <button
-              className={`rounded-xl border-[1.5px] py-3 font-cozy font-bold transition active:translate-y-[1px] ${
-                theme === "day" ? "border-leaf-500 bg-leaf-300/25 text-cocoa-700" : "border-cream-300 bg-white text-cocoa-500"
+              className={`rounded-xl border py-3 font-cozy font-bold transition active:translate-y-[1px] ${
+                theme === "day" ? "border-cta bg-cta/5 text-ink" : "border-border bg-surface text-ink-soft"
               }`}
               onClick={() => onThemeChange("day")}
             >
@@ -107,8 +136,8 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
               </span>
             </button>
             <button
-              className={`rounded-xl border-[1.5px] py-3 font-cozy font-bold transition active:translate-y-[1px] ${
-                theme === "night" ? "border-leaf-500 bg-leaf-300/25 text-cocoa-700" : "border-cream-300 bg-white text-cocoa-500"
+              className={`rounded-xl border py-3 font-cozy font-bold transition active:translate-y-[1px] ${
+                theme === "night" ? "border-cta bg-cta/5 text-ink" : "border-border bg-surface text-ink-soft"
               }`}
               onClick={() => onThemeChange("night")}
             >
@@ -117,21 +146,15 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
               </span>
             </button>
           </div>
-          <p className="mt-2 text-xs font-semibold text-cocoa-500">
-            Mặc định theo giờ máy bạn. Cửa sổ tòa nhà sẽ sáng đèn ấm vào ban đêm!
-          </p>
+          <p className="mt-3 text-xs font-semibold text-ink-soft">Mặc định theo giờ máy bạn. Cửa sổ tòa nhà sẽ sáng đèn ấm vào ban đêm.</p>
         </div>
 
-        {/* thông tin on-chain */}
-        <div className="card-cream p-4">
-          <h4 className="flex items-center gap-1.5 font-cozy font-bold">
-            <Icon name="bank" size={18} className="text-cocoa-600" /> Trên chuỗi (Fuji Testnet)
+        {/* Thông tin on-chain */}
+        <div className="card p-4">
+          <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
+            <Icon name="bank" size={18} className="text-ink-soft" /> Thông tin trên chuỗi (Fuji Testnet)
           </h4>
-          <dl className="mt-2 space-y-1.5 text-xs font-semibold text-cocoa-500">
-            <div className="flex justify-between gap-2">
-              <dt>Số dư mUSDC</dt>
-              <dd className="font-cozy text-sm font-extrabold text-cocoa-700 tabular-nums">{fmt(tokenBalance, 2)}</dd>
-            </div>
+          <dl className="mt-3 space-y-2 text-xs font-semibold text-ink-soft">
             {(
               [
                 ["Vault (gốc & streak)", contracts.vault],
@@ -146,8 +169,8 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
               <ContractRow key={label} label={label} addr={addr} />
             ))}
           </dl>
-          <p className="mt-3 text-[11px] font-semibold text-cocoa-500">
-            Mọi giao dịch trong app đều kèm link Snowtrace để đối chiếu khi demo — không server nào giữ tiền ngườ dùng.
+          <p className="mt-3 text-[11px] font-semibold text-ink-soft">
+            Mọi giao dịch trong app đều kèm link Snowtrace để đối chiếu — không server nào giữ tiền ngườ dùng.
           </p>
         </div>
       </div>
@@ -162,11 +185,11 @@ function ContractRow({ label, addr }: { label: string; addr: string }) {
     <div className="flex items-center justify-between gap-2">
       <dt className="truncate">{label}</dt>
       <dd className="flex items-center gap-1.5">
-        <a className="underline" href={url} target="_blank" rel="noopener noreferrer">
+        <a className="font-mono text-ink underline" href={url} target="_blank" rel="noopener noreferrer">
           {shortAddr(addr)}
         </a>
         <button
-          className="rounded-md border border-cocoa-700/15 bg-white/70 px-1.5 py-0.5 text-[10px] font-extrabold text-cocoa-600 transition hover:bg-white active:translate-y-[1px]"
+          className="rounded-md border border-border bg-surface px-1.5 py-0.5 text-[10px] font-extrabold text-ink-soft transition hover:bg-surface-sunken active:translate-y-[1px]"
           onClick={() => {
             navigator.clipboard.writeText(addr);
             setCopied(true);
@@ -175,7 +198,7 @@ function ContractRow({ label, addr }: { label: string; addr: string }) {
           title="Sao chép địa chỉ"
           aria-label={`Sao chép địa chỉ ${label}`}
         >
-          {copied ? "✓" : "Copy"}
+          {copied ? "Đã copy" : "Copy"}
         </button>
       </dd>
     </div>

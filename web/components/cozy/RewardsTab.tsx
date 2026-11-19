@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useAccount, useReadContracts } from "wagmi";
 import { contracts } from "@/lib/config";
 import { streakNFTAbi, dailyCheckInAbi, yieldDistributorAbi } from "@/lib/abis";
@@ -10,16 +9,15 @@ import { FeatureCard, Stat } from "@/components/cozy/panel";
 import { Icon } from "@/components/cozy/icons";
 import type { VaultData } from "@/lib/useVaultData";
 
-/** Tab Rewards: huy hiệu streak (StreakNFT), điểm danh mỗi ngày, nhận lãi. */
 export function RewardsTab({ data }: { data: VaultData }) {
   return (
-    <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
-      <div className="space-y-3">
-        <BadgesCard data={data} />
+    <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
+      <div className="space-y-4">
+        <YieldCard data={data} />
         <CheckInCard />
       </div>
-      <div className="space-y-3">
-        <YieldCard data={data} />
+      <div className="space-y-4">
+        <BadgesCard data={data} />
       </div>
     </div>
   );
@@ -31,7 +29,6 @@ const TIERS = [
   { tier: 30n, label: "30 tuần", desc: "Huyền thoại cozy", icon: "crown" as const, color: "#a794e6" },
 ];
 
-/** Huy hiệu StreakNFT theo mốc 3 / 7 / 30 tuần streak. */
 function BadgesCard({ data }: { data: VaultData }) {
   const tx = useTx();
   const { address } = useAccount();
@@ -58,15 +55,12 @@ function BadgesCard({ data }: { data: VaultData }) {
     ]);
   }
 
-  const canMint = eligible > 0n && !owned(TIERS.findIndex((t) => t.tier === eligible));
+  const eligibleIndex = TIERS.findIndex((t) => t.tier === eligible);
+  const canMint = eligible > 0n && !owned(eligibleIndex);
 
   return (
-    <FeatureCard
-      icon="trophy"
-      title="Huy hiệu streak"
-      desc="NFT ghi lại cột mốc chuỗi tuần của bạn — vĩnh viễn trên chuỗi"
-    >
-      <div className="grid grid-cols-3 gap-2">
+    <FeatureCard icon="trophy" title="Huy hiệu streak" desc="NFT ghi lại cột mốc chuỗi tuần của bạn — vĩnh viễn trên chuỗi">
+      <div className="space-y-3">
         {TIERS.map((t, i) => {
           const has = owned(i);
           const canUnlock = !has && eligible >= t.tier;
@@ -75,41 +69,42 @@ function BadgesCard({ data }: { data: VaultData }) {
           return (
             <div
               key={t.tier.toString()}
-              className={`flex flex-col items-center rounded-2xl border-[1.5px] px-2 py-3 text-center transition ${
+              className={`flex items-center gap-3 rounded-xl border px-3 py-3 transition ${
                 has
-                  ? "border-lavender-400 bg-lavender-300/25 shadow-sm"
+                  ? "border-cta/40 bg-cta/5"
                   : canUnlock
-                    ? "border-leaf-500 bg-leaf-300/20 shadow-sm"
-                    : "border-cream-300 bg-white/60 opacity-75"
+                    ? "border-terracotta/40 bg-terracotta/5"
+                    : "border-border bg-surface-sunken/50 opacity-75"
               }`}
             >
               <span
-                className={`flex h-12 w-12 items-center justify-center rounded-full border-2 ${
-                  has ? "border-lavender-400 bg-white text-lavender-500" : canUnlock ? "border-leaf-500 bg-white text-leaf-600" : "border-cream-300 bg-white/80 text-cocoa-400"
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 ${
+                  has ? "border-cta bg-surface text-cta" : canUnlock ? "border-terracotta bg-surface text-terracotta" : "border-border bg-surface text-ink-muted"
                 }`}
-                style={{ boxShadow: has || canUnlock ? `0 0 0 3px ${t.color}33` : undefined }}
               >
                 <Icon name={t.icon} size={26} />
               </span>
-              <div className="mt-1.5 font-cozy text-sm font-extrabold text-cocoa-700">{t.label}</div>
-              <div className="text-[10px] font-semibold leading-tight text-cocoa-500">{t.desc}</div>
-              <div
-                className={`mt-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase ${
-                  has ? "bg-lavender-400 text-white" : canUnlock ? "bg-leaf-400 text-white" : "bg-cream-200 text-cocoa-500"
+              <div className="flex-1">
+                <div className="font-cozy text-base font-extrabold text-ink">{t.label}</div>
+                <div className="text-xs font-semibold text-ink-soft">{t.desc}</div>
+              </div>
+              <span
+                className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase ${
+                  has ? "bg-cta text-white" : canUnlock ? "bg-terracotta text-white" : "bg-border text-ink-soft"
                 }`}
               >
                 {loading ? "…" : has ? "Đã sở hữu" : canUnlock ? "Có thể nhận" : weeksLeft === 0 ? "Đã mở khóa" : `còn ${weeksLeft} tuần`}
-              </div>
+              </span>
             </div>
           );
         })}
       </div>
       {address && canMint && (
-        <button className="btn-cozy mt-3 w-full active:translate-y-[2px] active:border-b-2" disabled={tx.step !== null} onClick={mint}>
+        <button className="btn-primary mt-4 w-full" disabled={tx.step !== null} onClick={mint}>
           Nhận huy hiệu {eligible.toString()} tuần ngay
         </button>
       )}
-      <p className="mt-2 text-[11px] font-semibold text-cocoa-500">
+      <p className="mt-2 text-[11px] font-semibold text-ink-soft">
         Streak hiện tại: {streak.toString()} tuần · Huy hiệu mint theo tiêu chuẩn ERC-1155, đối chiếu được trên Snowtrace.
       </p>
       <TxFeedback state={tx} />
@@ -117,22 +112,20 @@ function BadgesCard({ data }: { data: VaultData }) {
   );
 }
 
-/** Điểm danh mỗi ngày — thưởng mUSDC từ pool, chuỗi tăng thưởng tăng. */
 function CheckInCard() {
   const tx = useTx();
   const { address } = useAccount();
 
   const state = useReadContracts({
-    contracts:
-      address
-        ? [
-            { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "today", args: [] },
-            { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "lastCheckInDay", args: [address] },
-            { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "checkInStreakDays", args: [address] },
-            { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "previewReward", args: [address] },
-            { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "rewardPool", args: [] },
-          ]
-        : [],
+    contracts: address
+      ? [
+          { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "today", args: [] },
+          { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "lastCheckInDay", args: [address] },
+          { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "checkInStreakDays", args: [address] },
+          { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "previewReward", args: [address] },
+          { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "rewardPool", args: [] },
+        ]
+      : [],
     query: { refetchInterval: 30_000, enabled: !!address },
   });
   const todayDay = state.data?.[0]?.result as bigint | undefined;
@@ -150,14 +143,14 @@ function CheckInCard() {
   }
 
   return (
-    <FeatureCard icon="calendar" title="Điểm danh mỗi ngày" desc="mUSDC thật mỗi ngày — chuỗi càng dài thưởng càng lớn (tối đa gấp đôi)">
+    <FeatureCard icon="calendar" title="Điểm danh mỗi ngày" desc="mUSDC thật mỗi ngày — chuỗi càng dài thưởng càng lớn">
       <div className="grid grid-cols-3 gap-2">
-        <Stat label="Chuỗi ngày" value={loading ? "…" : address ? streak.toString() : "—"} tone="text-blush-500" />
-        <Stat label="Thưởng hôm nay" value={loading ? "…" : address ? `${fmt(reward)} mUSDC` : "—"} tone="text-leaf-600" />
-        <Stat label="Pool còn" value={loading ? "…" : address ? `${fmt(pool)} mUSDC` : "—"} />
+        <Stat label="Chuỗi ngày" value={loading ? undefined : address ? streak.toString() : "—"} tone="text-terracotta" />
+        <Stat label="Thưởng hôm nay" value={loading ? undefined : address ? `${fmt(reward)} mUSDC` : "—"} tone="text-cta" />
+        <Stat label="Pool còn" value={loading ? undefined : address ? `${fmt(pool)} mUSDC` : "—"} />
       </div>
       <button
-        className="btn-cozy mt-3 w-full active:translate-y-[2px] active:border-b-2"
+        className="btn-primary mt-4 w-full"
         disabled={tx.step !== null || !address || !canCheckIn}
         onClick={doCheckIn}
       >
@@ -168,7 +161,6 @@ function CheckInCard() {
   );
 }
 
-/** Nhận lãi yield đã phân bổ + chốt kỳ công khai. */
 function YieldCard({ data }: { data: VaultData }) {
   const claim = useTx();
   const finalize = useTx();
@@ -189,21 +181,21 @@ function YieldCard({ data }: { data: VaultData }) {
   const busy = claim.step !== null || finalize.step !== null;
 
   return (
-    <FeatureCard icon="chart" title="Lãi tiết kiệm" desc="Yield từ nguồn lãi mock — chia theo gốc và streak, đối chiếu được on-chain">
+    <FeatureCard icon="chart" title="Lãi tiết kiệm" desc="Yield từ nguồn lãi mô phỏng — chia theo gốc và streak, đối chiếu được on-chain">
       <div className="grid grid-cols-3 gap-2">
-        <Stat label="Chờ nhận" value={`${fmt(claimable)} mUSDC`} tone="text-leaf-600" />
+        <Stat label="Chờ nhận" value={`${fmt(claimable)} mUSDC`} tone="text-cta" />
         <Stat label="Đã nhận" value={`${fmt(claimed)} mUSDC`} />
         <Stat label="Ngân sách kỳ này" value={`${fmt(currentBudget)} mUSDC`} />
       </div>
-      <button className="btn-cozy mt-3 w-full active:translate-y-[2px] active:border-b-2" disabled={busy || !claimable || claimable === 0n} onClick={claimYield}>
+      <button className="btn-primary mt-4 w-full" disabled={busy || !claimable || claimable === 0n} onClick={claimYield}>
         Nhận lãi về ví
       </button>
       <TxFeedback state={claim} />
-      <div className="mt-3 border-t border-dashed border-cocoa-700/15 pt-3">
-        <p className="text-xs font-semibold text-cocoa-500">
+      <div className="mt-4 border-t border-dashed border-border pt-4">
+        <p className="text-xs font-semibold text-ink-soft">
           Chốt kỳ là hành động công khai — ai gọi cũng được{rollover !== undefined && rollover > 0n ? ` · Rollover chờ chia: ${fmt(rollover)} mUSDC` : ""}.
         </p>
-        <button className="btn-cream mt-2 w-full active:translate-y-[1px] active:border-b-2" disabled={busy || !canFinalize} onClick={finalizeEpoch}>
+        <button className="btn-secondary mt-2 w-full" disabled={busy || !canFinalize} onClick={finalizeEpoch}>
           {canFinalize ? `Chốt kỳ #${nextEpochToFinalize}` : "Chưa đến hạn chốt kỳ"}
         </button>
         <TxFeedback state={finalize} />

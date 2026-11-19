@@ -12,15 +12,14 @@ import type { VaultData } from "@/lib/useVaultData";
 
 const PRESETS = [5, 10, 25, 50];
 
-/** Tab Mục tiêu: đặt mục tiêu tuần (vault), mục tiêu tiết kiệm (SavingsGoal), cơ chế chia thưởng. */
 export function GoalsTab({ data }: { data: VaultData }) {
   return (
-    <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
-      <div className="space-y-3">
+    <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
+      <div className="space-y-4">
         <ActiveGoalBanner data={data} />
         <WeeklyTargetCard data={data} />
       </div>
-      <div className="space-y-3">
+      <div className="space-y-4">
         <SavingsGoalCard data={data} />
         <RewardMechanismCard data={data} />
       </div>
@@ -28,7 +27,6 @@ export function GoalsTab({ data }: { data: VaultData }) {
   );
 }
 
-/** Banner mục tiêu đang chạy — luôn hiện đầu trang khi đã có mục tiêu. */
 function ActiveGoalBanner({ data }: { data: VaultData }) {
   const { account } = data;
   const target = account?.currentTarget ?? 0n;
@@ -36,27 +34,23 @@ function ActiveGoalBanner({ data }: { data: VaultData }) {
   const pct = target > 0n ? Math.min(100, Number((progress * 100n) / target)) : 0;
   if (!target) return null;
   return (
-    <div className="card-cream p-4">
+    <div className="card p-4">
       <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-1.5 font-cozy text-lg font-bold">
-          <Icon name="rocket" size={20} className="text-lavender-500" /> Mục tiêu kỳ này
+        <h3 className="flex items-center gap-1.5 font-cozy text-lg font-bold text-ink">
+          <Icon name="rocket" size={20} className="text-cta" /> Mục tiêu kỳ này
         </h3>
-        <span className="font-cozy text-sm font-extrabold text-cocoa-700 tabular-nums">{pct}%</span>
+        <span className="font-cozy text-sm font-extrabold tabular-nums text-ink">{pct}%</span>
       </div>
-      <div className="mt-2 h-4 overflow-hidden rounded-full bg-cocoa-700/10">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-lavender-400 to-lavender-300 transition-all duration-700"
-          style={{ width: `${pct}%` }}
-        />
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-sunken" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tiến độ mục tiêu kỳ này">
+        <div className="h-full rounded-full bg-cta transition-all duration-700" style={{ width: `${pct}%` }} />
       </div>
-      <p className="mt-2 text-xs font-semibold text-cocoa-500">
+      <p className="mt-2 text-xs font-semibold text-ink-soft">
         {fmt(progress)} / {fmt(target)} mUSDC · còn {fmt(target > progress ? target - progress : 0n)} mUSDC nữa
       </p>
     </div>
   );
 }
 
-/** Đặt mục tiêu tuần — áp dụng từ kỳ kế tiếp. */
 function WeeklyTargetCard({ data }: { data: VaultData }) {
   const { account } = data;
   const { run, step, hash, error, info } = useTx();
@@ -72,19 +66,19 @@ function WeeklyTargetCard({ data }: { data: VaultData }) {
   }
 
   return (
-    <div className="card-cream p-4">
-      <h3 className="flex items-center gap-1.5 font-cozy text-lg font-bold">
-        <Icon name="target" size={20} className="text-cocoa-600" /> Mục tiêu tuần
+    <div className="card p-4">
+      <h3 className="flex items-center gap-1.5 font-cozy text-lg font-bold text-ink">
+        <Icon name="target" size={20} className="text-ink-soft" /> Mục tiêu mỗi kỳ
       </h3>
-      <p className="mt-0.5 text-xs font-semibold text-cocoa-500">
+      <p className="mt-0.5 text-xs font-semibold text-ink-soft">
         {account?.activated ? "Thay đổi áp dụng từ kỳ kế tiếp." : "Lần đầu đặt có hiệu lực ngay kỳ này."} Hiện tại:{" "}
-        {fmt(account?.currentTarget ?? 0n)} mUSDC/tuần
+        <span className="text-ink">{fmt(account?.currentTarget ?? 0n)} mUSDC/kỳ</span>
       </p>
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <div className="mt-3 flex flex-wrap gap-2">
         {PRESETS.map((p) => (
           <button
             key={p}
-            className="rounded-lg border border-[#e3d5b8] bg-white px-2.5 py-1 text-xs font-extrabold text-cocoa-600 shadow-sm transition hover:border-lavender-400 hover:bg-lavender-300/15 active:translate-y-[1px]"
+            className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-extrabold text-ink-soft shadow-card transition hover:border-cta hover:text-cta active:translate-y-[1px]"
             onClick={() => setInput(String(p))}
           >
             {p} mUSDC
@@ -92,17 +86,17 @@ function WeeklyTargetCard({ data }: { data: VaultData }) {
         ))}
       </div>
       <ActionRow>
-        <div className="relative mt-2 flex-1">
+        <div className="relative mt-3 flex-1">
           <input
-            className="input-cozy w-full pr-16"
+            className="input w-full pr-16"
             inputMode="decimal"
             placeholder="VD: 5"
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-cocoa-500">mUSDC</span>
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-ink-muted">mUSDC</span>
         </div>
-        <button className="btn-cozy mt-2 shrink-0 active:translate-y-[2px] active:border-b-2" disabled={step !== null || !parseAmount(input)} onClick={setTarget}>
+        <button className="btn-primary mt-3 shrink-0" disabled={step !== null || !parseAmount(input)} onClick={setTarget}>
           Lưu
         </button>
       </ActionRow>
@@ -111,7 +105,6 @@ function WeeklyTargetCard({ data }: { data: VaultData }) {
   );
 }
 
-/** Mục tiêu tiết kiệm on-chain (SavingsGoal): đặt mốc gốc + hạn kỳ, theo dõi progress, ghi nhận đạt. */
 function SavingsGoalCard({ data }: { data: VaultData }) {
   const tx = useTx();
   const { address } = useAccount();
@@ -143,31 +136,24 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
   const pct = g && g.targetAmount > 0n ? Math.min(100, Number((g.progress * 100n) / g.targetAmount)) : 0;
 
   return (
-    <FeatureCard
-      icon="rocket"
-      title="Mục tiêu tiết kiệm lớn"
-      desc="Cam kết một mốc gốc + hạn chót — ghi trực tiếp lên chuỗi, không sửa được ngược"
-    >
+    <FeatureCard icon="rocket" title="Mục tiêu dài hạn" desc="Cam kết một mốc gốc + hạn chót — ghi trực tiếp lên chuỗi">
       {g?.active ? (
         <div>
-          <div className="flex items-center justify-between text-xs font-bold text-cocoa-500">
+          <div className="flex items-center justify-between text-xs font-bold text-ink-soft">
             <span>Gốc hiện tại / mục tiêu</span>
-            <span className="font-cozy text-sm text-cocoa-700 tabular-nums">
+            <span className="font-cozy text-sm tabular-nums text-ink">
               {fmt(g.progress)} / {fmt(g.targetAmount)} mUSDC · {pct}%
             </span>
           </div>
-          <div className="mt-1.5 h-4 overflow-hidden rounded-full bg-cocoa-700/10" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tiến độ mục tiêu tiết kiệm">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ${g.reached ? "bg-gradient-to-r from-leaf-400 to-leaf-500" : "bg-gradient-to-r from-lavender-400 to-lavender-300"}`}
-              style={{ width: `${pct}%` }}
-            />
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-sunken" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tiến độ mục tiêu tiết kiệm">
+            <div className={`h-full rounded-full transition-all duration-700 ${g.reached ? "bg-cta" : "bg-terracotta"}`} style={{ width: `${pct}%` }} />
           </div>
-          <div className="mt-2 flex items-center justify-between gap-2 text-xs font-semibold text-cocoa-500">
+          <div className="mt-2 flex items-center justify-between gap-2 text-xs font-semibold text-ink-soft">
             <span>
               Hạn: trước kỳ #{g.deadlineEpoch.toString()} · {g.reached ? "Đã đạt — chiến tích on-chain!" : "Còn cố lên!"}
             </span>
             {!g.reached && g.progress >= g.targetAmount && (
-              <button className="btn-cozy shrink-0 !px-3 !py-1.5 text-xs active:translate-y-[1px] active:border-b-2" disabled={tx.step !== null} onClick={() =>
+              <button className="btn-primary shrink-0 !px-3 !py-1.5 text-xs" disabled={tx.step !== null} onClick={() =>
                 tx.run("Ghi nhận đạt mục tiêu", [
                   { label: "Đang ghi nhận GoalReached…", call: { address: contracts.goal, abi: savingsGoalAbi, functionName: "checkReached", args: [] } },
                 ])
@@ -177,7 +163,7 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
             )}
           </div>
           <button
-            className="btn-cream mt-2 w-full !py-1.5 text-xs active:translate-y-[1px] active:border-b-2"
+            className="btn-secondary mt-3 w-full !py-2 text-xs"
             disabled={tx.step !== null}
             onClick={() =>
               tx.run("Huỷ mục tiêu", [
@@ -189,14 +175,14 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
           </button>
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           <div>
             <FieldLabel>Mốc gốc muốn đạt (mUSDC)</FieldLabel>
-            <div className="mt-1 flex flex-wrap gap-1.5">
+            <div className="mt-1 flex flex-wrap gap-2">
               {PRESETS.map((p) => (
                 <button
                   key={p}
-                  className="rounded-lg border border-[#e3d5b8] bg-white px-2.5 py-1 text-xs font-extrabold text-cocoa-600 shadow-sm transition hover:border-lavender-400 hover:bg-lavender-300/15 active:translate-y-[1px]"
+                  className="rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-extrabold text-ink-soft shadow-card transition hover:border-cta hover:text-cta active:translate-y-[1px]"
                   onClick={() => setAmount(String(p))}
                 >
                   {p}
@@ -204,21 +190,21 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
               ))}
             </div>
             <ActionRow>
-              <input className="input-cozy mt-1 flex-1" inputMode="decimal" placeholder="VD: 50" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <input className="input mt-2 flex-1" inputMode="decimal" placeholder="VD: 50" value={amount} onChange={(e) => setAmount(e.target.value)} />
             </ActionRow>
           </div>
           <div>
             <FieldLabel>Hạn chót (kỳ #, đang ở kỳ #{currentEpoch.toString()})</FieldLabel>
             <ActionRow>
               <input
-                className="input-cozy mt-1 flex-1"
+                className="input mt-2 flex-1"
                 inputMode="numeric"
                 placeholder={`VD: ${(currentEpoch + 4n).toString()}`}
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value.replace(/[^0-9]/g, ""))}
               />
               <button
-                className="btn-cozy mt-1 shrink-0 active:translate-y-[2px] active:border-b-2"
+                className="btn-primary mt-2 shrink-0"
                 disabled={tx.step !== null || !parseAmount(amount) || !deadline || BigInt(deadline) <= currentEpoch}
                 onClick={setGoal}
               >
@@ -233,7 +219,6 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
   );
 }
 
-/** Cơ chế chia thưởng: baseRatioBps đọc từ YieldDistributor — không APY "ước tính" nào phía client. */
 function RewardMechanismCard({ data }: { data: VaultData }) {
   const { currentBudget, rollover } = data;
   const state = useReadContracts({
@@ -249,18 +234,17 @@ function RewardMechanismCard({ data }: { data: VaultData }) {
   const byStreak = baseRatio !== undefined ? 100 - byPrincipal : 0;
 
   return (
-    <FeatureCard icon="bolt" title="Cơ chế chia thưởng" desc="Tham số đọc trực tiếp từ YieldDistributor trên Fuji">
-      <div className="grid grid-cols-2 gap-2">
-        <Stat label="Chia theo gốc" value={baseRatio !== undefined ? `${byPrincipal}%` : undefined} tone="text-sky-600" />
-        <Stat label="Chia theo streak" value={baseRatio !== undefined ? `${byStreak}%` : undefined} tone="text-blush-500" />
+    <FeatureCard icon="bolt" title="Cơ chế chia thưởng" desc="Tham số đọc trực tiếp từ YieldDistributor trên Fuji" collapsible defaultOpen={false}>
+      <div className="grid grid-cols-2 gap-3">
+        <Stat label="Chia theo gốc" value={baseRatio !== undefined ? `${byPrincipal}%` : undefined} tone="text-cta" />
+        <Stat label="Chia theo streak" value={baseRatio !== undefined ? `${byStreak}%` : undefined} tone="text-terracotta" />
       </div>
-      <div className="mt-2 grid grid-cols-2 gap-2">
+      <div className="mt-3 grid grid-cols-2 gap-3">
         <Stat label="Ngân sách kỳ này" value={`${fmt(currentBudget)} mUSDC`} />
         <Stat label="Rollover chờ chia" value={`${fmt(rollover)} mUSDC`} />
       </div>
-      <p className="mt-2 text-xs font-semibold text-cocoa-500">
-        Mỗi kỳ chốt, ngân sách yield (trừ phí {Number(feeBps) / 100}%) chia cho những ví giữ streak: một phần theo tỷ
-        trọng gốc, phần còn lại theo trọng số streak — gửi càng đều, phần chia càng lớn.
+      <p className="mt-3 text-xs font-semibold text-ink-soft">
+        Mỗi kỳ chốt, ngân sách yield (trừ phí {Number(feeBps) / 100}%) chia cho những ví giữ streak: một phần theo tỷ trọng gốc, phần còn lại theo trọng số streak — gửi càng đều, phần chia càng lớn.
       </p>
     </FeatureCard>
   );

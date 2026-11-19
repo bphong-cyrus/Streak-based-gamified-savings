@@ -150,7 +150,7 @@ export function useTx() {
 export function TxFeedback({ state }: { state: TxState }) {
   if (state.info && !state.step && !state.error) {
     return (
-      <div role="status" aria-live="polite" className="mt-3 rounded-xl border border-cocoa-700/20 bg-white/70 px-3 py-2 text-sm font-semibold text-cocoa-600">
+      <div role="status" aria-live="polite" className="mt-3 rounded-xl border border-border bg-surface px-3 py-2 text-sm font-semibold text-ink-soft">
         {state.info}
       </div>
     );
@@ -161,17 +161,17 @@ export function TxFeedback({ state }: { state: TxState }) {
       role="status"
       aria-live="polite"
       className={`mt-3 rounded-xl border px-3 py-2.5 text-sm ${
-        state.error ? "border-red-500/40 bg-red-500/10 text-red-300" : "border-leaf-500/40 bg-leaf-500/10 text-cocoa-700"
+        state.error ? "border-danger/40 bg-danger/10 text-danger" : "border-cta/40 bg-cta/10 text-ink"
       }`}
     >
       {state.error ?? (
         <div className="flex items-center gap-2.5">
           <span className="flex flex-col items-center gap-0.5">
-            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-leaf-500 border-t-transparent" />
+            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-cta border-t-transparent" />
           </span>
           <div>
             {state.stepTotal && state.stepTotal > 1 ? (
-              <div className="font-cozy text-xs font-extrabold uppercase tracking-wide text-leaf-600">
+              <div className="font-cozy text-xs font-extrabold uppercase tracking-wide text-cta">
                 Bước {state.stepIndex}/{state.stepTotal}
               </div>
             ) : null}

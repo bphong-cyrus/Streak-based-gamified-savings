@@ -22,43 +22,59 @@ interface Props {
   isDemo?: boolean;
 }
 
-function Tile({
-  icon,
-  label,
-  value,
-  sub,
-  tone,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-  sub?: string;
-  tone?: string;
-}) {
+const HEAT_WEEKS = 12;
+
+function SectionTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
-    <div className="card-cream p-3">
-      <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-cocoa-500/90">
-        <span className="text-cocoa-500">{icon}</span>
-        <span className="truncate">{label}</span>
-      </div>
-      <div className={`mt-0.5 font-cozy text-xl font-extrabold leading-tight tabular-nums ${tone ?? "text-cocoa-700"}`}>{value}</div>
-      {sub && <div className="text-[11px] font-semibold text-cocoa-500">{sub}</div>}
+    <div className="mb-2 flex items-center justify-between">
+      <h3 className="font-cozy text-lg font-bold text-ink">{children}</h3>
+      {action}
     </div>
   );
 }
 
-const HEAT_WEEKS = 12;
+function LoadingState() {
+  return (
+    <div className="card p-6 text-center">
+      <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-border border-t-cta" />
+      <p className="mt-3 font-semibold text-ink-soft">Đang tải dữ liệu tòa nhà…</p>
+    </div>
+  );
+}
 
-/** Heatmap 12 kỳ gần nhất: xanh = đạt mục tiêu, hồng = lỡ, xanh dương nhấp nháy = kỳ đang diễn ra. */
+function ErrorState({ onRetry }: { onRetry?: () => void }) {
+  return (
+    <div className="card p-6 text-center">
+      <Icon name="flag" size={40} className="mx-auto text-ink-muted" />
+      <h2 className="mt-2 font-cozy text-xl font-bold text-ink">Không đọc được dữ liệu</h2>
+      <p className="mt-1 text-sm font-semibold text-ink-soft">RPC Fuji có thể đang bận. Thử lại sau vài giây nhé.</p>
+      {onRetry && (
+        <button className="btn-primary mt-4" onClick={onRetry}>
+          Thử lại
+        </button>
+      )}
+    </div>
+  );
+}
+
+function NotStartedState({ countdown }: { countdown: string }) {
+  return (
+    <div className="card p-6 text-center">
+      <Icon name="clock" size={40} className="mx-auto text-ink-muted" />
+      <h2 className="mt-2 font-cozy text-xl font-bold text-ink">Chưa đến giờ mở kỳ đầu tiên</h2>
+      <p className="mt-1 text-sm font-semibold text-ink-soft">Tòa nhà khởi công sau {countdown}. Quay lại sớm nhé!</p>
+    </div>
+  );
+}
+
+/** Heatmap 12 kỳ gần nhất: xanh = đạt, hồng = lỡ, nhấp nháy xanh dương = kỳ đang diễn ra. */
 function StreakHeatmap({ data }: { data: VaultData }) {
   const { address } = useAccount();
   const current = data.account?.currentEpoch;
   const started = data.hasStarted;
 
   const from = current !== undefined && current > BigInt(HEAT_WEEKS - 1) ? current - BigInt(HEAT_WEEKS - 1) : 0n;
-  const epochs = started && current !== undefined
-    ? Array.from({ length: Number(current - from) + 1 }, (_, i) => from + BigInt(i))
-    : [];
+  const epochs = started && current !== undefined ? Array.from({ length: Number(current - from) + 1 }, (_, i) => from + BigInt(i)) : [];
 
   const reads = useReadContracts({
     contracts: address
@@ -78,74 +94,77 @@ function StreakHeatmap({ data }: { data: VaultData }) {
   }).length ?? 0;
 
   return (
-    <div className="card-cream p-4">
-      <div className="flex items-center justify-between">
-        <h3 className="flex items-center gap-1.5 font-cozy text-lg font-bold">
-          <Icon name="flame" size={19} className="text-blush-500" /> Lịch sử {HEAT_WEEKS} kỳ gần nhất
-        </h3>
-        <span className="rounded-full bg-leaf-300/40 px-2.5 py-0.5 font-cozy text-xs font-extrabold text-leaf-600">
-          {qualified}/{epochs.length || HEAT_WEEKS} đạt
-        </span>
-      </div>
+    <div className="card p-4">
+      <SectionTitle action={<span className="rounded-full bg-surface-sunken px-2.5 py-0.5 font-cozy text-xs font-extrabold text-ink-soft">{qualified}/{epochs.length || HEAT_WEEKS} đạt</span>}>
+        <Icon name="flame" size={19} className="inline text-terracotta" /> Lịch sử {HEAT_WEEKS} kỳ gần nhất
+      </SectionTitle>
       {!address ? (
-        <p className="mt-2 text-sm font-semibold text-cocoa-500">Kết nối ví để xem lịch sử streak của bạn.</p>
+        <p className="text-sm font-semibold text-ink-soft">Kết nối ví để xem lịch sử streak của bạn.</p>
       ) : (
-        <div className="mt-3 flex justify-between gap-1.5">
-          {epochs.map((e, i) => {
-            const s = reads.data?.[i]?.result as
-              | { progress: bigint; target: bigint; settled: boolean; qualified: boolean }
-              | undefined;
-            const isCurrent = e === current;
-            const cls = !s
-              ? "skeleton"
-              : s.settled && s.qualified
-                ? "bg-gradient-to-b from-leaf-400 to-leaf-500"
-                : s.settled
-                  ? "bg-blush-300"
-                  : isCurrent
-                    ? "animate-pulse bg-sky-300"
-                    : "bg-cocoa-700/15";
-            return (
-              <div key={e.toString()} className="flex flex-1 flex-col items-center gap-1">
-                <div
-                  className={`h-12 w-full rounded-lg ${cls} ${isCurrent ? "ring-2 ring-sky-400/60" : ""}`}
-                  title={
-                    s
-                      ? `Kỳ #${e.toString()}: ${s.settled ? (s.qualified ? "đạt" : "lỡ") : "đang diễn ra"} · ${fmt(s.progress)}/${fmt(s.target)} mUSDC`
-                      : `Kỳ #${e.toString()}`
-                  }
-                />
-                <span className="text-[8px] font-bold text-cocoa-500/70">{e.toString()}</span>
-              </div>
-            );
-          })}
-        </div>
+        <>
+          <div className="mt-1 flex justify-between gap-1.5">
+            {epochs.map((e, i) => {
+              const s = reads.data?.[i]?.result as
+                | { progress: bigint; target: bigint; settled: boolean; qualified: boolean }
+                | undefined;
+              const isCurrent = e === current;
+              const cls = !s
+                ? "skeleton"
+                : s.settled && s.qualified
+                  ? "bg-cta"
+                  : s.settled
+                    ? "bg-streak-missed"
+                    : isCurrent
+                      ? "animate-pulse bg-streak-current"
+                      : "bg-border";
+              return (
+                <div key={e.toString()} className="flex flex-1 flex-col items-center gap-1">
+                  <div
+                    className={`h-12 w-full rounded-lg ${cls} ${isCurrent ? "ring-2 ring-streak-current/60" : ""}`}
+                    title={
+                      s
+                        ? `Kỳ #${e.toString()}: ${s.settled ? (s.qualified ? "đạt" : "lỡ") : "đang diễn ra"} · ${fmt(s.progress)}/${fmt(s.target)} mUSDC`
+                        : `Kỳ #${e.toString()}`
+                    }
+                  />
+                  <span className="text-[8px] font-bold text-ink-muted">{e.toString()}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-2 flex items-center gap-3 text-[10px] font-semibold text-ink-soft">
+            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-cta" /> Đạt</span>
+            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-streak-missed" /> Lỡ</span>
+            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 animate-pulse rounded-sm bg-streak-current" /> Kỳ này</span>
+          </div>
+        </>
       )}
-      <div className="mt-2 flex items-center gap-3 text-[10px] font-semibold text-cocoa-500">
-        <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-leaf-400" /> Đạt</span>
-        <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-blush-300" /> Lỡ</span>
-        <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 animate-pulse rounded-sm bg-sky-300" /> Kỳ này</span>
-      </div>
     </div>
   );
 }
 
-/** Dashboard: streak hero, heatmap, tòa nhà 3D, CTA gửi tiền, faucet cho ví mới, đóng băng khi sắp hết hạn. */
 export function HomeTab({ data, night, building, celebrateKey, onDepositStart, isDemo }: Props) {
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetMode, setSheetMode] = useState<"deposit" | "withdraw" | null>(null);
   const [showParty, setShowParty] = useState(false);
   const [zoom, setZoom] = useState<number | null>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const [natural, setNatural] = useState(0);
-  const { account, claimable, claimed, countdown, hasStarted, tokenBalance } = data;
-  const floorsEarly = Number(data.account?.streak ?? 0n);
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const [sceneSize, setSceneSize] = useState({ w: 0, h: 0 });
+  const { account, claimable, claimed, countdown, hasStarted, tokenBalance, epochDuration } = data;
 
   useEffect(() => {
-    const measure = () => setNatural(wrapRef.current?.offsetHeight ?? 0);
+    const measure = () => {
+      if (sceneRef.current) {
+        setSceneSize({ w: sceneRef.current.clientWidth, h: sceneRef.current.clientHeight });
+      }
+    };
     measure();
+    window.addEventListener("resize", measure);
     const t = setTimeout(measure, 300);
-    return () => clearTimeout(t);
-  }, [floorsEarly, building, celebrateKey]);
+    return () => {
+      window.removeEventListener("resize", measure);
+      clearTimeout(t);
+    };
+  }, []);
 
   useEffect(() => {
     if (celebrateKey === 0) return;
@@ -155,182 +174,203 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, i
     return () => clearTimeout(t);
   }, [celebrateKey]);
 
-  if (hasStarted === false) {
-    return (
-      <div className="card-cream mx-4 mt-4 p-5 text-center">
-        <div className="mx-auto w-fit"><Icon name="clock" size={40} className="text-cocoa-500" /></div>
-        <h2 className="mt-2 font-cozy text-xl font-bold">Chưa đến giờ mở kỳ đầu tiên</h2>
-        <p className="mt-1 text-sm font-semibold text-cocoa-500">Tòa nhà khởi công sau {countdown}. Quay lại sớm nhé!</p>
-      </div>
-    );
-  }
-  if (!account) return null;
+  if (data === undefined || hasStarted === undefined) return <LoadingState />;
+  if (hasStarted === false) return <NotStartedState countdown={countdown} />;
 
-  const target = account.currentTarget;
-  const progress = account.currentProgress;
+  const target = account?.currentTarget ?? 0n;
+  const progress = account?.currentProgress ?? 0n;
   const pct = target > 0n ? Math.min(100, Number((progress * 100n) / target)) : 0;
   const goalDone = target > 0n && progress >= target;
   const floors = Number(account?.streak ?? 0n);
   const interestTotal = (claimed ?? 0n) + (claimable ?? 0n);
   const remaining = target > progress ? target - progress : 0n;
-  const urgent = !!countdown?.startsWith("00:") && !goalDone && target > 0n;
-  const isNewWallet = !account.activated;
+  const secondsLeft = countdown === "Hết hạn" ? 0 : parseCountdownSeconds(countdown);
+  const urgent = secondsLeft !== undefined && secondsLeft < 600 && !goalDone && target > 0n && !isDemo;
+  const isNewWallet = !account?.activated && !isDemo;
 
-  const vw = typeof window !== "undefined" ? window.innerWidth : 420;
-  const sectionW = Math.min(840, vw - 24);
-  const available = typeof window !== "undefined" ? Math.min(window.innerHeight * 0.55, 560) : 480;
-  const autoScale = natural > 0 ? Math.max(0.45, Math.min(1.6, sectionW / 420, (available / natural) * 1.15)) : 1;
-  const fit = autoScale;
-  const scale = zoom ?? autoScale;
+  const scale = zoom ?? 1;
 
   return (
-    <div className="space-y-3 lg:grid lg:grid-cols-12 lg:gap-4 lg:space-y-0">
-      {/* Cột trái — HUD: Streak hero + stats (desktop: 4 cột; mobile: full) */}
-      <div className="relative z-10 space-y-3 lg:col-span-4">
-        {/* Streak hero */}
-        <div className="card-cream relative overflow-hidden p-4">
-          <div className="pointer-events-none absolute -right-6 -top-8 opacity-[0.08]">
-            <Icon name="flame" size={150} className="text-blush-500" />
+    <div className="space-y-4 lg:grid lg:grid-cols-12 lg:gap-6 lg:space-y-0">
+      {/* Cột trái — HUD chính */}
+      <div className="space-y-4 lg:col-span-5">
+        <div className="card p-5">
+          <div className="text-xs font-bold uppercase tracking-wide text-ink-muted">Gốc đã gửi</div>
+          <div className="mt-1 flex items-baseline gap-2">
+            <span className="font-cozy text-[44px] font-extrabold leading-none tabular-nums text-ink md:text-[52px]">
+              {fmt(account?.principal)}
+            </span>
+            <span className="text-base font-semibold text-ink-muted">mUSDC</span>
           </div>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-b from-blush-400 to-blush-500 text-white shadow-md">
-                <Icon name="flame" size={30} />
-              </span>
-              <div>
-                <div className="font-cozy text-4xl font-extrabold leading-none text-cocoa-700 tabular-nums">
-                  {account.streak.toString()}
-                  <span className="ml-1.5 text-base font-bold text-cocoa-500">tuần</span>
-                </div>
-                <div className="mt-1 text-xs font-semibold text-cocoa-500">liên tiếp</div>
-              </div>
-            </div>
+
+          <div className="my-4 h-px bg-border" />
+
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-bold uppercase tracking-wide text-ink-muted">Tiến độ kỳ này</span>
+            <span className="font-cozy text-sm font-bold tabular-nums text-ink">
+              {fmt(progress)} / {fmt(target)} mUSDC · {pct}%
+            </span>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-sunken" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tiến độ mục tiêu kỳ này">
             <div
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-center font-cozy text-sm font-bold ${
-                urgent ? "animate-pulse border-blush-500 bg-blush-400 text-white" : "border-cocoa-700/20 bg-white/80 text-cocoa-700"
-              }`}
-            >
-              <Icon name="clock" size={14} className="mr-1 inline -mt-0.5" />
+              className={`h-full rounded-full transition-all duration-700 ${goalDone ? "bg-cta" : "bg-terracotta"}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
+            {goalDone ? (
+              <span className="font-semibold text-cta">Đã đủ mục tiêu · Chờ chốt kỳ</span>
+            ) : target > 0n ? (
+              <span className="font-semibold text-ink-soft">Còn {fmt(remaining)} mUSDC để đạt mục tiêu</span>
+            ) : (
+              <span className="font-semibold text-ink-soft">Chưa đặt mục tiêu kỳ này</span>
+            )}
+            <span className={`flex items-center gap-1 font-cozy text-sm font-bold tabular-nums ${urgent ? "text-danger" : "text-ink-soft"}`}>
+              <Icon name="clock" size={14} />
               {countdown}
-            </div>
+            </span>
           </div>
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-xs font-bold text-cocoa-500">
-              <span className="flex items-center gap-1"><Icon name="target" size={13} /> Mục tiêu kỳ này</span>
-              <span className="font-cozy text-sm text-cocoa-700 tabular-nums">{fmt(progress)} / {fmt(target)} mUSDC · {pct}%</span>
-            </div>
-            <div className="mt-1.5 h-3.5 overflow-hidden rounded-full bg-cocoa-700/10" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tiến độ mục tiêu kỳ này">
-              <div
-                className={`h-full rounded-full transition-all duration-700 ${goalDone ? "bg-gradient-to-r from-leaf-400 to-leaf-500" : "bg-gradient-to-r from-blush-400 to-blush-300"}`}
-                style={{ width: `${pct}%` }}
-              />
-            </div>
+
+          <div className="mt-5 space-y-2">
+            {isNewWallet ? (
+              <FaucetCard />
+            ) : (
+              <>
+                <button
+                  className="btn-primary w-full text-lg active:translate-y-[2px]"
+                  onClick={() => setSheetMode("deposit")}
+                >
+                  {isDemo ? "Mô phỏng gửi tiền" : goalDone ? "Gửi thêm" : `Gửi ${fmt(remaining)} mUSDC hoàn thành tầng`}
+                </button>
+                {(account?.principal ?? 0n) > 0n && (
+                  <button className="btn-ghost w-full" onClick={() => setSheetMode("withdraw")}>
+                    Rút gốc
+                  </button>
+                )}
+              </>
+            )}
+            {urgent && !isNewWallet && <FreezeEpochButton />}
           </div>
-        </div>
-
-        {/* 4 chỉ số */}
-        <div className="grid grid-cols-2 gap-2">
-          <Tile icon={<Icon name="bank" size={16} />} label="Tiết kiệm" value={`${fmt(account.principal)}`} sub="mUSDC · rút anytime" />
-          <Tile icon={<Icon name="chart" size={16} />} label="Lãi tích lũy" value={`+${fmt(interestTotal)}`} sub={`Chờ nhận ${fmt(claimable)} mUSDC`} tone="text-leaf-600" />
-          <Tile icon={<Icon name="target" size={16} />} label="Số kỳ đã tham gia" value={account.currentEpoch.toString()} sub={`Lv.${1 + Math.floor(floors / 2)} · ${account.depositCount?.toString() ?? "0"} lần gửi`} />
-          <Tile icon={<Icon name="wallet" size={16} />} label="Ví của bạn" value={`${fmt(tokenBalance, 2)}`} sub="mUSDC khả dụng" />
-        </div>
-
-        {/* Heatmap 12 kỳ */}
-        <div className="hidden lg:block">
-          <StreakHeatmap data={data} />
         </div>
       </div>
 
-      {/* Cột giữa — Nhà 3D */}
-      <div className="relative z-0 lg:col-span-5">
-        <div className="relative flex flex-col items-center justify-center rounded-[24px] border border-[#eadfc6] bg-[#fffdf7]/70 p-3 shadow-sm backdrop-blur-sm">
-          {/* Badge Floor gọn ở trên */}
-          <div className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-2xl border border-cocoa-700/15 bg-white/95 px-4 py-1 shadow-sm backdrop-blur-sm">
-            <div className="font-cozy text-[10px] font-bold uppercase tracking-wide text-cocoa-500">Tầng</div>
-            <div className="text-center font-cozy text-xl font-extrabold leading-none text-cocoa-700 tabular-nums">{building ? floors + 1 : floors}</div>
+      {/* Cột phải — Nhà 3D */}
+      <div className="space-y-3 lg:col-span-7">
+        <div className={`relative overflow-hidden rounded-2xl border border-border p-3 shadow-card ${night ? "bg-[#1A2049]" : "bg-gradient-to-b from-[#B8E3F5] to-[#E8F6FC]"}`}>
+          <div className="absolute left-3 top-3 z-10 rounded-xl border border-border bg-surface/95 px-3 py-1.5 shadow-card backdrop-blur-sm">
+            <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">Nhà của bạn</div>
+            <div className="font-cozy text-lg font-extrabold tabular-nums text-ink">
+              {floors === 0 ? "Chưa có tầng tích lũy" : `${floors} tầng`}
+            </div>
           </div>
 
           <div
-            className="relative w-full overflow-visible"
-            style={{ height: Math.max(280, (natural || 360) * scale + 40) }}
+            ref={sceneRef}
+            className="relative h-[300px] w-full md:h-[440px]"
           >
-            <div
-              ref={wrapRef}
-              className="pointer-events-none absolute left-1/2 top-1/2 w-fit -translate-x-1/2 -translate-y-1/2"
-              style={{ transform: `translate(-50%, -50%) scale(${scale})` }}
-            >
-              <Building key={celebrateKey} floors={floors} night={night} building={building} celebrating={celebrateKey > 0} goalDone={goalDone} />
-              {showParty && !building && (
-                <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center">
-                  <div className="rounded-2xl border-[3px] border-cocoa-700/70 bg-cream-100 px-4 py-2 text-center font-cozy text-lg font-extrabold text-cocoa-700 shadow-chunky" style={{ animation: "bannerPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-                    🎉 TẦNG MỚI HOÀN THÀNH!
-                  </div>
-                  <div className="big-jump mt-4 text-6xl" style={{ filter: "drop-shadow(0 4px 3px rgba(0,0,0,0.3))" }}>🐈</div>
-                  <div className="mt-3 rounded-full border-2 border-leaf-500/50 bg-leaf-300/60 px-3 py-1 font-cozy text-xs font-extrabold text-leaf-600" style={{ animation: "bannerPop 0.5s 0.35s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-                    +1 🔥 Chuỗi kiên trì · +1 🏗️ Tầng mới
-                  </div>
+            <Building
+              key={celebrateKey}
+              floors={floors}
+              night={night}
+              building={building}
+              celebrating={celebrateKey > 0}
+              goalDone={goalDone}
+              width={sceneSize.w}
+              height={sceneSize.h}
+              scale={scale}
+            />
+            {showParty && !building && (
+              <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center">
+                <div className="rounded-2xl border border-border bg-surface px-5 py-2.5 text-center font-cozy text-lg font-extrabold text-ink shadow-card" style={{ animation: "bannerPop 0.5s var(--ease-spring) both" }}>
+                  TẦNG MỚI HOÀN THÀNH!
                 </div>
-              )}
-            </div>
+                <div className="mt-3 rounded-full border border-cta/30 bg-cta/10 px-3 py-1 font-cozy text-xs font-extrabold text-cta" style={{ animation: "bannerPop 0.5s 0.2s var(--ease-spring) both" }}>
+                  +1 chuỗi kiên trì · +1 tầng mới
+                </div>
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* CTA chính + freeze — mobile full width; desktop có thể ở dưới nhà */}
-        <div className="mx-auto mt-3 max-w-xs text-center lg:max-w-sm">
-          {isNewWallet && !isDemo ? (
-            <FaucetCard />
-          ) : (
-            <button className="btn-cozy w-full text-lg active:translate-y-[2px] active:border-b-2" onClick={() => (isDemo ? onDepositStart() : setSheetOpen(true))}>
-              {isDemo ? "Mô phỏng gửi tiền — xem tòa nhà lớn lên" : goalDone ? "Gửi thêm" : `Gửi ${fmt(remaining)} mUSDC hoàn thành tầng`}
-            </button>
-          )}
-          {urgent && !isNewWallet && <FreezeEpochButton />}
-          {!account.activated && !isDemo && (
-            <p className="mt-2 text-xs font-semibold text-cocoa-500">Nhận 5 mUSDC miễn phí ở trên để bắt đầu xây nhà nhé!</p>
-          )}
-        </div>
-      </div>
-
-      {/* Cột phải — Controls + heatmap mobile (desktop: zoom, quick actions) */}
-      <div className="relative z-10 space-y-3 lg:col-span-3">
-        <div className="card-cream p-4">
-          <h4 className="font-cozy text-sm font-bold text-cocoa-600">Điều khiển tòa nhà</h4>
-          <div className="mt-2 flex items-center justify-center gap-2">
+          {/* Zoom controls */}
+          <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1.5 rounded-xl border border-border bg-surface/95 p-1 shadow-card backdrop-blur-sm">
             <button
-              className="btn-cream h-11 w-11 !p-0 text-lg font-extrabold active:translate-y-[2px] active:border-b-2"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-sunken text-lg font-extrabold text-ink transition hover:bg-border disabled:opacity-40"
               disabled={scale >= 2.2}
               onClick={() => setZoom(Math.min(2.2, scale + 0.15))}
-              title="Phóng to"
-              aria-label="Phóng to tòa nhà"
+              aria-label="Phóng to"
             >+</button>
             <button
-              className="btn-cream h-11 w-11 !p-0 text-lg font-extrabold active:translate-y-[2px] active:border-b-2"
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-sunken text-lg font-extrabold text-ink transition hover:bg-border disabled:opacity-40"
               disabled={scale <= 0.4}
               onClick={() => setZoom(Math.max(0.4, scale - 0.15))}
-              title="Thu nhỏ"
-              aria-label="Thu nhỏ tòa nhà"
+              aria-label="Thu nhỏ"
             >−</button>
             <button
-              className="btn-cream h-11 px-3 text-sm font-extrabold active:translate-y-[2px] active:border-b-2"
-              onClick={() => setZoom(fit)}
-              title="Vừa khung hình"
-              aria-label="Vừa khung hình"
-            >⛶ Vừa khung</button>
+              className="h-9 px-2.5 text-xs font-extrabold text-ink transition hover:bg-surface-sunken"
+              onClick={() => setZoom(null)}
+              aria-label="Vừa khung"
+            >Vừa khung</button>
           </div>
-        </div>
-
-        <div className="lg:hidden">
-          <StreakHeatmap data={data} />
         </div>
       </div>
 
-      <DepositSheet data={data} open={sheetOpen} onClose={() => setSheetOpen(false)} onDeposited={onDepositStart} />
+      {/* Dải số liệu phụ + lịch sử */}
+      <div className="space-y-4 lg:col-span-12">
+        <div className="card flex flex-col divide-y divide-border md:flex-row md:divide-x md:divide-y-0">
+          <StatItem icon={<Icon name="chart" size={18} />} label="Lãi chờ nhận" value={`+${fmt(claimable)}`} sub="mUSDC" />
+          <StatItem icon={<Icon name="wallet" size={18} />} label="Số dư ví" value={fmt(tokenBalance, 2)} sub="mUSDC" />
+          <StatItem icon={<Icon name="flame" size={18} />} label="Chuỗi hiện tại" value={account?.streak.toString() ?? "—"} sub="tuần liên tiếp" />
+          <StatItem icon={<Icon name="bank" size={18} />} label="Lãi tích lũy" value={`+${fmt(interestTotal)}`} sub="mUSDC" />
+        </div>
+        <StreakHeatmap data={data} />
+      </div>
+
+      <DepositSheet
+        data={data}
+        mode={sheetMode}
+        onClose={() => setSheetMode(null)}
+        onDeposited={onDepositStart}
+      />
     </div>
   );
 }
 
-/** Ví mới chưa kích hoạt: nhận 5 mUSDC thẳng vào vault + mục tiêu kỳ đầu tự đặt. */
+function StatItem({ icon, label, value, sub }: { icon: ReactNode; label: string; value: string | undefined; sub: string }) {
+  return (
+    <div className="flex flex-1 items-center gap-3 px-5 py-3">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-surface-sunken text-ink-soft">{icon}</span>
+      <div>
+        <div className="text-[11px] font-bold uppercase tracking-wide text-ink-muted">{label}</div>
+        <div className="flex items-baseline gap-1.5">
+          <span className="font-cozy text-xl font-extrabold tabular-nums text-ink">{value ?? "—"}</span>
+          <span className="text-xs font-semibold text-ink-muted">{sub}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function parseCountdownSeconds(cd: string): number | undefined {
+  if (!cd || cd === "—" || cd === "Hết hạn") return undefined;
+  const parts = cd.split(/[: ]+/).filter(Boolean);
+  let total = 0;
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i];
+    if (p.endsWith("ngày")) {
+      total += parseInt(p, 10) * 86400;
+    } else {
+      const n = parseInt(p, 10);
+      if (!Number.isNaN(n)) {
+        if (parts.length - i === 3) total += n * 3600;
+        else if (parts.length - i === 2) total += n * 60;
+        else total += n;
+      }
+    }
+  }
+  return total;
+}
+
 function FaucetCard() {
   const tx = useTx();
   async function drip() {
@@ -341,14 +381,14 @@ function FaucetCard() {
   }
 
   return (
-    <div className="mt-3 rounded-2xl border-2 border-dashed border-leaf-500/60 bg-leaf-300/15 p-4">
-      <div className="flex items-center gap-2 font-cozy text-lg font-extrabold text-cocoa-700">
-        <Icon name="droplet" size={22} className="text-leaf-600" /> Chào mừng chủ nhân mới!
+    <div className="rounded-2xl border border-dashed border-cta/50 bg-cta/5 p-4">
+      <div className="flex items-center gap-2 font-cozy text-lg font-extrabold text-ink">
+        <Icon name="droplet" size={22} className="text-cta" /> Chào mừng chủ nhân mới!
       </div>
-      <p className="mt-1 text-sm font-semibold text-cocoa-500">
+      <p className="mt-1 text-sm font-semibold text-ink-soft">
         Nhận <strong>5 mUSDC</strong> gửi thẳng vào tòa nhà + mục tiêu kỳ đầu được đặt sẵn — bấm một nút là xong.
       </p>
-      <button className="btn-cozy mt-3 w-full active:translate-y-[2px] active:border-b-2" disabled={tx.step !== null} onClick={drip}>
+      <button className="btn-primary mt-3 w-full" disabled={tx.step !== null} onClick={drip}>
         Nhận 5 mUSDC miễn phí & bắt đầu
       </button>
       <TxFeedback state={tx} />
@@ -356,7 +396,6 @@ function FaucetCard() {
   );
 }
 
-/** Tự trả phí đóng băng kỳ hiện tại — chỉ hiện khi sắp hết hạn mà chưa đủ mục tiêu. */
 function FreezeEpochButton() {
   const tx = useTx();
   const allowance = useTokenAllowance(contracts.vault);
@@ -379,7 +418,7 @@ function FreezeEpochButton() {
 
   return (
     <div className="mt-2">
-      <button className="btn-cream w-full !py-2 text-sm active:translate-y-[2px] active:border-b-2" disabled={tx.step !== null} onClick={freeze}>
+      <button className="btn-secondary w-full !py-2 text-sm" disabled={tx.step !== null} onClick={freeze}>
         <Icon name="snow" size={15} className="inline -mt-0.5" /> Đóng băng kỳ này ({fmt(fee)} mUSDC) — giữ chuỗi an toàn
       </button>
       <TxFeedback state={tx} />

@@ -5,7 +5,7 @@ import { Providers } from "@/components/Providers";
 export const metadata: Metadata = {
   title: "Cozy Save — Tiết kiệm mọc nhà",
   description:
-    "Gửi tiền đều mỗi kỳ, giữ streak, xây tòa nhà 3D của bạn trên Avalanche. Streak càng dài, phần thưởng lãi càng lớn — gốc luôn của bạn, rút anytime.",
+    "Gửi tiền đều mỗi kỳ, giữ streak, xây tòa nhà 3D của bạn trên Avalanche Fuji. Streak càng dài, phần thưởng lãi càng lớn — gốc luôn của bạn, rút anytime.",
   applicationName: "Cozy Save",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Cozy Save — Tiết kiệm mọc nhà",
     description:
-      "Streak-based gamified savings trên Avalanche: gửi đều mỗi kỳ → +1 tầng nhà 3D, streak càng dài thưởng càng lớn. 25+ hợp đồng on-chain.",
+      "Streak-based gamified savings trên Avalanche: gửi đều mỗi kỳ → +1 tầng nhà 3D, streak càng dài thưởng càng lớn.",
     type: "website",
     images: ["/icons/icon-512.png"],
   },
@@ -32,8 +32,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  themeColor: "#63b8f0",
+  themeColor: "#285A44",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -55,6 +54,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           } as React.CSSProperties
         }
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function(){
+                const p = new URLSearchParams(location.search);
+                if (p.has('night')) { document.documentElement.classList.add('night-ui'); return; }
+                if (p.has('day')) { document.documentElement.classList.remove('night-ui'); return; }
+                const saved = localStorage.getItem('cozy-theme');
+                if (saved === 'night' || (saved !== 'day' && (new Date().getHours() >= 18 || new Date().getHours() < 6))) {
+                  document.documentElement.classList.add('night-ui');
+                }
+              })();
+            `,
+          }}
+        />
         <Providers>{children}</Providers>
       </body>
     </html>

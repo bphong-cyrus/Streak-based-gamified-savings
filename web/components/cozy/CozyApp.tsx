@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { useChainId } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import { ConnectButton } from "@/components/ConnectButton";
 import { HomeTab } from "@/components/cozy/HomeTab";
 import { GoalsTab } from "@/components/cozy/GoalsTab";
@@ -29,15 +29,13 @@ const TABS: Array<{ key: TabKey; icon: IconName; label: string }> = [
 interface CozyAppProps {
   theme: ThemeMode;
   onThemeChange: (t: ThemeMode) => void;
-  /** Dữ liệu mẫu khi xem demo không cần ví (?demo=1 hoặc ví chưa kết nối). */
   demoData?: VaultData;
+  demoForced: boolean;
+  isConnected: boolean;
   onExitDemo?: () => void;
-  /** CTA hiển thị trong banner demo (VD: nút kết nối ví khi chưa đăng nhập). */
-  demoCta?: React.ReactNode;
 }
 
-/** Vỏ app: header, tab content, bottom nav, animation xây tầng. */
-export function CozyApp({ theme, onThemeChange, demoData, onExitDemo, demoCta }: CozyAppProps) {
+export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnected, onExitDemo }: CozyAppProps) {
   const live = useVaultData({ enabled: !demoData });
   const [demoBoost, setDemoBoost] = useState(0);
   const demoAcc = demoData?.account;
@@ -62,6 +60,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo, demoCta }:
   }, [demoData]);
 
   const chainId = useChainId();
+  const { isConnecting, isReconnecting } = useAccount();
   const [tab, setTab] = useState<TabKey>("home");
   const night = theme === "night";
   const wrongChain = !demoData && chainId !== targetChainId;
@@ -96,10 +95,10 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo, demoCta }:
   if (wrongChain) {
     return (
       <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
-        <div className="card-cream w-full max-w-sm p-6 text-center">
-          <div className="mx-auto w-fit"><Icon name="flag" size={40} className="text-cocoa-500" /></div>
-          <h2 className="mt-2 font-cozy text-xl font-bold">Bạn đang ở mạng khác</h2>
-          <p className="mt-1 text-sm font-semibold text-cocoa-500">
+        <div className="card w-full max-w-sm p-6 text-center">
+          <div className="mx-auto w-fit"><Icon name="flag" size={40} className="text-ink-muted" /></div>
+          <h2 className="mt-2 font-cozy text-xl font-bold text-ink">Bạn đang ở mạng khác</h2>
+          <p className="mt-1 text-sm font-semibold text-ink-soft">
             Cozy Save xây nhà trên Avalanche Fuji C-Chain (chain ID {targetChainId}).
           </p>
           <div className="mt-4 flex justify-center">
@@ -110,26 +109,72 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo, demoCta }:
     );
   }
 
+  const connecting = isConnecting || isReconnecting;
+
   return (
-    <div className="relative z-10 mx-auto min-h-screen w-full max-w-md md:max-w-3xl">
-      {/* Floating glassmorphic header pill */}
-      <header className="fixed left-1/2 top-3 z-30 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 md:max-w-2xl">
-        <div className="flex items-center justify-between rounded-full border border-white/80 bg-[#FFFDF8]/90 px-3 py-2 shadow-sm backdrop-blur-md">
-          <div className="flex items-center gap-2.5">
-            <IdentityAvatar address={data.address} className="h-9 w-9" />
+    <div className="relative z-10 mx-auto min-h-screen w-full max-w-app px-4 pb-32 pt-24 md:px-6 md:pb-28 md:pt-28 lg:px-10">
+      {/* Desktop header */}
+      <header className="fixed left-0 right-0 top-0 z-30">
+        <div className="mx-auto flex h-16 max-w-app items-center justify-between px-4 md:px-6 lg:px-10">
+          <div className="flex items-center gap-3">
+            <span className="font-cozy text-2xl font-extrabold text-ink">Cozy Save</span>
+            {demoData && (
+              <span className="hidden rounded-full border border-border bg-surface px-2.5 py-0.5 text-[11px] font-bold text-ink-soft sm:inline-block">
+                Bản thử
+              </span>
+            )}
+          </div>
+
+          {/* Desktop tabs */}
+          <nav className="hidden items-center gap-1 rounded-2xl border border-border bg-surface/90 p-1 shadow-card backdrop-blur-md lg:flex">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => switchTab(t.key)}
+                aria-current={tab === t.key ? "page" : undefined}
+                className={`flex min-h-[40px] items-center gap-2 rounded-xl px-4 py-1.5 text-sm font-bold transition ${
+                  tab === t.key ? "bg-cta text-white shadow-button" : "text-ink-soft hover:bg-surface-sunken hover:text-ink"
+                }`}
+              >
+                <Icon name={t.icon} size={18} />
+                {t.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-2">
+            {connecting && !demoData && (
+              <span className="hidden rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-ink-soft md:inline">
+                Đang kết nối…
+              </span>
+            )}
+            {demoData && demoForced && isConnected && (
+              <button className="btn-secondary !h-9 !px-3 !py-1.5 text-xs" onClick={onExitDemo}>
+                Thoát bản thử
+              </button>
+            )}
+            <HeaderIconButton
+              label={night ? "Chuyển ban ngày" : "Chuyển ban đêm"}
+              onClick={() => onThemeChange(night ? "day" : "night")}
+            >
+              <Icon name={night ? "sun" : "moon"} size={18} />
+            </HeaderIconButton>
+            <div className="hidden md:block">
+              <ConnectButton />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Mobile header compact */}
+      <div className="fixed left-0 right-0 top-0 z-30 lg:hidden">
+        <div className="mx-auto flex h-14 max-w-app items-center justify-between px-4 pt-1">
+          <div className="flex items-center gap-2.5 rounded-full border border-border bg-surface/95 px-3 py-1.5 shadow-card backdrop-blur-md">
+            <IdentityAvatar address={data.address} className="h-8 w-8" />
             <div>
-              <div className="font-cozy text-base font-extrabold leading-none text-[#2C221E]">Cozy Save</div>
-              <div className="text-[10px] font-bold text-cocoa-600/80">
-                {data.address ? (
-                  <>
-                    Hi, {shortAddr(data.address)}!{" "}
-                    <span className="rounded bg-leaf-300/40 px-1 py-px font-cozy text-[9px] font-extrabold text-leaf-700">
-                      Lv.{1 + Math.floor(Number(data.account?.streak ?? 0n) / 2)}
-                    </span>
-                  </>
-                ) : (
-                  "Tiết kiệm mọc nhà"
-                )}
+              <div className="font-cozy text-sm font-extrabold leading-none text-ink">Cozy Save</div>
+              <div className="text-[10px] font-semibold text-ink-soft">
+                {data.address ? shortAddr(data.address) : "Tiết kiệm mọc nhà"}
               </div>
             </div>
           </div>
@@ -151,36 +196,14 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo, demoCta }:
             >
               <Icon name="volume" size={17} className={muted ? "opacity-40" : undefined} />
             </HeaderIconButton>
-            {demoData ? (
-              <span className="rounded-full border border-[#e3d5b8] bg-white/90 px-3 py-1.5 font-cozy text-xs font-extrabold text-cocoa-600 shadow-sm">
-                Demo
-              </span>
-            ) : (
+            <div className="md:hidden">
               <ConnectButton />
-            )}
+            </div>
           </div>
         </div>
-      </header>
+      </div>
 
-      {demoData && (
-        <div className="pointer-events-none fixed left-1/2 top-[4.25rem] z-20 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 md:max-w-2xl">
-          <div className="pointer-events-none flex items-center justify-between gap-2 rounded-full border border-cocoa-700/20 bg-white/90 py-1.5 pl-3 pr-1.5 shadow-sm backdrop-blur-sm">
-            <span className="text-left text-[11px] font-bold text-cocoa-600">
-              {demoCta ? "Bạn đang xem thử không cần ví — kết nối để dùng thật" : "Demo với dữ liệu mẫu — giao dịch sẽ không thực hiện được"}
-            </span>
-            {demoCta ? (
-              <span className="pointer-events-auto">{demoCta}</span>
-            ) : (
-              <button className="pointer-events-auto shrink-0 text-[11px] font-bold underline" onClick={onExitDemo}>
-                Thoát
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* nội dung tab — pb-36 để bottom nav không che */}
-      <main className="px-3 pb-36 pt-28 md:px-4 md:pt-36">
+      <main className="min-h-[calc(100vh-8rem)]">
         {tab === "home" && (
           <HomeTab
             data={data}
@@ -198,24 +221,24 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo, demoCta }:
 
       <Onboarding />
 
-      {/* bottom nav */}
-      <nav className="fixed bottom-3 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2">
-        <div className="flex justify-between rounded-3xl border border-[#eadfc6] bg-white/95 px-2 py-1.5 shadow-[0_8px_30px_-6px_rgba(70,56,39,0.25)] backdrop-blur-md">
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              className={`flex min-h-[44px] w-16 flex-col items-center justify-center gap-0.5 rounded-2xl py-1 transition focus-visible:ring-2 focus-visible:ring-leaf-400 focus-visible:ring-offset-1 ${
-                tab === t.key ? "bg-gradient-to-b from-leaf-400 to-leaf-500 text-white shadow-md" : "opacity-75 hover:opacity-100"
-              }`}
-              onClick={() => switchTab(t.key)}
-              aria-current={tab === t.key ? "page" : undefined}
-            >
-              <Icon name={t.icon} size={21} className={tab === t.key ? "text-white" : "text-cocoa-600"} />
-              <span className={`text-[10px] font-bold ${tab === t.key ? "text-white" : "text-cocoa-600"}`}>
-                {t.label}
-              </span>
-            </button>
-          ))}
+      {/* Mobile bottom nav */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden">
+        <div className="mx-auto max-w-app px-4 pb-4 pt-2">
+          <div className="flex justify-between rounded-2xl border border-border bg-surface/95 px-2 py-1.5 shadow-card backdrop-blur-md">
+            {TABS.map((t) => (
+              <button
+                key={t.key}
+                className={`flex min-h-[52px] min-w-[56px] flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1 transition ${
+                  tab === t.key ? "bg-cta text-white shadow-button" : "text-ink-soft hover:bg-surface-sunken"
+                }`}
+                onClick={() => switchTab(t.key)}
+                aria-current={tab === t.key ? "page" : undefined}
+              >
+                <Icon name={t.icon} size={20} />
+                <span className="text-[10px] font-bold">{t.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </nav>
     </div>
@@ -225,7 +248,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo, demoCta }:
 function HeaderIconButton({ children, onClick, label }: { children: ReactNode; onClick: () => void; label: string }) {
   return (
     <button
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e3d5b8] bg-white/90 text-cocoa-600 shadow-sm transition hover:bg-white active:translate-y-[1px] active:scale-95 focus-visible:ring-2 focus-visible:ring-leaf-400 focus-visible:ring-offset-1"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-ink-soft shadow-card transition hover:bg-surface-sunken hover:text-ink active:translate-y-[1px]"
       onClick={onClick}
       title={label}
       aria-label={label}
