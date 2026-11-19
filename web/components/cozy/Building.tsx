@@ -29,7 +29,7 @@ export function Building({ floors, night, building, celebrating, goalDone }: Bui
       {/* biển Floor nổi trên cùng */}
       <div
         className="absolute left-1/2 z-30 -translate-x-1/2 rounded-2xl border-[3px] bg-cream-100 px-5 py-1.5 text-center"
-        style={{ borderColor: "rgba(70,56,39,0.75)", boxShadow: "0 3px 0 rgba(70,56,39,0.4)", top: 6 }}
+        style={{ borderColor: "rgba(70,56,39,0.75)", boxShadow: "0 3px 0 rgba(70,56,39,0.4)", top: 132 }}
       >
         <div className="font-cozy text-[10px] font-bold uppercase tracking-wide text-cocoa-500">Floor</div>
         <div className="font-cozy text-2xl font-extrabold leading-none text-cocoa-700">{building ? total + 1 : total}</div>

@@ -119,9 +119,13 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
     return () => clearTimeout(t);
   }, [floors, building, celebrateKey]);
 
-  const available = typeof window !== "undefined" ? Math.min(window.innerHeight * 0.5, 540) : 480;
-  const fit = natural > 0 ? Math.min(1.2, Math.max(0.35, available / natural)) : 1;
-  const scale = zoom ?? 1; // mặc định phóng to; ⛶ để vừa khung
+  const vw = typeof window !== "undefined" ? window.innerWidth : 420;
+  // Phóng to mặc định theo màn hình: ưu tiên fill chiều rộng (tối đa 660px), trần theo chiều cao
+  const sectionW = Math.min(660, vw - 16);
+  const available = typeof window !== "undefined" ? Math.min(window.innerHeight * 0.6, 620) : 480;
+  const fit = natural > 0 ? Math.min(1.9, Math.max(0.35, available / natural)) : 1;
+  const autoScale = natural > 0 ? Math.max(0.35, Math.min(1.9, sectionW / 380, (available / natural) * 1.25)) : 1;
+  const scale = zoom ?? autoScale; // mặc định theo màn hình; ⛶ vừa khung; +/− chỉnh tay
   const interestTotal = (claimed ?? 0n) + (claimable ?? 0n);
   const apy = estimateApy(account.streak);
   const remaining = target > progress ? target - progress : 0n;
@@ -167,15 +171,15 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
         )}
       </div>
 
-      {/* tòa nhà (phóng to + tự co để thấy trọn, có nút zoom) + màn ăn mừng */}
+      {/* tòa nhà (phóng to theo màn hình + tự co chiều cao, có nút zoom) + màn ăn mừng */}
       <div className="relative mt-4" style={{ height: natural * scale }}>
         {/* nút zoom bên phải tòa nhà */}
         <div className="absolute -right-1 top-1/2 z-40 flex -translate-y-1/2 flex-col gap-2">
           <button
             className="btn-cream !px-0 !py-0 font-cozy text-lg font-extrabold"
             style={{ width: 36, height: 36 }}
-            disabled={scale >= 1.5}
-            onClick={() => setZoom(Math.min(1.5, scale + 0.15))}
+            disabled={scale >= 2.2}
+            onClick={() => setZoom(Math.min(2.2, scale + 0.15))}
             title="Phóng to"
           >
             +

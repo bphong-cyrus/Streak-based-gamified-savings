@@ -162,12 +162,12 @@ function Roof({ y, color, night }: { y: number; color: string; night: boolean })
           </mesh>
         ))}
       </group>
-      {/* cột cờ + lá cờ */}
-      <mesh castShadow position={[-0.7, 2.35, 0.4]}>
+      {/* cột cờ cắm trên đỉnh mái + lá cờ */}
+      <mesh castShadow position={[-0.7, 2.12, 0.4]}>
         <cylinderGeometry args={[0.03, 0.03, 1.1, 8]} />
         <meshStandardMaterial color="#8a7256" />
       </mesh>
-      <mesh ref={flag} position={[-0.38, 2.72, 0.4]}>
+      <mesh ref={flag} position={[-0.38, 2.5, 0.4]}>
         <boxGeometry args={[0.62, 0.36, 0.03]} />
         <meshStandardMaterial color="#f26d8d" />
       </mesh>
