@@ -15,7 +15,7 @@ import { FeatureCard, Stat, FieldLabel, ActionRow, useTokenAllowance, withTokenA
 /** Tab Tiện ích: các công cụ tài chính cá nhân xung quanh ví tiết kiệm. */
 export function ToolsTab() {
   return (
-    <div className="space-y-3 px-4 pb-28 pt-2">
+    <div className="space-y-3 px-4 pb-28 pt-2 md:columns-2 md:gap-3 md:[&>*]:mb-3 md:[&>*]:break-inside-avoid">
       <SavingCircleCard />
       <SavingsBondCard />
       <TermLockCard />
@@ -86,7 +86,7 @@ function SavingCircleCard() {
         <div>
           <FieldLabel>Mở vòng hụi mới</FieldLabel>
           <ActionRow>
-            <input className="input-cozy flex-1" placeholder="Tên vòng (VD: Hụi phòng 301)" value={name} onChange={(e) => setName(e.target.value)} />
+            <input className="input-cozy flex-1" placeholder="Tên vòng hụi" value={name} onChange={(e) => setName(e.target.value)} />
             <input className="input-cozy w-24" inputMode="decimal" placeholder="Góp/kỳ" value={commit} onChange={(e) => setCommit(e.target.value)} />
             <button
               className="btn-cozy shrink-0"
@@ -101,7 +101,7 @@ function SavingCircleCard() {
         <div>
           <FieldLabel>Tham gia / đóng góp</FieldLabel>
           <ActionRow>
-            <input className="input-cozy flex-1" inputMode="numeric" placeholder={`ID vòng (mới nhất #${circleCount.toString()})`} value={viewId} onChange={(e) => setViewId(e.target.value.replace(/[^0-9]/g, ""))} />
+            <input className="input-cozy flex-1" inputMode="numeric" placeholder={`ID vòng (#${circleCount.toString()})`} value={viewId} onChange={(e) => setViewId(e.target.value.replace(/[^0-9]/g, ""))} />
             <button className="btn-cream shrink-0" disabled={tx.step !== null || id === 0n || isMember || !address} onClick={() => call("joinCircle", [id], "Đang tham gia vòng hụi…")}>
               Tham gia
             </button>
@@ -180,7 +180,7 @@ function SavingsBondCard() {
         <div>
           <FieldLabel>Đáo hạn</FieldLabel>
           <ActionRow>
-            <input className="input-cozy flex-1" inputMode="numeric" placeholder="Bond ID cần đáo hạn" value={bondId} onChange={(e) => setBondId(e.target.value.replace(/[^0-9]/g, ""))} />
+            <input className="input-cozy flex-1" inputMode="numeric" placeholder="Bond ID" value={bondId} onChange={(e) => setBondId(e.target.value.replace(/[^0-9]/g, ""))} />
             <button className="btn-cream shrink-0" disabled={tx.step !== null || !bondId} onClick={() => tx.run("Đáo hạn trái phiếu", [{ label: "Đang đáo hạn…", call: { address: contracts.savingsBond, abi: savingsBondAbi, functionName: "redeem", args: [BigInt(bondId)] } }])}>
               Đáo hạn
             </button>
@@ -311,7 +311,7 @@ function TimeCapsuleCard() {
             <input className="input-cozy w-20" inputMode="numeric" placeholder="Kỳ" value={epochs} onChange={(e) => setEpochs(e.target.value.replace(/[^0-9]/g, ""))} />
           </ActionRow>
           <ActionRow>
-            <input className="input-cozy mt-2 flex-1" placeholder="Lờ nhắn cho tương lai…" value={message} onChange={(e) => setMessage(e.target.value)} />
+            <input className="input-cozy mt-2 flex-1" placeholder="Lờ nhắn tương lai" value={message} onChange={(e) => setMessage(e.target.value)} />
             <button className="btn-cozy mt-2 shrink-0" disabled={tx.step !== null || !parseAmount(amount)} onClick={create}>
               Niêm phong
             </button>
@@ -683,7 +683,7 @@ function SpendingLimitCard() {
         <div>
           <FieldLabel>Đổi limit (hiệu lực sau 2 kỳ)</FieldLabel>
           <ActionRow>
-            <input className="input-cozy flex-1" inputMode="decimal" placeholder="Limit mỗi kỳ (mUSDC)" value={limit} onChange={(e) => setLimit(e.target.value)} />
+            <input className="input-cozy flex-1" inputMode="decimal" placeholder="Limit mỗi kỳ" value={limit} onChange={(e) => setLimit(e.target.value)} />
             <button className="btn-cream shrink-0" disabled={tx.step !== null || !parseAmount(limit)} onClick={() => tx.run("Đổi limit", [{ label: "Đang đăng ký limit mới…", call: { address: contracts.spendingLimit, abi: spendingLimitAbi, functionName: "setLimit", args: [parseAmount(limit)!] } }])}>
               Đặt limit
             </button>

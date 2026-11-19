@@ -288,8 +288,8 @@ function MailCard() {
           ))}
         </ul>
       )}
-      <input className="input-cozy mt-2 w-full font-mono text-xs" placeholder="Địa chỉ ngườ nhận" value={to} onChange={(e) => setTo(e.target.value)} />
-      <textarea className="input-cozy mt-2 h-16 w-full resize-none" placeholder="Lờ nhắn (tối đa 280 ký tự)" maxLength={280} value={body} onChange={(e) => setBody(e.target.value)} />
+      <input className="input-cozy mt-2 w-full font-mono text-xs" placeholder="Ví ngườ nhận" value={to} onChange={(e) => setTo(e.target.value)} />
+      <textarea className="input-cozy mt-2 h-16 w-full resize-none" placeholder="Lờ nhắn" maxLength={280} value={body} onChange={(e) => setBody(e.target.value)} />
       <div className="mt-2 flex gap-2">
         <input className="input-cozy w-28" inputMode="decimal" placeholder="Tip (0)" value={tip} onChange={(e) => setTip(e.target.value)} />
         <button className="btn-cozy flex-1" disabled={tx.step !== null || !to || !body.trim()} onClick={send}>

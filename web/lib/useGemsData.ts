@@ -48,7 +48,7 @@ export interface ShopItemView {
 }
 
 /** Dữ liệu vòng tiền tệ trong game: số dư Gems, danh sách nhiệm vụ, catalog shop. */
-export function useGemsData() {
+export function useGemsData({ enabled = true }: { enabled?: boolean } = {}) {
   const { address } = useAccount();
 
   const balance = useReadContracts({
@@ -58,10 +58,10 @@ export function useGemsData() {
           { address: contracts.gems, abi: gemsAbi, functionName: "allowance", args: [address, contracts.gemShop] },
         ]
       : [],
-    query: { refetchInterval: 5_000, enabled: !!address },
+    query: { refetchInterval: 5_000, enabled: enabled && !!address, refetchOnWindowFocus: false },
   });
 
-  const count = useReadContract_count();
+  const count = useReadContract_count({ enabled });
   const n = count !== undefined ? Number(count) : 0;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -80,7 +80,7 @@ export function useGemsData() {
 
   const missionData = useReadContracts({
     contracts: missionCalls,
-    query: { refetchInterval: 8_000, enabled: missionCalls.length > 0 },
+    query: { refetchInterval: 8_000, enabled: enabled && missionCalls.length > 0, refetchOnWindowFocus: false },
   });
 
   const missions: MissionView[] = [];
@@ -128,7 +128,7 @@ export function useGemsData() {
 
   const shopData = useReadContracts({
     contracts: shopCalls,
-    query: { refetchInterval: 8_000, enabled: shopCalls.length > 0 },
+    query: { refetchInterval: 8_000, enabled: enabled && shopCalls.length > 0, refetchOnWindowFocus: false },
   });
 
   const step = address ? 2 : 1;
@@ -154,10 +154,10 @@ export function useGemsData() {
   };
 }
 
-function useReadContract_count(): bigint | undefined {
+function useReadContract_count({ enabled }: { enabled: boolean }): bigint | undefined {
   const { data } = useReadContracts({
     contracts: [{ address: contracts.missions, abi: missionsAbi, functionName: "missionCount" }],
-    query: { refetchInterval: 30_000 },
+    query: { refetchInterval: 30_000, enabled, refetchOnWindowFocus: false },
   });
   return data?.[0]?.result as bigint | undefined;
 }

@@ -6,9 +6,8 @@ import { contracts, isConfigured } from "@/lib/config";
 import { streakVaultAbi, yieldDistributorAbi, autoSaverAbi, mockUSDCAbi, goalTemplatesAbi } from "@/lib/abis";
 import { fmt, parseAmount } from "@/lib/format";
 import { TxFeedback, useTx } from "@/components/useTx";
-import { FeatureCard } from "@/components/cozy/panel";
+import { FeatureCard, Stat } from "@/components/cozy/panel";
 import { Icon } from "@/components/cozy/icons";
-import { estimateApy } from "@/components/cozy/HomeTab";
 import type { VaultData } from "@/lib/useVaultData";
 
 const SHOWN_EPOCHS = 8;
@@ -31,23 +30,15 @@ export function GoalsTab({ data }: { data: VaultData }) {
     if (ok) setInput("");
   }
 
-  const streak = account?.streak ?? 0n;
-  const baseApy = 4.8;
-  const bonusApy = Math.min(Number(streak) * 0.5, 2.5);
-  const totalApy = baseApy + bonusApy;
-  const weeklyTarget = account?.currentTarget ?? 0n;
-  // lãi ước tính một kỳ cho mức gửi tuần hiện tại
-  const weeklyInterest =
-    weeklyTarget > 0n ? (Number(weeklyTarget) * (totalApy / 100)) / 52 : 0;
 
   return (
-    <div className="space-y-3 px-4 pb-28 pt-2">
+    <div className="space-y-3 px-4 pb-28 pt-2 md:columns-2 md:gap-3 md:[&>*]:mb-3 md:[&>*]:break-inside-avoid">
       {/* đặt mục tiêu */}
       <div className="card-cream p-4">
         <h3 className="flex items-center gap-1.5 font-cozy text-lg font-bold"><Icon name="target" size={20} className="text-cocoa-600" /> Mục tiêu tuần</h3>
         <p className="mt-0.5 text-xs font-semibold text-cocoa-500">
           {account?.activated ? "Thay đổi áp dụng từ kỳ kế tiếp." : "Lần đầu đặt có hiệu lực ngay kỳ này."} Hiện tại:{" "}
-          {fmt(weeklyTarget)} mUSDC/tuần
+          {fmt(account?.currentTarget ?? 0n)} mUSDC/tuần
         </p>
         <div className="mt-2 flex gap-2">
           <div className="relative flex-1">
@@ -67,89 +58,14 @@ export function GoalsTab({ data }: { data: VaultData }) {
         <TxFeedback state={{ step, hash, error }} />
       </div>
 
-      {/* hiệu suất sinh lợi */}
-      <div className="card-cream p-4">
-        <div className="flex items-center justify-between">
-          <h4 className="font-cozy font-bold">⚡ Hiệu suất sinh lợi</h4>
-          <span className="rounded-full bg-leaf-300/50 px-2.5 py-0.5 font-cozy text-xs font-extrabold text-leaf-600">
-            {totalApy.toFixed(1)}% APY
-          </span>
-        </div>
-        <div className="mt-2 space-y-2 text-sm font-semibold">
-          <div className="flex items-center justify-between rounded-xl border-2 border-cream-300 bg-white/80 px-3 py-2">
-            <span className="flex items-center gap-2 text-cocoa-600">
-              <span className="h-2.5 w-2.5 rounded-full bg-sky-400" /> Lãi cơ bản (Base Yield)
-            </span>
-            <span className="font-cozy font-extrabold text-cocoa-700">{baseApy.toFixed(1)}% APY</span>
-          </div>
-          <div className="flex items-center justify-between rounded-xl border-2 border-cream-300 bg-white/80 px-3 py-2">
-            <span className="flex items-center gap-2 text-cocoa-600">
-              <span className="h-2.5 w-2.5 rounded-full bg-blush-400" /> Thưởng duy trì chuỗi (Streak Bonus)
-            </span>
-            <span className="font-cozy font-extrabold text-blush-500">+{bonusApy.toFixed(1)}% APY</span>
-          </div>
-          <p className="text-[11px] text-cocoa-500">
-            Base: nguồn yield mock tham chiếu USDC Lending. Bonus: +0.5% mỗi tuần giữ chuỗi (tối đa +2.5%) — bạn đang
-            có chuỗi {streak.toString()} tuần.
-          </p>
-        </div>
-
-        {/* biểu đồ biến động APY (mock) */}
-        <div className="mt-3 rounded-xl border-2 border-cream-300 bg-white/80 p-3">
-          <div className="flex items-center justify-between text-[11px] font-bold text-cocoa-500">
-            <span>📉 Biến động APY 6 kỳ gần nhất (mock)</span>
-            <span className="rounded-full bg-cream-200 px-2 py-0.5">Rất ổn định</span>
-          </div>
-          <ApyChart />
-          <div className="mt-1 flex justify-between text-[10px] font-semibold text-cocoa-500">
-            <span>Kỳ trước</span>
-            <span className="font-cozy font-extrabold text-leaf-600">Hiện tại: {totalApy.toFixed(1)}%</span>
-          </div>
-        </div>
-
-        {weeklyTarget > 0n && (
-          <div className="mt-2 flex items-center justify-between rounded-xl border-2 border-dashed border-lavender-400 bg-lavender-300/20 px-3 py-2 text-sm font-semibold text-cocoa-600">
-            <span>🧮 Gửi {fmt(weeklyTarget)} mUSDC/tuần → lãi kỳ này ước tính</span>
-            <span className="font-cozy font-extrabold text-lavender-500">
-              +{weeklyInterest >= 0.01 ? weeklyInterest.toFixed(2) : "<0.01"} mUSDC
-            </span>
-          </div>
-        )}
-      </div>
+      {/* cơ chế chia thưởng — tham số đọc trực tiếp từ YieldDistributor */}
+      <RewardMechanismCard data={data} />
 
       {/* gửi tự động */}
       <AutoSaveCard data={data} />
 
       <EpochHistory currentEpoch={account?.currentEpoch} />
     </div>
-  );
-}
-
-/** Biểu đồ đường APY đơn giản bằng SVG. */
-function ApyChart() {
-  const series = [5.6, 5.9, 5.7, 6.0, 6.3, 6.2];
-  const min = 5.4;
-  const max = 6.5;
-  const W = 280;
-  const H = 70;
-  const pts = series
-    .map((v, i) => `${(i / (series.length - 1)) * W},${H - ((v - min) / (max - min)) * H}`)
-    .join(" ");
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="mt-1 w-full">
-      <polyline points={pts} fill="none" stroke="#4fbe7d" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
-      {series.map((v, i) => (
-        <circle
-          key={i}
-          cx={(i / (series.length - 1)) * W}
-          cy={H - ((v - min) / (max - min)) * H}
-          r="4"
-          fill="#fff"
-          stroke="#4fbe7d"
-          strokeWidth="2.5"
-        />
-      ))}
-    </svg>
   );
 }
 
@@ -453,6 +369,41 @@ function GoalTemplatesCard() {
         </button>
       </div>
       <TxFeedback state={tx} />
+    </FeatureCard>
+  );
+}
+
+/** Cơ chế chia thưởng: baseRatioBps đọc từ YieldDistributor — không APY "ước tính" nào phía client. */
+function RewardMechanismCard({ data }: { data: VaultData }) {
+  const { account, currentBudget, rollover } = data;
+  const state = useReadContracts({
+    contracts: isConfigured(contracts.distributor)
+      ? [
+          { address: contracts.distributor, abi: yieldDistributorAbi, functionName: "baseRatioBps", args: [] },
+          { address: contracts.distributor, abi: yieldDistributorAbi, functionName: "yieldFeeBps", args: [] },
+        ]
+      : [],
+    query: { refetchInterval: 60_000, enabled: isConfigured(contracts.distributor) },
+  });
+  const baseRatio = state.data?.[0]?.result as bigint | undefined;
+  const feeBps = (state.data?.[1]?.result as bigint | undefined) ?? 0n;
+  const byPrincipal = baseRatio !== undefined ? Number(baseRatio) / 100 : 0;
+  const byStreak = baseRatio !== undefined ? 100 - byPrincipal : 0;
+
+  return (
+    <FeatureCard icon="bolt" title="Cơ chế chia thưởng" desc="Tham số đọc trực tiếp từ YieldDistributor trên Fuji">
+      <div className="grid grid-cols-2 gap-2">
+        <Stat label="Chia theo gốc" value={baseRatio !== undefined ? `${byPrincipal}%` : undefined} tone="text-sky-600" />
+        <Stat label="Chia theo streak" value={baseRatio !== undefined ? `${byStreak}%` : undefined} tone="text-blush-500" />
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <Stat label="Ngân sách kỳ này" value={`${fmt(currentBudget)} mUSDC`} />
+        <Stat label="Rollover chờ chia" value={`${fmt(rollover)} mUSDC`} />
+      </div>
+      <p className="mt-2 text-xs font-semibold text-cocoa-500">
+        Mỗi kỳ chốt, ngân sách yield (trừ phí {Number(feeBps) / 100}%) chia cho những ví giữ streak: một phần theo tỷ
+        trọng gốc, phần còn lại theo trọng số streak — nên gửi càng đều, phần chia của bạn càng lớn.
+      </p>
     </FeatureCard>
   );
 }

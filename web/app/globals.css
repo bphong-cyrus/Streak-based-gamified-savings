@@ -366,6 +366,11 @@ body {
   animation: bob 2.2s ease-in-out infinite;
 }
 
+/* Hàng tầng nền pastel: mực phải luôn màu cocoa, không chuyển trắng theo night */
+.night-ui .floor-row :is(.text-cocoa-700, .text-cocoa-600, .text-cocoa-500) {
+  color: #5b4a35;
+}
+
 /* ============ NIGHT UI: toàn bộ thành phần chuyển tím đậm ============ */
 .night-ui {
   --night-card: #262052;
@@ -373,7 +378,7 @@ body {
   --night-tile: rgba(64, 54, 118, 0.55);
   --night-border: #4a3f8c;
   --night-text: #efeaff;
-  --night-text-soft: #b9afe8;
+  --night-text-soft: #cfc6f5;
   --night-shadow: rgba(8, 6, 24, 0.55);
 }
 
@@ -391,7 +396,22 @@ body {
   color: var(--night-text-soft);
 }
 .night-ui :is(.text-cocoa-500) {
-  color: #9d92d4;
+  color: #b4a9e6;
+}
+
+/* Các tone màu nhấn phải đủ sáng trên nền tím đậm */
+.night-ui .text-lavender-500 { color: #c4b5fd; }
+.night-ui .text-leaf-600 { color: #7fd8a4; }
+.night-ui .text-blush-500 { color: #ff9fb2; }
+.night-ui .text-sky-600 { color: #7dd3fc; }
+.night-ui .text-sky-700 { color: #bae6fd; }
+.night-ui .text-amber-600 { color: #fbbf24; }
+.night-ui .text-slate-400 { color: #cbd5e1; }
+.night-ui .text-yellow-500 { color: #fde047; }
+
+.night-ui .input-cozy::placeholder,
+.night-ui textarea::placeholder {
+  color: #8f85c4;
 }
 
 .night-ui :is(.bg-white, .bg-white\/70, .bg-white\/80, .bg-white\/90, .bg-cream-100\/70, .bg-cream-100\/80, .bg-cream-100\/90, .bg-cream-100\/95) {

@@ -41,9 +41,9 @@ interface CozyAppProps {
 
 /** Vỏ app: header, tab content, bottom nav, animation xây tầng. Bầu trờ do page.tsx render theo theme. */
 export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppProps) {
-  const live = useVaultData();
+  const live = useVaultData({ enabled: !demoData });
   const data = demoData ?? live;
-  const gemsData = useGemsData();
+  const gemsData = useGemsData({ enabled: !demoData });
   const chainId = useChainId();
   const [tab, setTab] = useState<TabKey>("home");
   const [muted, setMutedState] = useState(isMuted());
@@ -100,7 +100,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
   }
 
   return (
-    <div className="relative z-10 mx-auto min-h-screen w-full max-w-md pb-4">
+    <div className="relative z-10 mx-auto min-h-screen w-full max-w-md pb-4 md:max-w-3xl">
       {/* header */}
       <header className="sticky top-0 z-30 flex items-center justify-between px-4 pb-2 pt-3">
         <div className="flex items-center gap-2">

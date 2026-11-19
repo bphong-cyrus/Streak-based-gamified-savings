@@ -41,7 +41,7 @@ function useCountdown(targetSec: bigint | undefined): string {
 }
 
 /** Mọi dữ liệu on-chain dashboard cần, fetch theo nhóm và tự refetch. */
-export function useVaultData() {
+export function useVaultData({ enabled = true }: { enabled?: boolean } = {}) {
   const { address } = useAccount();
 
   const base = useReadContracts({
@@ -55,7 +55,7 @@ export function useVaultData() {
       { address: contracts.distributor, abi: yieldDistributorAbi, functionName: "rollover" },
       { address: contracts.distributor, abi: yieldDistributorAbi, functionName: "totalClaimable" },
     ],
-    query: { refetchInterval: 10_000 },
+    query: { refetchInterval: 10_000, enabled, refetchOnWindowFocus: false },
   });
 
   const wallet = useReadContracts({
@@ -68,7 +68,7 @@ export function useVaultData() {
           { address: contracts.distributor, abi: yieldDistributorAbi, functionName: "claimedYield", args: [address] },
         ]
       : [],
-    query: { refetchInterval: 5_000, enabled: !!address },
+    query: { refetchInterval: 5_000, enabled: enabled && !!address, refetchOnWindowFocus: false },
   });
 
   const startAt = base.data?.[0]?.result as bigint | undefined;
@@ -95,7 +95,7 @@ export function useVaultData() {
             },
           ]
         : [],
-    query: { refetchInterval: 10_000, enabled: currentEpochLocal !== undefined },
+    query: { refetchInterval: 10_000, enabled: enabled && currentEpochLocal !== undefined, refetchOnWindowFocus: false },
   });
 
   const epochEnd =

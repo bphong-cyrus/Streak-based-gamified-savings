@@ -33,7 +33,7 @@ export function MeTab({ data, theme, onThemeChange, themes, decors, gemsBalance,
   }
 
   return (
-    <div className="space-y-3 px-4 pb-28 pt-2">
+    <div className="space-y-3 px-4 pb-28 pt-2 md:columns-2 md:gap-3 md:[&>*]:mb-3 md:[&>*]:break-inside-avoid">
       {/* hồ sơ */}
       <div className="card-cream p-4 text-center">
         <div className="mx-auto w-fit">

@@ -8,6 +8,7 @@ import { fmt, shortAddr } from "@/lib/format";
 import { IdentityAvatar, identityOf } from "@/lib/identity";
 import { TxFeedback, useTx } from "@/components/useTx";
 import { FeatureCard, Stat } from "@/components/cozy/panel";
+import { Icon } from "@/components/cozy/icons";
 import type { VaultData } from "@/lib/useVaultData";
 
 const FLOOR_COLORS = ["#ffd9a8", "#ffc9d4", "#c9bdf5", "#bfe8c9", "#fde9a9", "#bfe3f2"];
@@ -49,7 +50,7 @@ export function GroupTab({ data }: { data: VaultData }) {
     <div className="space-y-3 px-4 pb-28 pt-2">
       {/* tổng quan nhóm */}
       <div className="card-cream p-4">
-        <h3 className="font-cozy text-lg font-bold">🏢 Tòa nhà chung</h3>
+        <h3 className="flex items-center gap-1.5 font-cozy text-lg font-bold"><Icon name="home" size={20} className="text-cocoa-600" /> Tòa nhà chung</h3>
         <p className="mt-0.5 text-xs font-semibold text-cocoa-500">
           {members.length} cư dân · tiền của từng ngườ vẫn thuộc về họ, nhóm chỉ để cùng nhau giữ nhịp gửi đều.
         </p>
@@ -71,7 +72,7 @@ export function GroupTab({ data }: { data: VaultData }) {
 
       {/* tòa nhà: mỗi thành viên một tầng */}
       <div className="card-cream p-4">
-        <h4 className="mb-2 font-cozy font-bold">🐈 Các tầng trong nhà</h4>
+        <h4 className="mb-2 flex items-center gap-1.5 font-cozy font-bold"><Icon name="cat" size={18} className="text-cocoa-600" /> Các tầng trong nhà</h4>
         {members.length === 0 ? (
           <p className="text-sm font-semibold text-cocoa-500">Chưa có cư dân nào. Hãy là ngườ đầu tiên!</p>
         ) : (
@@ -82,7 +83,7 @@ export function GroupTab({ data }: { data: VaultData }) {
               return (
                 <div
                   key={m.address}
-                  className="relative flex items-center gap-3 rounded-xl border-2 px-3 py-2"
+                  className="floor-row relative flex items-center gap-3 rounded-xl border-2 px-3 py-2"
                   style={{
                     background: FLOOR_COLORS[idx % FLOOR_COLORS.length],
                     borderColor: "rgba(70,56,39,0.6)",
@@ -115,7 +116,7 @@ export function GroupTab({ data }: { data: VaultData }) {
         )}
         {giftLive && (
           <p className="mt-2 text-[11px] font-semibold text-cocoa-500">
-            ❄️ Nút bên cạnh là tặng Streak Freeze kỳ này cho cư dân (phí bạn trả thay).
+            Nút bên cạnh là tặng Streak Freeze kỳ này cho cư dân (phí bạn trả thay).
           </p>
         )}
       </div>
@@ -162,7 +163,7 @@ function FreezeGiftButton({ to }: { to: string }) {
         title="Tặng Streak Freeze kỳ này"
         onClick={gift}
       >
-        {tx.step ? "…" : "❄️ Tặng freeze"}
+        {tx.step ? "…" : <span className="inline-flex items-center gap-1"><Icon name="snow" size={12} /> Tặng freeze</span>}
       </button>
       <TxFeedback state={{ step: tx.step, hash: tx.hash, error: tx.error }} />
     </div>
@@ -193,7 +194,7 @@ function InsuranceGiftButton({ to }: { to: string }) {
         title="Tặng Streak Insurance kỳ này"
         onClick={gift}
       >
-        {tx.step ? "…" : "🛡️ Tặng insurance"}
+        {tx.step ? "…" : <span className="inline-flex items-center gap-1"><Icon name="shield" size={12} /> Tặng insurance</span>}
       </button>
       <TxFeedback state={{ step: tx.step, hash: tx.hash, error: tx.error }} />
     </div>
@@ -249,7 +250,7 @@ function GroupsPanel() {
 
   return (
     <div className="card-cream p-4">
-      <h4 className="font-cozy font-bold">🫂 Nhóm bạn bè (on-chain)</h4>
+      <h4 className="flex items-center gap-1.5 font-cozy font-bold"><Icon name="users" size={18} className="text-cocoa-600" /> Nhóm bạn bè (on-chain)</h4>
       <p className="mt-0.5 text-xs font-semibold text-cocoa-500">
         Tạo nhóm bằng mã mờ, rủ bạn vào, cùng theo dõi ai đạt mục tiêu tuần này. Streak nhóm = số kỳ liên tiếp cả
         nhóm đều đạt.
@@ -346,7 +347,7 @@ function GroupView({ groupId }: { groupId: bigint }) {
         <div className="font-cozy font-bold text-cocoa-700">
           {g.name} <span className="text-xs text-cocoa-500">#{g.id.toString()}</span>
         </div>
-        <div className="font-cozy text-sm font-extrabold text-blush-500">🔥 nhóm {groupStreak.toString()} kỳ</div>
+        <div className="font-cozy text-sm font-extrabold text-blush-500">{groupStreak.toString()} kỳ liên tiếp</div>
       </div>
       <ul className="mt-2 space-y-1.5">
         {g.members.map((m, i) => {
@@ -415,7 +416,7 @@ function MentorHubCard() {
         <div className="mt-2 flex gap-2">
           <input
             className="input-cozy flex-1 font-mono text-xs"
-            placeholder="Địa chỉ mentor của bạn"
+            placeholder="Ví mentor"
             value={mentorAddr}
             onChange={(e) => setMentorAddr(e.target.value)}
           />

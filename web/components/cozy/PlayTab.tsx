@@ -8,9 +8,12 @@ import {
   kingOfTheHillAbi, prizeLinkedSavingsAbi, guildWarsAbi, celebrationPoolAbi,
 } from "@/lib/abis";
 import { fmt, parseAmount, shortAddr } from "@/lib/format";
+import { getPublicClient } from "@wagmi/core";
+import { decodeEventLog } from "viem";
+import { wagmiConfig, fuji, explorerTx } from "@/lib/config";
 import { TxFeedback, useTx } from "@/components/useTx";
 import { FeatureCard, Stat, useTokenAllowance, withTokenApprove } from "@/components/cozy/panel";
-import { Icon } from "@/components/cozy/icons";
+import { Icon, type IconName } from "@/components/cozy/icons";
 import { MissionsCard } from "@/components/cozy/MissionsCard";
 import type { VaultData } from "@/lib/useVaultData";
 import { fmtGems, type MissionView } from "@/lib/useGemsData";
@@ -21,21 +24,10 @@ interface PlayProps {
   gemsBalance: bigint;
 }
 
-const WHEEL_REWARDS = [
-  { icon: "❄️", label: "Streak Freeze" },
-  { icon: "💰", label: "+50 Paws" },
-  { icon: "⚡", label: "Interest x2 (1 tuần)" },
-  { icon: "🎁", label: "Hộp quà bí ẩn" },
-  { icon: "💎", label: "+120 Paws" },
-  { icon: "🔥", label: "Streak Revival" },
-  { icon: "🪙", label: "+20 Paws" },
-  { icon: "🎨", label: "Theme độc quyền" },
-];
-
 /** Tab Chơi: thưởng on-chain, nhiệm vụ, vòng quay, điểm danh + các trò chơi isometric. */
 export function PlayTab({ data, missions, gemsBalance }: PlayProps) {
   return (
-    <div className="space-y-3 px-4 pb-28 pt-2">
+    <div className="space-y-3 px-4 pb-28 pt-2 md:columns-2 md:gap-3 md:[&>*]:mb-3 md:[&>*]:break-inside-avoid">
       <RewardsCard data={data} gemsBalance={gemsBalance} />
       <MissionsCard missions={missions} hasWallet={!!data.address} />
       <WheelCard data={data} />
@@ -95,14 +87,41 @@ function RewardsCard({ data, gemsBalance }: { data: VaultData; gemsBalance: bigi
   );
 }
 
-/** Vòng quay may mắn on-chain: 1 lượt mỗi kỳ. */
+/** Vòng quay may mắn on-chain: tầng giải đọc từ contract, kết quả từ event WheelSpun trong receipt. */
+const TIER_ICONS: IconName[] = ["snow", "paw", "bolt", "gift", "gem", "flame", "coin", "spark"];
+const TIER_COLORS = ["#ffc9d4", "#fde9a9", "#bfe8c9", "#c9bdf5", "#bfe3f2", "#ffd9a8"];
+
 function WheelCard({ data }: { data: VaultData }) {
   const spin = useTx();
   const [spinning, setSpinning] = useState(false);
-  const [won, setWon] = useState<number | null>(null);
+  const [won, setWon] = useState<{ prize: bigint; hash: string } | null>(null);
   const { address } = useAccount();
   const epoch = data.account?.currentEpoch;
   const live = isConfigured(contracts.wheel);
+
+  // Đọc tầng giải thật từ contract
+  const countState = useReadContracts({
+    contracts: live ? [{ address: contracts.wheel, abi: luckyWheelAbi, functionName: "tierCount", args: [] }] : [],
+    query: { refetchInterval: 60_000, enabled: live },
+  });
+  const tierCount = Number((countState.data?.[0]?.result as bigint | undefined) ?? 0n);
+  const tiersState = useReadContracts({
+    contracts: live
+      ? Array.from({ length: tierCount }, (_, i) => ({
+          address: contracts.wheel, abi: luckyWheelAbi, functionName: "tiers", args: [BigInt(i)],
+        }))
+      : [],
+    query: { refetchInterval: 60_000, enabled: live && tierCount > 0 },
+  });
+  const tiers = Array.from({ length: tierCount }, (_, i) => tiersState.data?.[i]?.result as
+    | { probabilityBps: bigint; prizeAmount: bigint }
+    | undefined)
+    .filter((t): t is NonNullable<typeof t> => !!t)
+    .map((t) => ({
+      probabilityBps: BigInt(t.probabilityBps ?? 0),
+      prizeAmount: BigInt(t.prizeAmount ?? 0),
+    }));
+  const totalBps = tiers.reduce((s, t) => s + Number(t.probabilityBps), 0);
 
   const wheelState = useReadContracts({
     contracts:
@@ -112,52 +131,84 @@ function WheelCard({ data }: { data: VaultData }) {
             { address: contracts.wheel, abi: luckyWheelAbi, functionName: "lastSpunEpoch", args: [address] },
           ]
         : [],
-    query: { refetchInterval: 8_000, enabled: live && !!address && epoch !== undefined },
+    query: { refetchInterval: 20_000, enabled: live && !!address && epoch !== undefined },
   });
   const canSpin = wheelState.data?.[0]?.result as boolean | undefined;
+
+  // conic-gradient theo xác suất thật từng tầng
+  const gradient = (() => {
+    let acc = 0;
+    const stops: string[] = [];
+    tiers.forEach((t, i) => {
+      const start = (acc / totalBps) * 360;
+      acc += Number(t.probabilityBps);
+      const end = (acc / totalBps) * 360;
+      stops.push(`${TIER_COLORS[i % TIER_COLORS.length]} ${start}deg ${end}deg`);
+    });
+    return stops.length ? `conic-gradient(${stops.join(", ")})` : "conic-gradient(#c9bdf5 0 360deg)";
+  })();
 
   async function spinWheel() {
     if (spinning || epoch === undefined) return;
     setWon(null);
     setSpinning(true);
     if (live) {
-      await spin.run("Vòng quay may mắn", [
+      const ok = await spin.run("Vòng quay may mắn", [
         { label: "Đang quay trên blockchain…", call: { address: contracts.wheel, abi: luckyWheelAbi, functionName: "spin", args: [epoch] } },
       ]);
       setSpinning(false);
-      setWon(Math.floor(Math.random() * WHEEL_REWARDS.length));
+      if (ok && spin.hash) {
+        // Kết quả thật: đọc event WheelSpun trong receipt — không random phía client
+        try {
+          const client = getPublicClient(wagmiConfig, { chainId: fuji.id });
+          const receipt = await client.getTransactionReceipt({ hash: spin.hash as `0x${string}` });
+          for (const log of receipt.logs) {
+            try {
+              const ev = decodeEventLog({ abi: luckyWheelAbi, data: log.data, topics: log.topics });
+              if (ev.eventName === "WheelSpun") {
+                const args = ev.args as unknown as { prize: bigint };
+                setWon({ prize: args.prize, hash: spin.hash });
+                return;
+              }
+            } catch { /* log khác */ }
+          }
+        } catch { /* fallback: chỉ link Snowtrace */ }
+        setWon({ prize: -1n, hash: spin.hash }); // -1 = chỉ hiện link đối chiếu
+      }
       return;
     }
-    setTimeout(() => {
-      setSpinning(false);
-      setWon(Math.floor(Math.random() * WHEEL_REWARDS.length));
-    }, 3300);
+    setSpinning(false);
   }
 
   return (
     <FeatureCard
       icon="wheel"
       title="Vòng quay may mắn"
-      desc={live ? "Quay thật on-chain — mỗi ví một lượt mỗi kỳ, giải từ prize pool." : "Chưa cấu hình contract cho chain này."}
+      desc={live ? "Tầng giải & kết quả đọc thẳng từ contract — không số ngẫu nhiên nào phía client." : "Chưa cấu hình contract cho chain này."}
     >
+      {tiers.length === 0 ? (
+        <div className="mx-auto mt-1 flex h-40 w-full max-w-xs flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-cocoa-700/30 bg-white/40 p-4 text-center">
+          <Icon name="wheel" size={36} className="text-cocoa-500" />
+          <p className="text-xs font-semibold text-cocoa-500">
+            Kết nối ví mạng Fuji để tải tầng giải thật từ contract — mỗi ví một lượt mỗi kỳ.
+          </p>
+        </div>
+      ) : (
       <div className="relative mx-auto mt-1 h-52 w-52">
         <div className="absolute -top-1 left-1/2 z-20 -translate-x-1/2 text-2xl">📍</div>
         <div
           className={`h-full w-full rounded-full border-4 border-cocoa-700/70 shadow-chunkySm ${spinning ? "wheel-spinning" : ""}`}
-          style={{
-            background:
-              "conic-gradient(#ffc9d4 0 45deg, #fde9a9 45deg 90deg, #bfe8c9 90deg 135deg, #c9bdf5 135deg 180deg, #ffc9d4 180deg 225deg, #fde9a9 225deg 270deg, #bfe8c9 270deg 315deg, #c9bdf5 315deg 360deg)",
-          }}
+          style={{ background: gradient }}
         >
-          {WHEEL_REWARDS.map((r, i) => {
-            const angle = i * 45 + 22.5;
+          {tiers.map((t, i) => {
+            const angle = ((tiers.slice(0, i).reduce((s, x) => s + Number(x.probabilityBps), 0) + Number(t.probabilityBps) / 2) / totalBps) * 360;
             return (
               <div
                 key={i}
-                className="absolute left-1/2 top-1/2 flex h-12 w-12 items-center justify-center rounded-full border-2 border-cocoa-700/50 bg-white/90 text-xl"
-                style={{ transform: `rotate(${angle}deg) translateY(-78px) rotate(${-angle}deg) translate(-50%, -50%)` }}
+                className="absolute left-1/2 top-1/2 flex h-11 w-11 items-center justify-center rounded-full border-2 border-cocoa-700/50 bg-white/90 text-[10px] font-extrabold text-cocoa-700"
+                style={{ transform: `rotate(${angle}deg) translateY(-76px) rotate(${-angle}deg) translate(-50%, -50%)` }}
               >
-                {r.icon}
+                {t.prizeAmount > 0n ? fmt(t.prizeAmount) : "x"}
               </div>
             );
           })}
@@ -166,18 +217,35 @@ function WheelCard({ data }: { data: VaultData }) {
           </div>
         </div>
       </div>
+      )}
+      {tiers.length > 0 && tiers.every((t) => t.prizeAmount === 0n) && (
+        <p className="mt-2 rounded-xl border-2 border-dashed border-cream-300 bg-white/60 px-3 py-2 text-center text-xs font-semibold text-cocoa-500">
+          Các tầng hiện đều là &quot;miss&quot; (0 mUSDC) — owner cần cấu hình giải + nạp pool trước khi quay được.
+        </p>
+      )}
       <div className="mt-4 text-center">
         <button
           className="btn-cozy"
-          disabled={spinning || spin.step !== null || (live && (!!address ? canSpin === false : true))}
+          disabled={spinning || spin.step !== null || tiers.length === 0 || (live && (!!address ? canSpin === false : true))}
           onClick={spinWheel}
         >
-          {spinning ? "Đang quay…" : live ? (canSpin === false ? "Đã quay kỳ này 🔒" : "Quay ngay") : "Quay miễn phí"}
+          {spinning ? "Đang quay…" : live ? (canSpin === false ? "Đã quay kỳ này" : "Quay ngay") : "Chưa sẵn sàng"}
         </button>
       </div>
-      {won !== null && (
-        <div className="mx-auto mt-3 w-fit rounded-xl border-2 border-leaf-500/60 bg-leaf-300/40 px-4 py-2 font-cozy font-bold text-leaf-600">
-          Bạn nhận được: {WHEEL_REWARDS[won].label}!
+      {won && (
+        <div className="mx-auto mt-3 w-fit max-w-full rounded-xl border-2 border-leaf-500/60 bg-leaf-300/40 px-4 py-2 text-center font-cozy font-bold text-leaf-600">
+          {won.prize >= 0n ? (
+            <>
+              Bạn trúng <span className="text-lg">{fmt(won.prize)} mUSDC</span> thật!
+              <a className="ml-1 text-xs underline" href={explorerTx(won.hash)} target="_blank" rel="noreferrer">
+                đối chiếu trên Snowtrace
+              </a>
+            </>
+          ) : (
+            <a className="text-xs underline" href={explorerTx(won.hash)} target="_blank" rel="noreferrer">
+              Xem kết quả quay trên Snowtrace
+            </a>
+          )}
         </div>
       )}
       <TxFeedback state={{ step: spin.step, hash: spin.hash, error: spin.error }} />
@@ -298,6 +366,11 @@ function PredictionCard({ data }: { data: VaultData }) {
         />
         <span className="text-xs font-semibold text-cocoa-500">mới nhất: #{latest.toString()}</span>
       </div>
+      {latest === 0n && (
+        <p className="mt-2 rounded-xl border-2 border-dashed border-cream-300 bg-white/60 px-3 py-2 text-center text-xs font-semibold text-cocoa-500">
+          Chưa có thị trường nào — chờ owner tạo market đầu tiên cho kỳ tới.
+        </p>
+      )}
       {m && id > 0n && (
         <div className="mt-2 grid grid-cols-3 gap-2">
           <Stat label="Mốc line" value={`${fmt(m.line)}`} />
@@ -391,7 +464,7 @@ function KingOfTheHillCard() {
         <Stat label="Prize pool" value={fmt(pool)} tone="text-leaf-600" />
       </div>
       <div className="mt-2 flex gap-2">
-        <input className="input-cozy flex-1" inputMode="decimal" placeholder={`Tối thiểu ~${fmt(kingStake + kingStake / 10n + 1n)}`} value={stake} onChange={(e) => setStake(e.target.value)} />
+        <input className="input-cozy flex-1" inputMode="decimal" placeholder="Stake mới" value={stake} onChange={(e) => setStake(e.target.value)} />
         <button className="btn-cozy shrink-0" disabled={tx.step !== null || !parseAmount(stake)} onClick={claimThrone}>
           Lên ngôi
         </button>
@@ -445,6 +518,11 @@ function PrizeLinkedCard() {
         <Stat label="Jackpot" value={fmt(jackpot)} tone="text-leaf-600" />
       </div>
       {ticketSize > 0n && <p className="mt-2 text-[11px] font-semibold text-cocoa-500">1 vé = {fmt(ticketSize)} mUSDC lãi mỗi kỳ</p>}
+      {address && myTickets === 0n && totalTickets === 0n && (
+        <p className="mt-2 text-[11px] font-semibold text-cocoa-500">
+          Chưa có vé nào trong hệ thống — nhận lãi kỳ này rồi bấm "Đồng bộ vé" để tham gia quay.
+        </p>
+      )}
       <div className="mt-2 flex gap-2">
         <button className="btn-cream flex-1" disabled={tx.step !== null} onClick={() => call("syncTickets", [], "Đang đồng bộ vé…")}>Đồng bộ vé</button>
         <button className="btn-cozy flex-1" disabled={tx.step !== null} onClick={() => call("claimPrize", [], "Đang nhận giải…")}>Nhận giải</button>
@@ -590,10 +668,10 @@ function CelebrationCard({ data }: { data: VaultData }) {
         <Stat label="Mốc đã nhận" value={`${claimedMs}/3`} tone="text-lavender-500" />
       </div>
       <div className="mt-2 flex gap-2">
-        <input className="input-cozy flex-1" placeholder="Lờ chúc mừng (tuỳ chọn)" value={message} onChange={(e) => setMessage(e.target.value)} />
+        <input className="input-cozy flex-1" placeholder="Lờ chúc mừng" value={message} onChange={(e) => setMessage(e.target.value)} />
       </div>
       <div className="mt-2 flex gap-2">
-        <input className="input-cozy flex-1" inputMode="decimal" placeholder="Tip bao nhiêu mUSDC" value={tip} onChange={(e) => setTip(e.target.value)} />
+        <input className="input-cozy flex-1" inputMode="decimal" placeholder="Tip mUSDC" value={tip} onChange={(e) => setTip(e.target.value)} />
         <button className="btn-cream shrink-0" disabled={tx.step !== null || !parseAmount(tip)} onClick={doTip}>Gửi tip</button>
       </div>
       <button className="btn-cozy mt-2 w-full" disabled={tx.step !== null || nextMilestone !== undefined} onClick={celebrate}>

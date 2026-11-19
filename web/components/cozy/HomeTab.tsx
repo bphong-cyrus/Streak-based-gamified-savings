@@ -78,11 +78,6 @@ function Tile({
   );
 }
 
-/** APY ước tính từ thiết kế: lãi cơ bản 4.8% + thưởng chuỗi 0.5%/tuần (tối đa +2.5%). */
-export function estimateApy(streak: bigint): number {
-  return 4.8 + Math.min(Number(streak) * 0.5, 2.5);
-}
-
 /** Tab Home: báo cáo tóm tắt gọn nhẹ — chi tiết số liệu nằm ở tab Mục tiêu. */
 export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDepositStart, isDemo }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -90,7 +85,7 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
   const [zoom, setZoom] = useState<number | null>(null); // null = tự vừa khung
   const wrapRef = useRef<HTMLDivElement>(null);
   const [natural, setNatural] = useState(0);
-  const { account, claimable, claimed, countdown, hasStarted } = data;
+  const { account, claimable, claimed, countdown, hasStarted, currentBudget, rollover } = data;
 
 
   // Màn ăn mừng sau khi xây xong tầng (~3s)
@@ -134,7 +129,6 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
   const autoScale = natural > 0 ? Math.max(0.35, Math.min(1.9, sectionW / 380, (available / natural) * 1.25)) : 1;
   const scale = zoom ?? autoScale; // mặc định theo màn hình; ⛶ vừa khung; +/− chỉnh tay
   const interestTotal = (claimed ?? 0n) + (claimable ?? 0n);
-  const apy = estimateApy(account.streak);
   const remaining = target > progress ? target - progress : 0n;
 
   return (
@@ -142,7 +136,7 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
       {/* 4 chỉ số tóm tắt */}
       <div className="grid grid-cols-2 gap-2">
         <Tile icon={<Icon name="bank" size={16} />} label="Tiết kiệm" value={`${fmt(account.principal)}`} sub="mUSDC" />
-        <Tile icon={<Icon name="chart" size={16} />} label="Lãi tích lũy" value={`+${fmt(interestTotal)}`} sub={`~${apy.toFixed(1)}% APY (ước tính)`} tone="text-leaf-600" />
+        <Tile icon={<Icon name="chart" size={16} />} label="Lãi tích lũy" value={`+${fmt(interestTotal)}`} sub={`Chờ nhận ${fmt(claimable)} mUSDC`} tone="text-leaf-600" />
         <Tile icon={<Icon name="flame" size={16} />} label="Chuỗi kiên trì" value={`${account.streak} tuần`} sub={goalDone ? "Đạt phong độ cao!" : "Cố lên nào!"} tone="text-blush-500" />
         <Tile icon={<Icon name="paw" size={16} />} label="Điểm Paws" value={fmtGems(gemsBalance)} sub="Đổi nội thất nhà" tone="text-lavender-500" />
       </div>
@@ -272,10 +266,12 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
       {/* tự bảo vệ streak: đóng băng kỳ khi chưa kịp gửi đủ */}
       {!isDemo && !goalDone && target > 0n && <FreezeEpochButton />}
 
-      {/* băng tin thị trường */}
+      {/* chỉ số thật từ on-chain thay băng tin mock */}
       <div className="mx-auto mt-3 flex max-w-xs items-center gap-2 rounded-xl border-2 border-cocoa-700/30 bg-white/70 px-3 py-1.5 text-[11px] font-semibold text-cocoa-600">
         <Icon name="chart" size={15} className="shrink-0" />
-        <span className="truncate">Lãi suất USDC Lending (mock): 6.2% APY · Aave v3 tham chiếu</span>
+        <span className="truncate">
+          Ngân sách kỳ này: {fmt(currentBudget)} mUSDC · Chờ chia: {fmt(rollover ?? 0n)}
+        </span>
       </div>
 
       <DepositSheet data={data} open={sheetOpen} onClose={() => setSheetOpen(false)} onDeposited={onDepositStart} />
