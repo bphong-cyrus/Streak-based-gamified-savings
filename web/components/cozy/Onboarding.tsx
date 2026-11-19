@@ -46,6 +46,9 @@ export function Onboarding() {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-cocoa-800/60" onClick={done}>
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Hướng dẫn sử dụng Cozy Save"
         className="w-full max-w-md rounded-t-3xl border-[3px] border-b-0 border-cocoa-700/70 bg-cream-50 p-5 pb-8 shadow-chunky"
         onClick={(e) => e.stopPropagation()}
         style={{ animation: "bannerPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both" }}

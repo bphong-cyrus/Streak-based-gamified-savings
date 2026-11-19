@@ -150,7 +150,14 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
           </span>
         </div>
         <div className="mt-1.5 flex items-center gap-2">
-          <div className="h-4 flex-1 overflow-hidden rounded-full border-2 border-cocoa-700/40 bg-white">
+          <div
+            className="h-4 flex-1 overflow-hidden rounded-full border-2 border-cocoa-700/40 bg-white"
+            role="progressbar"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label="Tiến độ mục tiêu tuần này"
+          >
             <div
               className={`h-full rounded-full transition-all duration-500 ${goalDone ? "bg-leaf-400" : "bg-gradient-to-r from-blush-400 to-blush-300"}`}
               style={{ width: `${pct}%` }}
@@ -178,27 +185,30 @@ export function HomeTab({ data, night, building, celebrateKey, gemsBalance, onDe
         <div className="absolute -right-1 top-1/2 z-40 flex -translate-y-1/2 flex-col gap-2">
           <button
             className="btn-cream !px-0 !py-0 font-cozy text-lg font-extrabold"
-            style={{ width: 36, height: 36 }}
+            style={{ width: 44, height: 44 }}
             disabled={scale >= 2.2}
             onClick={() => setZoom(Math.min(2.2, scale + 0.15))}
             title="Phóng to"
+            aria-label="Phóng to tòa nhà"
           >
             +
           </button>
           <button
             className="btn-cream !px-0 !py-0 font-cozy text-lg font-extrabold"
-            style={{ width: 36, height: 36 }}
+            style={{ width: 44, height: 44 }}
             disabled={scale <= 0.4}
             onClick={() => setZoom(Math.max(0.4, scale - 0.15))}
             title="Thu nhỏ"
+            aria-label="Thu nhỏ tòa nhà"
           >
             −
           </button>
           <button
             className="btn-cream !px-0 !py-0 text-sm font-extrabold"
-            style={{ width: 36, height: 36 }}
+            style={{ width: 44, height: 44 }}
             onClick={() => setZoom(fit)}
             title="Vừa khung hình"
+            aria-label="Vừa khung hình"
           >
             ⛶
           </button>

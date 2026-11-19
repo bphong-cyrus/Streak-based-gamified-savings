@@ -159,7 +159,7 @@ function SavingsBondCard() {
   }
 
   return (
-    <FeatureCard icon="gem" title="Trái phiếu cozy" desc={`Coupon cơ bản ${Number(baseBps) / 100}% + 0.5% mỗi streak — rút đúng hạn nhận đủ, rút sớm bị phạt`}>
+    <FeatureCard collapsible defaultOpen={false} icon="gem" title="Trái phiếu cozy" desc={`Coupon cơ bản ${Number(baseBps) / 100}% + 0.5% mỗi streak — rút đúng hạn nhận đủ, rút sớm bị phạt`}>
       <div className="grid grid-cols-2 gap-2">
         <Stat label="Trái phiếu của bạn" value={address ? mine.toString() : undefined} />
         <Stat label="Đã phát hành toàn mạng" value={totalIssued.toString()} />
@@ -227,7 +227,7 @@ function TermLockCard() {
   }
 
   return (
-    <FeatureCard icon="lock" title="Két kỳ hạn" desc={`Thưởng ${Number(bps) / 100}%/năm quy ước — khoá càng lâu càng đáng`}>
+    <FeatureCard collapsible defaultOpen={false} icon="lock" title="Két kỳ hạn" desc={`Thưởng ${Number(bps) / 100}%/năm quy ước — khoá càng lâu càng đáng`}>
       <div className="grid grid-cols-2 gap-2">
         <Stat label="Khoản đang khoá" value={address ? active.toString() : undefined} />
         <Stat label="Phạt rút sớm" value="20%" tone="text-blush-500" />
@@ -300,7 +300,7 @@ function TimeCapsuleCard() {
   }
 
   return (
-    <FeatureCard icon="capsule" title="Hộp thờ gian" desc="Gửi tiền + lờ nhắn cho chính mình ở tương lai — mở đúng kỳ đã hẹn (phí tạo 0.2 mUSDC)">
+    <FeatureCard collapsible defaultOpen={false} icon="capsule" title="Hộp thờ gian" desc="Gửi tiền + lờ nhắn cho chính mình ở tương lai — mở đúng kỳ đã hẹn (phí tạo 0.2 mUSDC)">
       <Stat label="Hộp của bạn" value={address ? mine.toString() : undefined} />
 
       <div className="mt-3 space-y-2.5">
@@ -377,7 +377,7 @@ function PaycheckSplitterCard() {
   }
 
   return (
-    <FeatureCard icon="split" title="Máy chia lương" desc="VD: 0xABC:7000 → 70% vào ví phụ, phần còn lại gửi thẳng vault giữ streak">
+    <FeatureCard collapsible defaultOpen={false} icon="split" title="Máy chia lương" desc="VD: 0xABC:7000 → 70% vào ví phụ, phần còn lại gửi thẳng vault giữ streak">
       <Stat label="Kế hoạch đã lưu" value={address ? planCount.toString() : undefined} />
 
       <div className="mt-3 space-y-2.5">
@@ -443,7 +443,7 @@ function VaultCreditCard() {
   }
 
   return (
-    <FeatureCard icon="card" title="Tín dụng streak" desc="Càng giữ streak dài, hạn mức vay càng lớn — không cần thế chấp thêm">
+    <FeatureCard collapsible defaultOpen={false} icon="card" title="Tín dụng streak" desc="Càng giữ streak dài, hạn mức vay càng lớn — không cần thế chấp thêm">
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Hạn mức" value={address ? fmt(limit) : undefined} tone="text-leaf-600" />
         <Stat label="Đang nợ" value={address ? fmt(loan?.amount ?? 0n) : undefined} tone="text-blush-500" />
@@ -521,7 +521,7 @@ function EmergencyHatchCard() {
   }
 
   return (
-    <FeatureCard icon="hatch" title="Cửa thoát hiểm" desc="Muốn rút phải đặt lịch trước 24h — đủ lạnh đầu để không bán hoảng">
+    <FeatureCard collapsible defaultOpen={false} icon="hatch" title="Cửa thoát hiểm" desc="Muốn rút phải đặt lịch trước 24h — đủ lạnh đầu để không bán hoảng">
       <Stat label="Đang giữ trong hatch" value={address ? `${fmt(bal)} mUSDC` : undefined} />
 
       <div className="mt-3 space-y-2.5">
@@ -580,7 +580,7 @@ function GuardianRecoveryCard() {
   }
 
   return (
-    <FeatureCard icon="lifebuoy" title="Guardian khôi phục" desc="Chọn 1–3 ngườ tin cậy — mất ví vẫn lấy lại được tài khoản (2/3 guardian phải duyệt)">
+    <FeatureCard collapsible defaultOpen={false} icon="lifebuoy" title="Guardian khôi phục" desc="Chọn 1–3 ngườ tin cậy — mất ví vẫn lấy lại được tài khoản (2/3 guardian phải duyệt)">
       <div className="space-y-2.5">
         <div>
           <FieldLabel>Đặt guardian (cách nhau dấu phẩy)</FieldLabel>
@@ -662,7 +662,7 @@ function SpendingLimitCard() {
   }
 
   return (
-    <FeatureCard icon="gauge" title="Vòng kim cô chi tiêu" desc="Tự khoá mức rút mỗi kỳ — muốn nới phải chờ 2 kỳ, đủ thờ gian suy nghĩ">
+    <FeatureCard collapsible defaultOpen={false} icon="gauge" title="Vòng kim cô chi tiêu" desc="Tự khoá mức rút mỗi kỳ — muốn nới phải chờ 2 kỳ, đủ thờ gian suy nghĩ">
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Limit/kỳ" value={address ? fmt(l?.perEpoch ?? 0n) : undefined} tone="text-blush-500" />
         <Stat label="Đã rút kỳ này" value={address ? fmt(l?.withdrawnThisEpoch ?? 0n) : undefined} />
@@ -756,7 +756,7 @@ function CharityPotCard() {
   }
 
   return (
-    <FeatureCard icon="heart" title="Quỹ từ thiện" desc="Một phần lãi của bạn có thể nuôi những mái nhà thật ngoài đờii">
+    <FeatureCard collapsible defaultOpen={false} icon="heart" title="Quỹ từ thiện" desc="Một phần lãi của bạn có thể nuôi những mái nhà thật ngoài đờii">
       <div className="grid grid-cols-2 gap-2">
         <Stat label="Tổ chức đang hoạt động" value={charities.length > 0 ? charities.length.toString() : (count > 0 ? "0" : undefined)} />
         <Stat label="Bạn đã quyên góp" value={address ? fmt(lifetime) : undefined} tone="text-leaf-600" />

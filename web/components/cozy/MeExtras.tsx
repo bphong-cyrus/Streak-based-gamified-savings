@@ -129,7 +129,7 @@ function StampsCard({ data }: { data: VaultData }) {
   }
 
   return (
-    <FeatureCard icon="stamp" title="Sưu tập tem streak" desc={`Mùa hiện tại: #${seasonIdx.toString()} — đủ 12 tem nhận ${fmt(5n * 10n ** 6n)} mUSDC từ quỹ`}>
+    <FeatureCard collapsible defaultOpen={false} icon="stamp" title="Sưu tập tem streak" desc={`Mùa hiện tại: #${seasonIdx.toString()} — đủ 12 tem nhận ${fmt(5n * 10n ** 6n)} mUSDC từ quỹ`}>
       <div className="grid grid-cols-6 gap-1.5">
         {stamps.map((has, i) => (
           <div
@@ -192,7 +192,7 @@ function JournalCard({ data }: { data: VaultData }) {
   }
 
   return (
-    <FeatureCard icon="book" title="Nhật ký tiết kiệm" desc="Mỗi kỳ một dòng — về sau đọc lại thấy mình đã đi xa thế nào">
+    <FeatureCard collapsible defaultOpen={false} icon="book" title="Nhật ký tiết kiệm" desc="Mỗi kỳ một dòng — về sau đọc lại thấy mình đã đi xa thế nào">
       <div className="flex flex-wrap gap-1.5">
         {MOODS.map((m, i) => (
           <button
@@ -270,7 +270,7 @@ function MailCard() {
   }
 
   return (
-    <FeatureCard icon="mail" title="Thư on-chain" desc="Nhắn cho cư dân khác, kèm tip mUSDC nếu muốn thể hiện tình cảm">
+    <FeatureCard collapsible defaultOpen={false} icon="mail" title="Thư on-chain" desc="Nhắn cho cư dân khác, kèm tip mUSDC nếu muốn thể hiện tình cảm">
       <div className="grid grid-cols-2 gap-2">
         <Stat label="Thư trong hộp" value={inboxSize.toString()} tone="text-lavender-500" />
         <Stat label="Tổng thư toàn mạng" value={(state.data?.[1]?.result as bigint | undefined)?.toString() ?? "0"} />
@@ -346,7 +346,7 @@ function GemStakingCard() {
   };
 
   return (
-    <FeatureCard icon="sprout" title="Trồng Paws" desc={`Khoá Paws vào vườn — phần thưởng ${fmtGems((state.data?.[3]?.result as bigint | undefined) ?? 0n)} Paws/epoch chia cho ngườ stake`}>
+    <FeatureCard collapsible defaultOpen={false} icon="sprout" title="Trồng Paws" desc={`Khoá Paws vào vườn — phần thưởng ${fmtGems((state.data?.[3]?.result as bigint | undefined) ?? 0n)} Paws/epoch chia cho ngườ stake`}>
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Đang stake" value={fmtGems(staked)} tone="text-lavender-500" />
         <Stat label="Thưởng chờ" value={fmtGems(pending)} tone="text-leaf-600" />
@@ -405,7 +405,7 @@ function FeeRebateCard({ data }: { data: VaultData }) {
   }
 
   return (
-    <FeatureCard icon="percent" title="Hoàn phí streak" desc="Cứ 4 kỳ được hoàn một lần — streak dài hoàn tối đa 1 mUSDC hoặc đổi Paws">
+    <FeatureCard collapsible defaultOpen={false} icon="percent" title="Hoàn phí streak" desc="Cứ 4 kỳ được hoàn một lần — streak dài hoàn tối đa 1 mUSDC hoặc đổi Paws">
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Ước tính lần này" value={fmt(estimate)} tone="text-leaf-600" />
         <Stat label="Kỳ được claim" value={next.toString()} />

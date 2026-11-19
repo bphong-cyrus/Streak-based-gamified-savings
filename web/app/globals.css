@@ -2,12 +2,109 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============ DESIGN TOKENS (Atomic Design — theo Material 3/HIG) ============
+   Mọi component dùng token này để đảm bảo đồng bộ tuyệt đối giữa màn hình. */
 :root {
   color-scheme: light;
+
+  /* Màu ngữ nghĩa */
+  --surface: #fff6e0;
+  --surface-raised: #fffaf0;
+  --surface-sunken: #f7e8c8;
+  --ink: #463827;
+  --ink-soft: #6b573f;
+  --ink-muted: #8a7256;
+  --accent: #4fbe7d;
+  --accent-strong: #3a9e64;
+  --danger: #f26d8d;
+  --focus-ring: #2f7de1;
+
+  /* Cấp độ chữ fluid (đọc tốt mọi màn hình) */
+  --text-xs: clamp(0.66rem, 0.62rem + 0.2vw, 0.75rem);
+  --text-sm: clamp(0.8rem, 0.76rem + 0.2vw, 0.9rem);
+  --text-base: clamp(0.95rem, 0.9rem + 0.25vw, 1.05rem);
+  --text-lg: clamp(1.15rem, 1.05rem + 0.5vw, 1.35rem);
+  --text-xl: clamp(1.45rem, 1.25rem + 1vw, 1.9rem);
+
+  /* Tỉ lệ khoảng cách 4px */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+
+  /* Độ cao chạm tối thiểu (Fitts's Law / WCAG 2.5.8 — target >= 24px, khuyến nghị 44px) */
+  --touch-min: 44px;
+
+  /* Chuyển động (một hệ thống easing duy nhất) */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 150ms;
+  --dur-med: 300ms;
+}
+
+/* WCAG 2.4.7 / 2.4.11: vòng focus nhìn thấy rõ khi điều hướng bàn phím */
+:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+/* WCAG 2.3.3: tôn trọng ngườ dùng giảm chuyển động */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Perceived performance: skeleton shimmer thay vì màn trống */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-sunken);
+  border-radius: 8px;
+  min-height: 1em;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: shimmer 1.4s var(--ease-standard) infinite;
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Thu gọn section (Hick's Law: giảm số lựa chọn hiển thị cùng lúc) */
+.section-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-med) var(--ease-standard);
+}
+.section-body.open {
+  grid-template-rows: 1fr;
+}
+.section-body > div {
+  overflow: hidden;
+}
+.chevron-rotate {
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.chevron-rotate.open {
+  transform: rotate(90deg);
 }
 
 body {
   @apply font-body text-cocoa-700 antialiased;
+  font-size: var(--text-base);
 }
 
 .font-display {
@@ -409,6 +506,9 @@ body {
 .night-ui .text-slate-400 { color: #cbd5e1; }
 .night-ui .text-yellow-500 { color: #fde047; }
 
+.night-ui .skeleton {
+  background: #2c2560;
+}
 .night-ui .input-cozy::placeholder,
 .night-ui textarea::placeholder {
   color: #8f85c4;

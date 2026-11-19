@@ -31,7 +31,7 @@ export function PlayTab({ data, missions, gemsBalance }: PlayProps) {
       <RewardsCard data={data} gemsBalance={gemsBalance} />
       <MissionsCard missions={missions} hasWallet={!!data.address} />
       <WheelCard data={data} />
-      <CheckInCard />
+      <div className="contents"><CheckInCard /></div>
       <PredictionCard data={data} />
       <KingOfTheHillCard />
       <PrizeLinkedCard />
@@ -284,7 +284,7 @@ function CheckInCard() {
   }
 
   return (
-    <FeatureCard icon="calendar" title="Điểm danh mỗi ngày" desc="Thưởng Gems tăng dần theo chuỗi ngày liên tiếp">
+    <FeatureCard collapsible defaultOpen={false} icon="calendar" title="Điểm danh mỗi ngày" desc="Thưởng Gems tăng dần theo chuỗi ngày liên tiếp">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="font-cozy text-2xl font-extrabold text-blush-500">{streak.toString()}</span>
@@ -355,7 +355,7 @@ function PredictionCard({ data }: { data: VaultData }) {
   }
 
   return (
-    <FeatureCard icon="chart" title="Hộp dự đoán" desc="Đoán ngân sách kỳ tới cao hơn hay thấp hơn mốc — phe đúng chia pool">
+    <FeatureCard collapsible defaultOpen={false} icon="chart" title="Hộp dự đoán" desc="Đoán ngân sách kỳ tới cao hơn hay thấp hơn mốc — phe đúng chia pool">
       <div className="flex items-center gap-2">
         <input
           className="input-cozy w-28"
@@ -457,7 +457,7 @@ function KingOfTheHillCard() {
   const isKing = address?.toLowerCase() === king.toLowerCase();
 
   return (
-    <FeatureCard icon="crown" title="Ngai vàng tiết kiệm" desc="Stake nhiều hơn vua ít nhất 10% để lật đổ — vua hưởng % pool mỗi kỳ">
+    <FeatureCard collapsible defaultOpen={false} icon="crown" title="Ngai vàng tiết kiệm" desc="Stake nhiều hơn vua ít nhất 10% để lật đổ — vua hưởng % pool mỗi kỳ">
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Vua hiện tại" value={king === "0x0000000000000000000000000000000000000000" ? "Trống" : shortAddr(king)} tone="text-lavender-500" />
         <Stat label="Stake của vua" value={fmt(kingStake)} />
@@ -511,7 +511,7 @@ function PrizeLinkedCard() {
   }
 
   return (
-    <FeatureCard icon="ticket" title="Xổ số tiết kiệm" desc="Lãi kỳ này tự thành vé số — không mất thêm đồng nào">
+    <FeatureCard collapsible defaultOpen={false} icon="ticket" title="Xổ số tiết kiệm" desc="Lãi kỳ này tự thành vé số — không mất thêm đồng nào">
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Vé của bạn" value={address ? myTickets.toString() : undefined} tone="text-lavender-500" />
         <Stat label="Tổng vé" value={totalTickets.toString()} />
@@ -576,7 +576,7 @@ function GuildWarsCard() {
   }
 
   return (
-    <FeatureCard icon="flag" title="Bang hội chiến" desc="Mỗi streak thành viên = điểm cho bang — bang mạnh nhất mùa chia prize pool">
+    <FeatureCard collapsible defaultOpen={false} icon="flag" title="Bang hội chiến" desc="Mỗi streak thành viên = điểm cho bang — bang mạnh nhất mùa chia prize pool">
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Mùa" value={season.toString()} />
         <Stat label="Bang đã lập" value={guildCount > 0n || state.data ? guildCount.toString() : undefined} />
@@ -661,7 +661,7 @@ function CelebrationCard({ data }: { data: VaultData }) {
   const nextMilestone = [5, 10, 20].find((mm) => streak < mm);
 
   return (
-    <FeatureCard icon="party" title="Quỹ ăn mừng" desc="Mốc streak 5 / 10 / 20 tuần nhận thưởng từ quỹ do cả nhóm tip nuôi">
+    <FeatureCard collapsible defaultOpen={false} icon="party" title="Quỹ ăn mừng" desc="Mốc streak 5 / 10 / 20 tuần nhận thưởng từ quỹ do cả nhóm tip nuôi">
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Quỹ" value={fmt(pool)} tone="text-leaf-600" />
         <Stat label="Lượt ăn mừng" value={celebrated.toString()} />

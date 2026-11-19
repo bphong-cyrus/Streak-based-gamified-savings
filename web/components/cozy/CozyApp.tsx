@@ -147,6 +147,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
             className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-cocoa-700/50 bg-cream-100 text-cocoa-600 shadow-chunkySm active:translate-y-0.5"
             onClick={() => onThemeChange(night ? "day" : "night")}
             title={night ? "Chuyển ban ngày" : "Chuyển ban đêm"}
+            aria-label={night ? "Chuyển ban ngày" : "Chuyển ban đêm"}
           >
             <Icon name={night ? "sun" : "moon"} size={19} />
           </button>
@@ -159,6 +160,8 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
               if (!m) sfx.click();
             }}
             title={muted ? "Bật âm thanh" : "Tắt âm thanh"}
+            aria-label={muted ? "Bật âm thanh" : "Tắt âm thanh"}
+            aria-pressed={muted}
           >
             <span className="relative">
               <Icon name="volume" size={18} className={muted ? "opacity-40" : undefined} />
@@ -227,6 +230,7 @@ export function CozyApp({ theme, onThemeChange, demoData, onExitDemo }: CozyAppP
                 tab === t.key ? "bg-leaf-400/90 shadow-chunkySm" : "opacity-70 hover:opacity-100"
               }`}
               onClick={() => switchTab(t.key)}
+              aria-current={tab === t.key ? "page" : undefined}
             >
               <Icon name={t.icon} size={21} className={tab === t.key ? "text-white" : "text-cocoa-600"} />
               <span className={`text-[10px] font-bold ${tab === t.key ? "text-white" : "text-cocoa-600"}`}>

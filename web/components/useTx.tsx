@@ -98,7 +98,7 @@ export function useTx() {
 export function TxFeedback({ state }: { state: TxState }) {
   if (state.info && !state.step && !state.error) {
     return (
-      <div className="mt-3 rounded-xl border-2 border-cocoa-700/30 bg-cream-200/70 px-3 py-2 text-sm font-semibold text-cocoa-600">
+      <div role="status" aria-live="polite" className="mt-3 rounded-xl border-2 border-cocoa-700/30 bg-cream-200/70 px-3 py-2 text-sm font-semibold text-cocoa-600">
         {state.info}
       </div>
     );
@@ -106,6 +106,8 @@ export function TxFeedback({ state }: { state: TxState }) {
   if (!state.step && !state.error) return null;
   return (
     <div
+      role="status"
+      aria-live="polite"
       className={`mt-3 rounded-xl border px-3 py-2 text-sm ${
         state.error ? "border-red-500/40 bg-red-500/10 text-red-300" : "border-mint-500/40 bg-mint-500/10 text-mint-400"
       }`}
