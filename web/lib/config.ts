@@ -40,16 +40,18 @@ export const wagmiConfig = createConfig({
 
 const ZERO = "0x0000000000000000000000000000000000000000" as const;
 
-/** Địa chỉ Fuji đã deploy sẵn (43113) — dùng làm fallback khi thiếu env, để production/Vercel chạy ngay. */
+/** Địa chỉ Fuji đã deploy sẵn (43113) — dùng làm fallback khi thiếu env, để production/Vercel chạy ngay.
+ *  Deployment mới nhất: deployBlock 61371331, deployer 0xe00EA6a4168De3388FbF703DcF24ad55B2150734,
+ *  kỳ 180 giây, phí gốc = 0 vĩnh viễn (xem contracts/deployments/43113.json). */
 const FUJI_CORE = {
-  token: "0x1c0684ad8e5e6B8C1551B9197ACD6Ea821870Efe",
-  vault: "0x898676aB9838a23258C98f68D454D0aeFCA44E1E",
-  yieldSource: "0xB4A5Fe5620F6F8D5609483819806e7118Add1517",
-  distributor: "0xC8Dc7Bf74e7dF17625698B7F41F37287F9e4c98F",
-  dailyCheckIn: "0xF115668e510356E3c3b5191f6707Ab7C912f00C8",
-  goal: "0x0aAC7c26418d98F036ab55224b4083D0A516557c",
-  nft: "0xc812eD731d58a893e45336c930a0eF6C283c4c8A",
-  faucetDrip: "0xFc65B124A127C7cD2176f8CaEf7b6A3Eee6543DA",
+  token: "0xfb898F5D855d5B54F266c6b3D57ED879B619cbbB",
+  vault: "0x63Da6fAD88E18888003BFb0DbE1e8F2bfDC01Cd8",
+  yieldSource: "0x3110b2D90FB2e6BB2Ae753a98B00b7c86FDade31",
+  distributor: "0x90172773fDe524FD9165138b48169D435D9b0150",
+  dailyCheckIn: "0x3FdB50B5977A0d0de1D1819cA0dD5ad558af333C",
+  goal: "0x6a29Bc0FDafeB58c6160864439b5465f07d4BEb0",
+  nft: "0x81AAd1918466Eb736c5Aaa482cd9FA055169d989",
+  faucetDrip: "0xA140DF43E89A32487C52c0c90ba8de398c20AC01",
 } as const;
 
 function addr(env: string | undefined, fallbackAddr: string): `0x${string}` {

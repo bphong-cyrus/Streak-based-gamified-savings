@@ -134,6 +134,8 @@
 
 **Trạng thái:** **Fixed / Verified** — quyết định sản phẩm chốt: **phí trên gốc = 0 vĩnh viễn** (gỡ hoàn toàn `withdrawFeeBps`/`emergencyPenaltyBps`/whale-discount khỏi source, không còn setter nào để bật lại); bỏ `whenNotPaused` ở hai hàm rút; phí lãi giữ trần `MAX_YIELD_FEE_BPS = 20%`. Test đối kháng: `test_withdrawAlwaysReturnsFullPrincipal`, `test_emergencyWithdrawAlwaysReturnsFullPrincipal`, `test_withdrawWorksWhilePaused`, `test_emergencyWithdrawWorksWhilePaused`, `test_setYieldFeeAboveCapReverts` — `forge test` pass trọn bộ.
 
+> Triển khai: đã redeploy Fuji bản mới chứa toàn bộ fix (deployBlock 61371331, kỳ 180 giây, deployer `0xe00EA…50734`); địa chỉ trong `deployments/43113.json` và `web/lib/config.ts` là bản mới.
+
 ## 4. Kiểm chứng tính toàn vẹn tiền (chạy thật trên Fuji)
 
 | Bước | Kết quả |

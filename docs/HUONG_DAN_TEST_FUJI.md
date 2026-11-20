@@ -32,36 +32,22 @@ cast balance $DEMO_A --rpc-url $FUJI_RPC     # phải > 0
 
 ---
 
-## 1. Deploy bản contract mới lên Fuji (~10 phút)
+## 1+2. Deploy contract mới + seed — CHỈ 1 LỆNH
 
-> Contract mới: phí trên gốc = **0 vĩnh viễn** (không có setter), rút được kể cả khi pause,
-> seed fund theo kỳ hiện tại. Địa chỉ mới sẽ ghi đè `contracts/deployments/43113.json`.
-
-```bash
-cd contracts
-
-# Xem trước, chưa gửi: kiểm tra gas/số kỳ
-forge script script/Deploy.s.sol --rpc-url $FUJI_RPC
-
-# Deploy thật (ghi deployments/43113.json)
-forge script script/Deploy.s.sol --rpc-url $FUJI_RPC --broadcast --verify -vvvv
-```
-
-- `--verify` cần `ETHERSCAN_API_KEY` của Snowtrace; nếu chưa có thì bỏ flag này,
-  verify tay sau trên <https://testnet.snowtrace.io> (mất 2 phút, giám khảo thích).
-- Deploy xong, mở `contracts/deployments/43113.json`, **chụp màn hình** địa chỉ
-  `vault`, `distributor`, `token`, `deployBlock`.
-
-## 2. Seed ngân sách + phát mUSDC cho ví A/B (~2 phút)
+> Yêu cầu trước: private key ví deployer, ví A/B đã có AVAX testnet (mục 0).
 
 ```bash
 cd contracts
-DEMO_WALLETS="$DEMO_A,$DEMO_B" \
-forge script script/Seed.s.sol --rpc-url $FUJI_RPC --broadcast -vvvv
+PRIVATE_KEY=0x... DEMO_A=0x... DEMO_B=0x... bash script/deploy-fuji.sh
 ```
 
-Script tự đọc `currentEpoch()` on-chain và fund ngân sách cho **kỳ hiện tại +1 +2**
-(mặc định 2/3/5 mUSDC), mint 100 mUSDC cho mỗi ví, nạp pool điểm danh + faucet.
+Script tự làm hết: kiểm tra gas → deploy 8 contract (kỳ 180 giây, mở kỳ sau 60 giây) →
+seed fund theo **kỳ hiện tại** + mint 100 mUSDC cho A/B → in địa chỉ mới.
+Địa chỉ cũ trong `deployments/43113.json` bị ghi đè — đó là dự kiến (bản cũ kẹt ~371 kỳ, bỏ).
+
+- Nếu muốn verify source trên Snowtrace, thêm `--verify` (cần API key); không có thì
+  verify tay sau trên <https://testnet.snowtrace.io> (mất 2 phút).
+- Deploy xong **chụp màn hình** phần địa chỉ cuối output.
 
 ## 3. Cập nhật frontend trỏ sang địa chỉ mới
 

@@ -36,9 +36,9 @@ Vòng đờ một kỳ: đặt mục tiêu tuần → gửi đủ trước hạn
 - **Trần phí trên lãi: 20%** (`MAX_YIELD_FEE_BPS` trong `YieldDistributor`) cho `yieldFeeBps` /
   `referralBps` — phí chỉ có thể đánh trên phần thưởng yield, không động gốc.
 - Bảo vệ streak (freeze / insurance / revive) là **dịch vụ tự chọn trả phí**, không ảnh hưởng quy tắc "bỏ kỳ reset về 0" nếu không dùng.
-- **Triển khai**: thay đổi contract đã sửa cần **redeploy Fuji mới** (xem hướng dẫn từng bước trong
-  [docs/HUONG_DAN_TEST_FUJI.md](docs/HUONG_DAN_TEST_FUJI.md)) — địa chỉ hiện tại trong
-  `deployments/43113.json` vẫn là bản cũ cho tới khi redeploy.
+- **Triển khai**: đã **redeploy Fuji** bản mới (phí gốc = 0 vĩnh viễn, kỳ 180 giây, deployBlock 61371331) —
+  địa chỉ bảng trên khớp `contracts/deployments/43113.json` và fallback trong `web/lib/config.ts`.
+  Hướng dẫn chạy lại từ đầu: [docs/HUONG_DAN_TEST_FUJI.md](docs/HUONG_DAN_TEST_FUJI.md).
 
 ## Chạy local (3 lệnh)
 
