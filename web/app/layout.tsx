@@ -3,7 +3,10 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "Savient — Tiết kiệm mọc nhà",
+  title: {
+    default: "Savient",
+    template: "%s · Savient",
+  },
   description:
     "Gửi tiền đều mỗi kỳ, giữ streak, xây tòa nhà 3D của bạn trên Avalanche Fuji. Streak càng dài, phần thưởng lãi càng lớn — gốc luôn của bạn, rút anytime.",
   applicationName: "Savient",
