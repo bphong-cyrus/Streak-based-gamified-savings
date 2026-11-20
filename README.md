@@ -40,6 +40,43 @@ Vòng đờ một kỳ: đặt mục tiêu tuần → gửi đủ trước hạn
   địa chỉ bảng trên khớp `contracts/deployments/43113.json` và fallback trong `web/lib/config.ts`.
   Hướng dẫn chạy lại từ đầu: [docs/HUONG_DAN_TEST_FUJI.md](docs/HUONG_DAN_TEST_FUJI.md).
 
+## Bằng chứng giao dịch thật trên Fuji (2 ví, kỳ 12–13 · 20/11/2026)
+
+Deployment mới (deployBlock 61371331, kỳ 180 giây). Mọi hash mở được tại
+`https://testnet.snowtrace.io/tx/<hash>` — status = success, đối chiếu được on-chain.
+mUSDC là token testnet của dự án; "lãi" là ngân sách do sponsor nạp (`MockYieldSource`),
+chia theo streak — không giới thiệu là lợi suất lending thật.
+
+- **Ví A** `0xe00EA6a4168De3388FbF703DcF24ad55B2150734` — gửi đủ 2 kỳ liên tiếp
+- **Ví B** `0x472E1ceCE7f45Da4BDB19301dd731cb0e5822FB3` — đạt kỳ 12, cố tình lỡ kỳ 13
+
+| Bước | Ví | Tx hash |
+|---|---|---|
+| Đặt mục tiêu 5 mUSDC/kỳ | A | [`0x0314d7de…cd5ec0`](https://testnet.snowtrace.io/tx/0x0314d7de06c9f7e5413a18a0a54d45237979aaec7ce7831eb9941c205dcd5ec0) |
+| Nhận 5 mUSDC qua faucet + target đầu | B | [`0x45cdc4fe…06279`](https://testnet.snowtrace.io/tx/0x45cdc4fec591d2f93c94502f8afc7af8494d169be97e7550e468debe12306279) |
+| Deposit kỳ 12 (5 mUSDC) | A | [`0x199693c3…6efe46`](https://testnet.snowtrace.io/tx/0x199693c3f583418cfd2e73409c7cdc3a3bc993677454c287bfe755d8de6efe46) |
+| Deposit kỳ 12 (5 mUSDC, tổng 10 đạt target 2) | B | [`0x90ca9cfc…c4822`](https://testnet.snowtrace.io/tx/0x90ca9cfcc37c76eccbd7a879554c45245a111b6b608c1d3017b291a2a71c4822) |
+| Chốt kỳ 12 (`finalizeEpoch`, ai cũng gọi được) | — | [`0xdf899328…9e9f18`](https://testnet.snowtrace.io/tx/0xdf899328adf71bdfd4b0f8425275c34bc6c353899476706f1626a8d4879e9f18) |
+| Nhận lãi kỳ 12 | A | [`0xb6a5d59b…631fc`](https://testnet.snowtrace.io/tx/0xb6a5d59bc6f3dfc1e0ce59c886645aebbf564761135e5f3d13af96ccae4631fc) |
+| Nhận lãi kỳ 12 | B | [`0x35ee81ce…b7900`](https://testnet.snowtrace.io/tx/0x35ee81ceb5ba1f981ac8f80df13879d14d5887f8222662433891511fa73b7900) |
+| Deposit kỳ 13 — A tiếp tục, B lỡ | A | [`0xbfe2312b…b23c6`](https://testnet.snowtrace.io/tx/0xbfe2312b490061feacdf1845d6eb6c06921b6ec790a10fc42f891538e60b23c6) |
+| Chốt kỳ 13 | — | [`0x3c263260…a9f4d`](https://testnet.snowtrace.io/tx/0x3c263260063c0e12fbe06a14f120028495fac44de3dd62323e031e5760fa9f4d) |
+| Nhận lãi kỳ 13 | A | [`0x790170c5…35b50`](https://testnet.snowtrace.io/tx/0x790170c5409d3f4c1da972a8daab2c218cf7806b856c1ebe3380aa0d09435b50) |
+| Rút toàn bộ gốc 10 mUSDC | A | [`0x2cac0e08…2b782`](https://testnet.snowtrace.io/tx/0x2cac0e089e13669655432680b13d2854e4ec3ae907a90e5005d542ee6bb2b782) |
+| Rút toàn bộ gốc 10 mUSDC | B | [`0xccf0b6b4…3d477`](https://testnet.snowtrace.io/tx/0xccf0b6b4a8461d7489b87422a97a7525625738eb6ba87611b86818f131f3d477) |
+
+**Kết quả đối chiếu on-chain** (đọc trực tiếp từ contract sau khi chốt kỳ 13):
+
+| Ví | Kỳ 12 | Kỳ 13 | Streak cuối | Lãi đã nhận | Gốc rút |
+|---|---|---|---|---|---|
+| A | đạt (5/5) | đạt (5/5) | **2** | **13 mUSDC** | 10/10 — 100% |
+| B | đạt (10/2) | **lỡ (0/2) → streak reset 0** | **0** | **9 mUSDC** | 10/10 — 100% |
+
+Số học kỳ 12: ngân sách 5 mUSDC + **rollover 13 mUSDC** từ các kỳ trước không ai đạt →
+18 mUSDC chia đều theo streak 1:1 → mỗi ví 9 mUSDC. Kỳ 13: ngân sách 4 mUSDC,
+chỉ A giữ streak (trọng số 2, B = 0) → A nhận 4 mUSDC. Rút gốc không mất phí —
+`withdraw` trả đúng 100% ("principal is never lost").
+
 ## Chạy local (3 lệnh)
 
 Yêu cầu: [Foundry](https://getfoundry.sh) + Node 20+.

@@ -114,20 +114,26 @@ Hai số `currentEpoch` và `nextEpochToFinalize` lệch nhau ≤ 1 tức không
 
 ---
 
-## Nếu CI trên GitHub vẫn failure (chẩn đoán 2 giây, không có step)
+## CI trên GitHub bị lock — đã xác định nguyên nhân
 
-Run [gần nhất](https://github.com/bphong-cyrus/Streak-based-gamified-savings/actions) thất bại
-sau **~2 giây, job không có bước nào, không runner** — đây là lỗi hạ tầng tài khoản,
-không phải test fail. Kiểm tra theo thứ tự:
+Run thất bại sau ~2 giây, không runner, không step. Đọc annotation của check-run trên
+GitHub API, nguyên nhân **chính xác** là:
 
-1. **Email của GitHub** (tài khoản chủ repo) — thường có thông báo "workflow run failed
-   to start" kèm nguyên nhân (quota, xác minh, billing).
-2. Repo **private**? Free plan hết 2 000 phút/tháng → job fail ngay. Vào
-   **Settings → Billing and licensing** xem phút Actions còn lại.
-   → Nếu hết: để repo **public** (testnet demo nên public là bình thường) hoặc chờ reset chu kỳ.
-3. **Settings → Actions → General**: Actions permission phải là "Allow all actions".
-4. Tài khoản mới/chưa xác minh: GitHub yêu cầu xác minh (thẻ hoặc tài khoản học sinh)
-   trước khi chạy Actions — kiểm tra banner vàng ở đầu trang Actions.
+> **"The job was not started because your account is locked due to a billing issue."**
+
+Tức tài khoản GitHub `bphong-cyrus` đang bị **khoá do vấn đề billing** — GitHub không
+cấp runner nên không job nào chạy được. Đây KHÔNG phải lỗi test/build. Cách gỡ:
+
+1. Vào **https://github.com/settings/billing** (đăng nhập đúng tài khoản chủ repo)
+   → xem thông báo khoá/thiếu thông tin → làm theo yêu cầu (thường là xác nhận
+   phương thức thanh toán hoặc đặt spending limit $0).
+2. Nếu repo đang **private**: chuyển **public** (Settings → General → Danger Zone →
+   Change repository visibility) — repo testnet/demo nên public vừa hết lỗi phút
+   Actions vừa dễ cho giám khảo xem code.
+3. Sinh viên: đăng ký **GitHub Student Developer Pack** — được phút Actions miễn phí
+   nhiều hơn và gỡ nhiều giới hạn tài khoản.
+4. Xong vào tab **Actions** → chọn workflow → **Re-run all jobs** (hoặc push commit mới)
+   để xác nhận cả 3 job chạy xanh: Foundry tests, Next build, Playwright E2E.
 
 Sau khi khắc phục: tab Actions → chọn workflow → **Re-run all jobs** (hoặc push commit mới).
 CI hiện có 3 job: Foundry tests, Next build, Playwright E2E (chạy trên bản production build).

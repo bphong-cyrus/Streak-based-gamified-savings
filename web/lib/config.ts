@@ -38,8 +38,6 @@ export const wagmiConfig = createConfig({
   },
 });
 
-const ZERO = "0x0000000000000000000000000000000000000000" as const;
-
 /** Địa chỉ Fuji đã deploy sẵn (43113) — dùng làm fallback khi thiếu env, để production/Vercel chạy ngay.
  *  Deployment mới nhất: deployBlock 61371331, deployer 0xe00EA6a4168De3388FbF703DcF24ad55B2150734,
  *  kỳ 180 giây, phí gốc = 0 vĩnh viễn (xem contracts/deployments/43113.json). */
@@ -54,8 +52,11 @@ const FUJI_CORE = {
   faucetDrip: "0xA140DF43E89A32487C52c0c90ba8de398c20AC01",
 } as const;
 
-function addr(env: string | undefined, fallbackAddr: string): `0x${string}` {
-  return (env && env !== ZERO ? env : fallbackAddr) as `0x${string}`;
+function addr(_env: string | undefined, fallbackAddr: string): `0x${string}` {
+  // KHÔNG đọc env cho địa chỉ contract: từng có lần env cũ trên Vercel ghi đè
+  // deployment mới khiến web hiển thị địa chỉ lỗi thờ. Địa chỉ duy nhất của sự thật
+  // là bộ dưới đây — luôn khớp contracts/deployments/43113.json.
+  return fallbackAddr as `0x${string}`;
 }
 
 /** 8 core contract — bấm mọi dữ liệu on-chain của app từ đây. */
