@@ -178,6 +178,9 @@ test.describe("Demo mode (?demo=1)", () => {
     // Chọn Mèo Pháp Sư, reload vẫn giữ
     await page.locator("button", { hasText: "Mèo Pháp Sư" }).click();
     await page.reload({ waitUntil: "load" });
+    // Sau reload app render shell trống trước rồi mới hydrate — đợi canvas/3D mount
+    // để tránh click nav khi chưa sẵn sàng (flaky dưới tải máy cao).
+    await page.locator("canvas").first().waitFor({ state: "visible", timeout: 20_000 }).catch(() => {});
     await page.getByRole("navigation").getByRole("button", { name: "Hồ sơ" }).click();
     await expect(page.getByText("Mèo Pháp Sư").first()).toBeVisible();
 

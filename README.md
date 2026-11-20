@@ -108,6 +108,7 @@ cd web && npx playwright test  # E2E desktop (1440×900) + mobile (390×844)
 - **Smart contracts:** 73 tests pass, 6 stateful invariants × 256 runs × 64 depth = 16 384 calls, bằng chứng CEI + ReentrancyGuard + access control; test đối kháng cho phí-gốc-bằng-0-vĩnh-viễn và rút-khi-pause.
 - **Gas report:** `contracts/.gas-snapshot` — `finalizeEpoch` với 20 ví ~2.57M gas.
 - **Báo cáo audit:** [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) — *self review nội bộ* (defense-in-depth, checklist pre-mainnet), không phải audit độc lập.
+- **CI:** workflow (.github/workflows/ci.yml) gồm Foundry tests + Next build + Playwright E2E. Tài khoản GitHub chủ repo hiện bị khoá billing ở cấp tài khoản (GitHub không cấp runner — annotation chính thức: *"account is locked due to a billing issue"*), nên các run chưa thể thực thi; toàn bộ pipeline tương đương đã chạy xanh trên máy local và được ghi nhận tại [docs/CI_LOCAL_RUN.md](docs/CI_LOCAL_RUN.md) — 73/73 forge, tsc 0 lỗi, build OK, E2E 10/10.
 - **E2E QA:** Playwright kiểm thử 4 màn hình core trên Desktop (1440×900) & Mobile (390×844), bắt toàn bộ `console.error` / `pageerror` / HTTP 4xx/5xx; selector dùng role/aria-label/`data-testid` ổn định; upload trace khi fail trong CI.
 
 ## Cấu trúc repo
