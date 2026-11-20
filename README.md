@@ -27,10 +27,18 @@ Vòng đờ một kỳ: đặt mục tiêu tuần → gửi đủ trước hạn
 
 ## Chính sách gốc & phí (đã chốt, có test đối kháng)
 
-- **Gốc luôn của bạn**: `withdraw` và `emergencyWithdraw` cố tình *không* mang `whenNotPaused` — pause chỉ chặn nạp/thao tác rủi ro, không bao giờ chặn lối rút của chủ gốc.
-- **Trần phí trên gốc: 10%** (`MAX_PRINCIPAL_FEE_BPS`) cho `withdrawFeeBps`, `emergencyPenaltyBps`, `whaleFeeBps` — mặc định bằng 0 và owner không đặt vượt trần được.
-- **Trần phí trên lãi: 20%** (`MAX_YIELD_FEE_BPS` trong `YieldDistributor`) cho `yieldFeeBps` / `referralBps` — phí chỉ đánh trên phần thưởng, không động gốc.
+- **"Principal is never lost" — phí trên gốc bằng 0 vĩnh viễn**: `withdraw` và `emergencyWithdraw`
+  luôn trả **100% gốc**. Các cơ chế phí/phạt/whale-discount trên gốc đã bị **gỡ hoàn toàn khỏi source**
+  — không tồn tại setter nào để owner (kể cả bị tấn công) bật phí lại. Test đối kháng:
+  `test_withdrawAlwaysReturnsFullPrincipal`, `test_emergencyWithdrawAlwaysReturnsFullPrincipal`.
+- **Rút bất cứ lúc nào, kể cả khi pause**: hai hàm rút cố tình *không* mang `whenNotPaused` —
+  pause chỉ chặn nạp/thao tác rủi ro. Test: `test_withdrawWorksWhilePaused`, `test_emergencyWithdrawWorksWhilePaused`.
+- **Trần phí trên lãi: 20%** (`MAX_YIELD_FEE_BPS` trong `YieldDistributor`) cho `yieldFeeBps` /
+  `referralBps` — phí chỉ có thể đánh trên phần thưởng yield, không động gốc.
 - Bảo vệ streak (freeze / insurance / revive) là **dịch vụ tự chọn trả phí**, không ảnh hưởng quy tắc "bỏ kỳ reset về 0" nếu không dùng.
+- **Triển khai**: thay đổi contract đã sửa cần **redeploy Fuji mới** (xem hướng dẫn từng bước trong
+  [docs/HUONG_DAN_TEST_FUJI.md](docs/HUONG_DAN_TEST_FUJI.md)) — địa chỉ hiện tại trong
+  `deployments/43113.json` vẫn là bản cũ cho tới khi redeploy.
 
 ## Chạy local (3 lệnh)
 
@@ -54,13 +62,13 @@ cd web && npm i && npm run dev   # mở http://localhost:3000
 ## Test, QA & bảo mật
 
 ```bash
-cd contracts && forge test     # 74 tests: unit + fuzz + invariant + security
+cd contracts && forge test     # 73 tests: unit + fuzz + invariant + security
 cd web && npx tsc --noEmit     # typecheck
 cd web && npm run build        # production build
 cd web && npx playwright test  # E2E desktop (1440×900) + mobile (390×844)
 ```
 
-- **Smart contracts:** 74 tests pass, 6 stateful invariants × 256 runs × 64 depth = 16 384 calls, bằng chứng CEI + ReentrancyGuard + access control; test đối kháng cho trần phí và rút-khi-pause.
+- **Smart contracts:** 73 tests pass, 6 stateful invariants × 256 runs × 64 depth = 16 384 calls, bằng chứng CEI + ReentrancyGuard + access control; test đối kháng cho phí-gốc-bằng-0-vĩnh-viễn và rút-khi-pause.
 - **Gas report:** `contracts/.gas-snapshot` — `finalizeEpoch` với 20 ví ~2.57M gas.
 - **Báo cáo audit:** [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) — *self review nội bộ* (defense-in-depth, checklist pre-mainnet), không phải audit độc lập.
 - **E2E QA:** Playwright kiểm thử 4 màn hình core trên Desktop (1440×900) & Mobile (390×844), bắt toàn bộ `console.error` / `pageerror` / HTTP 4xx/5xx; selector dùng role/aria-label/`data-testid` ổn định; upload trace khi fail trong CI.

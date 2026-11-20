@@ -8,10 +8,10 @@
 
 | Hạng mục | Kết quả |
 |---|---|
-| Unit / fuzz / security tests | **74 pass 100%** (`forge test`) |
+| Unit / fuzz / security tests | **73 pass 100%** (`forge test`) |
 | Stateful invariant | **6 invariants × 256 runs × 64 depth = 16 384 calls** pass (`Core8Invariant.t.sol`) |
 | Reentrancy & CEI | Mọi hàm chuyển token (`withdraw`, `emergencyWithdraw`, `claimYield`, `checkIn`, `drip`, `fundEpoch`) đều dùng `nonReentrant` + state trước transfer sau |
-| Trần phí gốc | `MAX_PRINCIPAL_FEE_BPS = 10%` chặn `withdrawFeeBps` / `emergencyPenaltyBps` / `whaleFeeBps` (mặc định 0) — có test đối kháng |
+| Trần phí gốc | **Đã gỡ hoàn toàn** — không còn `withdrawFeeBps`/`emergencyPenaltyBps`/whale fee trong source; rút luôn đủ 100% gốc, không setter nào bật phí lại được — có test đối kháng |
 | Trần phí lãi | `MAX_YIELD_FEE_BPS = 20%` chặn `yieldFeeBps` / `referralBps` |
 | Rút khi pause | `withdraw` / `emergencyWithdraw` **không** mang `whenNotPaused` — pause không bao giờ chặn chủ gốc rút tiền — có test đối kháng |
 | Access control | Admin (`onlyOwner`) giới hạn ở config/pause/rescue; không có đường rút tiền user trái phép |
@@ -128,13 +128,11 @@
 
 **Vị trí:** `src/StreakVault.sol` (`setWithdrawFeeBps`, `setEmergencyPenaltyBps`, `setWhaleDiscount`, `withdraw`, `emergencyWithdraw`), `src/YieldDistributor.sol` (`setYieldFeeBps`, `setReferralBps`).
 
-**Mô tả:** (1) Các setter phí chỉ chặn `bps <= 100%`, owner có thể đặt phí rút 100% — mâu thuẫn lợi hứa "gốc luôn của bạn, rút bất cứ lúc nào". (2) `withdraw`/`emergencyWithdraw` mang `whenNotPaused`: khi owner pause, chủ gốc bị chặn rút tiền. (3) `setWhaleDiscount` không kiểm tra `bps`.
+**Mô tả:** (1) Các setter phí chỉ chặn `bps <= 100%`, owner có thể đặt phí rút 100% — mâu thuẫn lợi hứa "principal is never lost". (2) `withdraw`/`emergencyWithdraw` mang `whenNotPaused`: khi owner pause, chủ gốc bị chặn rút tiền. (3) `setWhaleDiscount` không kiểm tra `bps`.
 
 **Tác động:** Lòng tin ngườ dùng: phí rút cao bất thường hoặc rút bị kẹt khi pause.
 
-**Trạng thái:** **Fixed / Verified** — thêm `MAX_PRINCIPAL_FEE_BPS = 10%` (gốc) và `MAX_YIELD_FEE_BPS = 20%` (lãi); bỏ `whenNotPaused` ở hai hàm rút; bổ sung 6 test đối kháng (`test_setWithdrawFeeAboveCapReverts`, `test_setEmergencyPenaltyAboveCapReverts`, `test_setWhaleDiscountAboveCapReverts`, `test_setYieldFeeAboveCapReverts`, `test_withdrawWorksWhilePaused`, `test_emergencyWithdrawWorksWhilePaused`) — `forge test` 74/74 pass.
-
-> Lưu ý triển khai: các thay đổi này là ABI-compatible nhưng cần **redeploy Fuji mới** để có hiệu lực on-chain; địa chỉ trong `deployments/43113.json` hiện tại vẫn là bản cũ (phí mặc định 0, chưa ai kích hoạt phí nào).
+**Trạng thái:** **Fixed / Verified** — quyết định sản phẩm chốt: **phí trên gốc = 0 vĩnh viễn** (gỡ hoàn toàn `withdrawFeeBps`/`emergencyPenaltyBps`/whale-discount khỏi source, không còn setter nào để bật lại); bỏ `whenNotPaused` ở hai hàm rút; phí lãi giữ trần `MAX_YIELD_FEE_BPS = 20%`. Test đối kháng: `test_withdrawAlwaysReturnsFullPrincipal`, `test_emergencyWithdrawAlwaysReturnsFullPrincipal`, `test_withdrawWorksWhilePaused`, `test_emergencyWithdrawWorksWhilePaused`, `test_setYieldFeeAboveCapReverts` — `forge test` pass trọn bộ.
 
 ## 4. Kiểm chứng tính toàn vẹn tiền (chạy thật trên Fuji)
 

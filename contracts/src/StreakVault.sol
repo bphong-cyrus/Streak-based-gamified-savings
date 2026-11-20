@@ -12,7 +12,8 @@ import {IBoostProvider} from "./interfaces/IBoostProvider.sol";
 
 /// @title StreakVault
 /// @notice Giữ gốc của người dùng, lưu mục tiêu theo kỳ, tiền gửi/rút từng kỳ, streak,
-///         và các tiện ích: freeze/revive/bảo hiểm streak, phí rút, giới hạn gửi, pause.
+///         và các tiện ích: freeze/revive/bảo hiểm streak, giới hạn gửi, pause.
+///         Rút gốc luôn đủ 100%, bất kỳ lúc nào, kể cả khi pause — không có phí trên gốc.
 /// @dev Epoch e chiếm khoảng [startAt + e*epochDuration, startAt + (e+1)*epochDuration).
 ///      Mặc định mọi phí/giới hạn bằng 0 để tương thích ngược với bản MVP.
 contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
@@ -20,9 +21,9 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
 
     uint256 public constant MAX_PARTICIPANTS = 20;
     uint256 public constant BPS_DENOMINATOR = 10_000;
-    /// @notice Trần phí/phạt trên gốc: 10%. Lợi nhuận sản phẩm là "gốc luôn của bạn"
-    ///         nên owner không bao giờ được đặt phí rút/phạt vượt mức này.
-    uint256 public constant MAX_PRINCIPAL_FEE_BPS = 1_000;
+    /// @notice REVIVE_WINDOW giữ nguyên; phí trên gốc đã bị loại bỏ hoàn toàn —
+    ///         withdraw/emergencyWithdraw luôn trả 100% gốc ("principal is never lost"),
+    ///         không có setter nào để owner bật phí lại.
     /// @notice Số kỳ tối đa sau kỳ thất bại để gọi revive.
     uint256 public constant REVIVE_WINDOW = 2;
     /// @notice Phí mặc định cho freeze/revive/bảo hiểm (owner có thể đổi).
@@ -46,11 +47,8 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
 
     uint256 public minDeposit; // 0 = không giới hạn dưới
     uint256 public maxDepositPerEpoch; // 0 = không giới hạn trên
-    uint256 public withdrawFeeBps; // Phí rút thường (về treasury)
-    uint256 public emergencyPenaltyBps; // Phạt rút khẩn cấp
-    uint256 public whaleThreshold; // gốc >= ngưỡng -> giảm phí rút
-    uint256 public whaleFeeBps; // phí rút áp dụng cho whale (0 = giữ nguyên withdrawFeeBps)
-    bool public freeFirstWithdraw; // Tính năng 29: miễn phí lần rút đầu mỗi kỳ
+    // NOTE: không có withdrawFee/emergencyPenalty/whale fee — gốc rút luôn đủ 100%
+    // và không tồn tại setter nào để owner bật phí trên gốc (cam kết "principal is never lost").
 
     struct TargetCheckpoint {
         uint64 fromEpoch;
@@ -93,7 +91,6 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
     mapping(address => uint256) internal _streakBeforeFail; // streak trước khi bị reset
     mapping(address => uint256) internal _lastFailedEpoch; // kỳ gần nhất chốt thất bại + 1 (0 = chưa từng)
     mapping(address => uint256) internal _revivedAtEpoch; // kỳ thất bại đã revive (tránh revive trùng)
-    mapping(address => uint256) internal _freeWithdrawUsedEpoch; // kỳ đã dùng miễn phí rút đầu
 
     modifier onlyDistributor() {
         if (msg.sender != distributor) revert NotDistributor();
@@ -148,29 +145,6 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
 
     function setMaxDepositPerEpoch(uint256 amount) external onlyOwner {
         maxDepositPerEpoch = amount;
-    }
-
-    function setWithdrawFeeBps(uint256 bps) external onlyOwner {
-        require(bps <= MAX_PRINCIPAL_FEE_BPS, "fee>10%");
-        withdrawFeeBps = bps;
-    }
-
-    function setEmergencyPenaltyBps(uint256 bps) external onlyOwner {
-        require(bps <= MAX_PRINCIPAL_FEE_BPS, "penalty>10%");
-        emergencyPenaltyBps = bps;
-    }
-
-    /// @notice Tính năng 28/29: ưu đãi whale + miễn phí lần rút đầu mỗi kỳ.
-    /// @dev whaleFeeBps cũng bị chặn ở MAX_PRINCIPAL_FEE_BPS — đây là mức *giảm* phí,
-    ///      không được biến thành cửa sau tăng phí vượt trần.
-    function setWhaleDiscount(uint256 threshold, uint256 bps) external onlyOwner {
-        require(bps <= MAX_PRINCIPAL_FEE_BPS, "whaleFee>10%");
-        whaleThreshold = threshold;
-        whaleFeeBps = bps;
-    }
-
-    function setFreeFirstWithdraw(bool enabled) external onlyOwner {
-        freeFirstWithdraw = enabled;
     }
 
     /// @notice Gắn hook boost multiplier (nhóm C, tính năng 26). 0 = tắt.
@@ -298,7 +272,7 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
 
     /// @notice Rút gốc của chính msg.sender, bất kỳ lúc nào — kể cả khi contract đang pause
     ///         (pause chỉ ngăn nạp/thao tác rủi ro, không bao giờ chặn lối rút của chủ gốc).
-    ///         Trừ phí rút (tối đa MAX_PRINCIPAL_FEE_BPS, mặc định 0) về treasury.
+    ///         Luôn trả 100% gốc: KHÔNG có phí rút, không có setter nào để bật phí.
     function withdraw(uint256 amount) external override nonReentrant {
         if (amount == 0) revert ZeroAmount();
         uint256 epoch = _requireStartedEpoch();
@@ -309,26 +283,11 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
         totalPrincipal -= amount;
         _flows[msg.sender][epoch].withdrawn += amount;
 
-        uint256 fee = (amount * withdrawFeeBps) / BPS_DENOMINATOR;
-        // Tính năng 28: whale (gốc còn lại >= ngưỡng) giảm phí rút.
-        if (fee > 0 && whaleThreshold > 0 && acc.principal >= whaleThreshold) {
-            fee = (amount * whaleFeeBps) / BPS_DENOMINATOR;
-        }
-        // Tính năng 29: miễn phí lần rút đầu tiên trong mỗi kỳ (lưu epoch+1, 0 = chưa dùng).
-        if (fee > 0 && freeFirstWithdraw && _freeWithdrawUsedEpoch[msg.sender] != epoch + 1) {
-            _freeWithdrawUsedEpoch[msg.sender] = epoch + 1;
-            fee = 0;
-        }
-        if (fee > 0) {
-            if (treasury == address(0)) revert ZeroAddress();
-            token.safeTransfer(treasury, fee);
-            emit WithdrawFeeCharged(msg.sender, amount, fee);
-        }
-        token.safeTransfer(msg.sender, amount - fee);
+        token.safeTransfer(msg.sender, amount);
         emit Withdrawn(msg.sender, epoch, amount, acc.principal);
     }
 
-    /// @notice Rút toàn bộ gốc với phạt (vẫn ghi tiến độ kỳ như withdraw thường).
+    /// @notice Rút toàn bộ gốc, luôn đủ 100%, không phạt (vẫn ghi tiến độ kỳ như withdraw thường).
     /// @dev Cố tình KHÔNG mang whenNotPaused: đây là lối rút khẩn cấp, phải luôn mở.
     function emergencyWithdraw() external override nonReentrant {
         uint256 epoch = _requireStartedEpoch();
@@ -339,13 +298,8 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
         totalPrincipal -= amount;
         _flows[msg.sender][epoch].withdrawn += amount;
 
-        uint256 penalty = (amount * emergencyPenaltyBps) / BPS_DENOMINATOR;
-        if (penalty > 0) {
-            if (treasury == address(0)) revert ZeroAddress();
-            token.safeTransfer(treasury, penalty);
-        }
-        token.safeTransfer(msg.sender, amount - penalty);
-        emit EmergencyWithdrawn(msg.sender, amount, penalty);
+        token.safeTransfer(msg.sender, amount);
+        emit EmergencyWithdrawn(msg.sender, amount, 0);
     }
 
     // ---------------------------------------------------------------------

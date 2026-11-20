@@ -1,8 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState } from "react";
 import { Icon } from "@/components/cozy/icons";
+import { Guard } from "@/components/cozy/Guard";
 
 const HouseScene = dynamic(() => import("@/components/cozy/HouseScene").then((m) => m.HouseScene), {
   ssr: false,
@@ -26,36 +26,38 @@ interface BuildingProps {
 }
 
 export function Building({ floors, night, building, celebrating, goalDone, width, height, scale }: BuildingProps) {
-  const [webglFailed, setWebglFailed] = useState(false);
-
-  if (webglFailed) {
-    return (
-      <div className="flex h-full w-full flex-col items-center justify-center rounded-xl border border-border bg-surface-sunken p-6 text-center">
-        <div className="font-cozy text-6xl font-extrabold text-ink">{Math.max(0, floors)}</div>
-        <div className="mt-1 text-sm font-semibold text-ink-soft">tầng đã xây</div>
-      </div>
-    );
-  }
-
   return (
     <div className="relative h-full w-full">
-      <HouseScene
-        floors={floors}
-        night={night}
-        building={building}
-        goalDone={goalDone}
-        celebrating={celebrating}
-        width={width}
-        height={height}
-        scale={scale}
-        onError={() => setWebglFailed(true)}
-      />
+      {/* Guard cô lập mọi lỗi render của cảnh 3D — hỏng WebGL hay hỏng mesh
+          thì chỉ đổi sang bản tĩnh, app không rơi error boundary. */}
+      <Guard fallback={<StaticFallback floors={floors} />}>
+        <HouseScene
+          floors={floors}
+          night={night}
+          building={building}
+          goalDone={goalDone}
+          celebrating={celebrating}
+          width={width}
+          height={height}
+          scale={scale}
+        />
+      </Guard>
 
       {building && (
         <div className="pointer-events-none absolute bottom-3 left-1/2 z-30 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-warning/10 px-3 py-1 font-cozy text-xs font-extrabold text-warning">
           <Icon name="hammer" size={14} /> Đang xây tầng…
         </div>
       )}
+    </div>
+  );
+}
+
+/** Bản tĩnh khi WebGL/scene 3D không dùng được. */
+function StaticFallback({ floors }: { floors: number }) {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center rounded-xl border border-border bg-surface-sunken p-6 text-center">
+      <div className="font-cozy text-6xl font-extrabold text-ink">{Math.max(0, floors)}</div>
+      <div className="mt-1 text-sm font-semibold text-ink-soft">tầng đã xây</div>
     </div>
   );
 }

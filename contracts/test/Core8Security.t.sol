@@ -340,30 +340,47 @@ contract Core8SecurityTest is Test {
     }
 
     // ------------------------------------------------------------------
-    // Fee bounds & pause policy (G1: gốc luôn của bạn)
+    // Principal integrity & pause policy (G1: "principal is never lost")
     // ------------------------------------------------------------------
 
-    function test_setWithdrawFeeAboveCapReverts() public {
-        vm.startPrank(deployer);
-        vm.expectRevert("fee>10%");
-        vault.setWithdrawFeeBps(1_001);
-        vault.setWithdrawFeeBps(1_000); // đúng trần 10% vẫn được
-        assertEq(vault.withdrawFeeBps(), 1_000);
+    function test_withdrawAlwaysReturnsFullPrincipal() public {
+        vm.warp(1_700_000_000 + 1 days);
+        vm.startPrank(alice);
+        vault.setWeeklyTarget(2 * ONE);
+        vm.stopPrank();
+        vm.prank(deployer);
+        token.mint(alice, 5 * ONE);
+        vm.startPrank(alice);
+        token.approve(address(vault), 5 * ONE);
+        vault.deposit(5 * ONE);
+        vault.withdraw(2 * ONE);
+        assertEq(token.balanceOf(alice), 2 * ONE); // đủ 100%, không trừ đồng nào
+        vault.withdraw(3 * ONE);
+        assertEq(token.balanceOf(alice), 5 * ONE);
+        assertEq(vault.getAccount(alice).principal, 0);
         vm.stopPrank();
     }
 
-    function test_setEmergencyPenaltyAboveCapReverts() public {
-        vm.startPrank(deployer);
-        vm.expectRevert("penalty>10%");
-        vault.setEmergencyPenaltyBps(10_000);
+    function test_emergencyWithdrawAlwaysReturnsFullPrincipal() public {
+        vm.warp(1_700_000_000 + 1 days);
+        vm.startPrank(alice);
+        vault.setWeeklyTarget(2 * ONE);
         vm.stopPrank();
-    }
+        vm.prank(deployer);
+        token.mint(alice, 5 * ONE);
+        vm.startPrank(alice);
+        token.approve(address(vault), 5 * ONE);
+        vault.deposit(5 * ONE);
+        vm.stopPrank();
 
-    function test_setWhaleDiscountAboveCapReverts() public {
-        vm.startPrank(deployer);
-        vm.expectRevert("whaleFee>10%");
-        vault.setWhaleDiscount(100 * ONE, 10_000);
-        vm.stopPrank();
+        vm.prank(deployer);
+        vault.setTreasury(deployer); // treasury tồn tại cũng không được nhận phí nào
+        uint256 treasuryBefore = token.balanceOf(deployer);
+        vm.prank(alice);
+        vault.emergencyWithdraw();
+        assertEq(token.balanceOf(alice), 5 * ONE);
+        assertEq(token.balanceOf(deployer), treasuryBefore); // không có phạt chảy về treasury
+        assertEq(vault.getAccount(alice).principal, 0);
     }
 
     function test_setYieldFeeAboveCapReverts() public {

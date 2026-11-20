@@ -206,10 +206,9 @@ export interface HouseSceneProps {
   width: number;
   height: number;
   scale: number;
-  onError?: () => void;
 }
 
-export function HouseScene({ floors, night, building, celebrating, width, height, scale, onError }: HouseSceneProps) {
+export function HouseScene({ floors, night, building, celebrating, width, height, scale }: HouseSceneProps) {
   const p = usePalette(night);
   const total = Math.max(1, floors);
   const floorH = 1.08;
@@ -226,7 +225,6 @@ export function HouseScene({ floors, night, building, celebrating, width, height
       onCreated={({ gl }) => {
         gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
       }}
-      onError={onError}
     >
       <CameraRig targetY={houseH * 0.45} floors={total} width={width} height={height} scale={scale} />
       <hemisphereLight args={[night ? "#3A4080" : "#BCD9FF", night ? "#2A2118" : "#7A6248", night ? 0.5 : 0.7]} />

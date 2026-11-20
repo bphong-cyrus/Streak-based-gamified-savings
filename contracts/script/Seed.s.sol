@@ -6,13 +6,15 @@ import {MockUSDC} from "../src/MockUSDC.sol";
 import {MockYieldSource} from "../src/MockYieldSource.sol";
 import {DailyCheckIn} from "../src/DailyCheckIn.sol";
 import {FaucetDrip} from "../src/FaucetDrip.sol";
+import {StreakVault} from "../src/StreakVault.sol";
 
-/// @notice Seed demo: mint mUSDC cho ví demo, nạp pool yield kỳ đầu + pool điểm danh + faucet.
+/// @notice Seed demo: mint mUSDC cho ví demo, nạp pool yield 3 kỳ liên tiếp bắt đầu từ
+///         KỲ HIỆN TẠI (đọc on-chain, không hardcode kỳ 0–2) + pool điểm danh + faucet.
 /// Đọc địa chỉ từ deployments/<chainId>.json.
 /// Env:
 ///   DEMO_WALLETS       địa chỉ phân tách dấu phẩy
 ///   DEMO_MINT_AMOUNT   mỗi ví, đơn vị nhỏ nhất (mặc định 100_000_000 = 100 mUSDC)
-///   FUND_EPOCH0/EPOCH1/EPOCH2  ngân sách yield (mặc định 2/3/5 mUSDC)
+///   FUND_EPOCH0/EPOCH1/EPOCH2  ngân sách yield cho kỳ hiện tại / +1 / +2 (mặc định 2/3/5 mUSDC)
 ///   FUND_CHECKIN       pool thưởng điểm danh (mặc định 10 mUSDC)
 ///   FUND_FAUCET        pool vòi nước (mặc định 100 mUSDC)
 contract Seed is Script {
@@ -20,6 +22,7 @@ contract Seed is Script {
         string memory path = string.concat(vm.projectRoot(), "/deployments/", vm.toString(block.chainid), ".json");
         string memory json = vm.readFile(path);
         MockUSDC token = MockUSDC(vm.parseJsonAddress(json, ".token"));
+        StreakVault vault = StreakVault(vm.parseJsonAddress(json, ".vault"));
         MockYieldSource source = MockYieldSource(vm.parseJsonAddress(json, ".yieldSource"));
         DailyCheckIn checkIn = DailyCheckIn(vm.parseJsonAddress(json, ".dailyCheckIn"));
         FaucetDrip faucet = FaucetDrip(vm.parseJsonAddress(json, ".faucetDrip"));
@@ -34,6 +37,11 @@ contract Seed is Script {
             vm.envOr("FUND_EPOCH2", uint256(5_000_000))
         ];
 
+        // Ngân sách gắn vào kỳ hiện tại trên chain — chạy script này bất kỳ lúc nào
+        // trên deployment mới đều đúng, không bị kẹt vì kỳ 0–2 đã kết thúc.
+        uint256 startEpoch = vault.currentEpoch();
+        console2.log("Funding yield starting at current epoch:", startEpoch);
+
         vm.startBroadcast();
         for (uint256 i; i < wallets.length; ++i) {
             token.mint(wallets[i], mintAmount);
@@ -46,9 +54,9 @@ contract Seed is Script {
             token.mint(msg.sender, total);
             if (totalYield > 0) {
                 token.approve(address(source), totalYield);
-                if (funds[0] > 0) source.fundEpoch(0, funds[0]);
-                if (funds[1] > 0) source.fundEpoch(1, funds[1]);
-                if (funds[2] > 0) source.fundEpoch(2, funds[2]);
+                if (funds[0] > 0) source.fundEpoch(startEpoch, funds[0]);
+                if (funds[1] > 0) source.fundEpoch(startEpoch + 1, funds[1]);
+                if (funds[2] > 0) source.fundEpoch(startEpoch + 2, funds[2]);
                 console2.log("Funded yield epochs:", totalYield);
             }
             if (fundCheckIn > 0) {

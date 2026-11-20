@@ -13,6 +13,7 @@ import type { VaultData } from "@/lib/useVaultData";
 import { RecentTxPanel } from "@/components/cozy/RecentTxPanel";
 import { Icon } from "@/components/cozy/icons";
 import { isMuted, setMuted, sfx } from "@/lib/sound";
+import { Guard } from "@/components/cozy/Guard";
 
 // WebGL chỉ chạy client — tắt SSR để tránh lỗi hydrate/render máy chủ.
 const IdentityPreview3D = dynamic(() => import("@/components/cozy/IdentityPreview3D").then((m) => m.IdentityPreview3D), {
@@ -86,7 +87,18 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
             <Icon name="cat" size={18} className="text-ink-soft" /> Nhân vật 3D của bạn
           </h4>
           <div className="mt-2 h-44 w-full">
-            <IdentityPreview3D variant={currentIdentity.key} />
+            <Guard
+              fallback={
+                <img
+                  src={`/identities/${currentIdentity.key}.svg`}
+                  alt={currentIdentity.name}
+                  className="mx-auto h-40 object-contain"
+                  draggable={false}
+                />
+              }
+            >
+              <IdentityPreview3D variant={currentIdentity.key} />
+            </Guard>
           </div>
           <p className="text-center text-xs font-semibold text-ink-soft">
             {currentIdentity.name} · {currentIdentity.vi} — xoay chậm để ngắm từ mọi góc.
