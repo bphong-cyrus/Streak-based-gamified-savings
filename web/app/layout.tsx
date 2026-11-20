@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
   },
   openGraph: {
-    title: "Savient — Tiết kiệm mọc nhà",
+    title: "Savient",
     description:
       "Streak-based gamified savings trên Avalanche: gửi đều mỗi kỳ → +1 tầng nhà 3D, streak càng dài thưởng càng lớn.",
     type: "website",

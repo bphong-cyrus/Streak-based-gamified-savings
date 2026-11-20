@@ -3,7 +3,7 @@ import type { MetadataRoute } from "next";
 /** PWA manifest — cài Savient về màn hình chính như một app thật. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Savient — Tiết kiệm mọc nhà",
+    name: "Savient",
     short_name: "Savient",
     description:
       "Gửi tiền đều mỗi kỳ, giữ streak, xây tòa nhà 3D của bạn trên Avalanche. Streak càng dài, phần thưởng lãi càng lớn.",
