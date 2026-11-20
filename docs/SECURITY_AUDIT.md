@@ -1,4 +1,4 @@
-# Báo cáo kiểm thử bảo mật — Cozy Save (8 Core Contracts)
+# Báo cáo kiểm thử bảo mật — Savient (8 Core Contracts)
 
 **Ngày:** 2026-11-20 · **Môi trường:** Avalanche Fuji (43113), fork local Anvil · **Nguyên tắc:** mọi PoC chạy trên fork/testnet — **không đụng tiền của ngườ dùng nào**.
 

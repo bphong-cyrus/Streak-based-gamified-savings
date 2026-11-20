@@ -124,7 +124,7 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
           <div className="mx-auto w-fit"><Icon name="flag" size={40} className="text-ink-muted" /></div>
           <h2 className="mt-2 font-cozy text-xl font-bold text-ink">Bạn đang ở mạng khác</h2>
           <p className="mt-1 text-sm font-semibold text-ink-soft">
-            Cozy Save xây nhà trên Avalanche Fuji C-Chain (chain ID {targetChainId}).
+            Savient xây nhà trên Avalanche Fuji C-Chain (chain ID {targetChainId}).
           </p>
           <div className="mt-4 flex justify-center">
             <ConnectButton />
@@ -142,7 +142,9 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
       <header className="fixed left-0 right-0 top-0 z-30">
         <div className="mx-auto flex h-16 max-w-app items-center justify-between px-4 md:px-6 lg:px-10">
           <div className="flex items-center gap-3">
-            <span className="font-cozy text-2xl font-extrabold text-ink">Cozy Save</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Savient" className="h-8 w-8 rounded-[9px] shadow-chunkySm" draggable={false} />
+            <span className="font-cozy text-2xl font-extrabold text-ink">Savient</span>
             {demoData && (
               <span
                 data-testid="demo-badge"
@@ -198,7 +200,9 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
       <div className="fixed left-0 right-0 top-0 z-30 lg:hidden">
         <div className="mx-auto flex h-14 max-w-app items-center justify-between px-4 pt-1">
           <div className="flex items-center gap-2.5">
-            <span className="font-cozy text-xl font-extrabold text-ink">Cozy Save</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Savient" className="h-7 w-7 rounded-lg" draggable={false} />
+            <span className="font-cozy text-xl font-extrabold text-ink">Savient</span>
             {demoData && (
               <span data-testid="demo-badge" className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-bold text-ink-soft">
                 Bản thử

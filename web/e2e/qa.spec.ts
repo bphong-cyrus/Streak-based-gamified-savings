@@ -5,7 +5,7 @@ function collectViolations(page: Page) {
   page.on("console", (msg) => {
     if (msg.type() === "error") {
       const text = msg.text();
-      // Ứng dụng Cozy Save phải không có console.error nào trong quá trình QA.
+      // Ứng dụng Savient phải không có console.error nào trong quá trình QA.
       errors.push(`[console.error] ${text}`);
     }
   });
@@ -62,7 +62,7 @@ test.describe("Demo mode (?demo=1)", () => {
     await goto(page, "/?demo=1");
 
     // Header & demo badge (2 bản: desktop + mobile — kiểm tra số lượng và nội dung)
-    await expect(page.getByText("Cozy Save").first()).toBeVisible();
+    await expect(page.getByText("Savient").first()).toBeVisible();
     await expect(page.getByTestId("demo-badge")).toHaveCount(2);
     await expect(page.getByTestId("demo-badge").first()).toHaveText("Bản thử");
     await expect(page.getByTestId("demo-notice")).toContainText("không phải số dư thật");
@@ -212,7 +212,7 @@ test.describe("Live mode (no demo param, disconnected wallet)", () => {
     await goto(page, "/");
 
     // Vì chưa kết nối ví, app vẫn hiển thị dashboard demo với CTA Connect
-    await expect(page.getByText("Cozy Save").first()).toBeVisible();
+    await expect(page.getByText("Savient").first()).toBeVisible();
     await expect(page.getByRole("button", { name: /Kết nối/ }).first()).toBeVisible();
 
     // Bottom nav dẫn đến đủ 4 tab

@@ -6,7 +6,7 @@ import { Icon } from "@/components/cozy/icons";
 /** Màn hình lỗi cozy thay cho crash trắng — giữ được trải nghiệm dù có lỗi runtime. */
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   useEffect(() => {
-    console.error("Cozy Save error:", error.message, error.stack ?? "", error.digest ?? "");
+    console.error("Savient error:", error.message, error.stack ?? "", error.digest ?? "");
   }, [error]);
 
   return (

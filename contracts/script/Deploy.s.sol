@@ -96,7 +96,7 @@ contract Deploy is Script {
         vm.serializeUint(k, "startAt", startAt);
         vm.serializeUint(k, "epochSeconds", epochSeconds);
         vm.serializeUint(k, "deployBlock", block.number);
-        string memory out = vm.serializeString(k, "note", "Cozy Save core 8");
+        string memory out = vm.serializeString(k, "note", "Savient core 8");
         vm.writeJson(out, string.concat("deployments/", vm.toString(block.chainid), ".json"));
     }
 }

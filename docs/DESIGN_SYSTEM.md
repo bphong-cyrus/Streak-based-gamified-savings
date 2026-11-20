@@ -1,4 +1,4 @@
-# Thiết kế UI/UX — Cozy Save
+# Thiết kế UI/UX — Savient
 
 Quy trình áp dụng: **Design Thinking** (Stanford d.school) trong khung **Double Diamond**, triết lý **UCD** (ISO 9241-210), kiểm định theo **Nielsen 10 heuristics**, tiêu chuẩn tiếp cận **WCAG 2.2 AA**, hệ thống thiết kế theo **Atomic Design + Design Tokens** (tham chiếu Material 3 & Apple HIG).
 
