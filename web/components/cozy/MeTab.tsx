@@ -11,6 +11,7 @@ import type { ThemeMode } from "@/components/cozy/useThemeLanding";
 import type { VaultData } from "@/lib/useVaultData";
 import { RecentTxPanel } from "@/components/cozy/RecentTxPanel";
 import { Icon } from "@/components/cozy/icons";
+import { isMuted, setMuted, sfx } from "@/lib/sound";
 
 interface Props {
   data: VaultData;
@@ -24,6 +25,7 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
   const currentIdx = useIdentityIndex(address);
   const currentIdentity = IDENTITIES[currentIdx] ?? IDENTITIES[0];
   const isDemo = isDemoMode();
+  const [muted, setMutedState] = useState(isMuted());
 
   function select(i: number) {
     pickIdentity(address, i);
@@ -147,6 +149,29 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
             </button>
           </div>
           <p className="mt-3 text-xs font-semibold text-ink-soft">Mặc định theo giờ máy bạn. Cửa sổ tòa nhà sẽ sáng đèn ấm vào ban đêm.</p>
+        </div>
+
+        {/* Âm thanh */}
+        <div className="card p-4">
+          <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
+            <Icon name="volume" size={18} className="text-ink-soft" /> Âm thanh
+          </h4>
+          <button
+            className={`mt-3 w-full rounded-xl border py-3 font-cozy font-bold transition active:translate-y-[1px] ${
+              muted ? "border-border bg-surface text-ink-soft" : "border-cta bg-cta/5 text-ink"
+            }`}
+            onClick={() => {
+              const m = !muted;
+              setMuted(m);
+              setMutedState(m);
+              if (!m) sfx.click();
+            }}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <Icon name="volume" size={16} className={muted ? "opacity-40" : undefined} />
+              {muted ? "Đang tắt âm thanh" : "Đang bật âm thanh"}
+            </span>
+          </button>
         </div>
 
         {/* Thông tin on-chain */}

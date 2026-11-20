@@ -84,7 +84,7 @@ export function DepositSheet({ data, mode, onClose, onDeposited }: Props) {
 
   useEffect(() => {
     if (!parsed && amount) setValidation("Vui lòng nhập số hợp lệ");
-    else if (parsed && parsed <= 0n) setValidation("Số tiền phải lớn hơn 0");
+    else if (parsed !== null && parsed <= 0n) setValidation("Số tiền phải lớn hơn 0");
     else if (parsed && parsed > maxBalance) setValidation(`Vượt quá số dư khả dụng (${fmt(maxBalance, 6)} mUSDC)`);
     else setValidation(null);
   }, [parsed, amount, maxBalance]);

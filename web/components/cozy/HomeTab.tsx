@@ -19,6 +19,7 @@ interface Props {
   building: boolean;
   celebrateKey: number;
   onDepositStart: () => void;
+  onDemoDeposit?: () => void;
   isDemo?: boolean;
 }
 
@@ -143,7 +144,7 @@ function StreakHeatmap({ data }: { data: VaultData }) {
   );
 }
 
-export function HomeTab({ data, night, building, celebrateKey, onDepositStart, isDemo }: Props) {
+export function HomeTab({ data, night, building, celebrateKey, onDepositStart, onDemoDeposit, isDemo }: Props) {
   const [sheetMode, setSheetMode] = useState<"deposit" | "withdraw" | null>(null);
   const [showParty, setShowParty] = useState(false);
   const [zoom, setZoom] = useState<number | null>(null);
@@ -235,13 +236,28 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, i
           <div className="mt-5 space-y-2">
             {isNewWallet ? (
               <FaucetCard />
+            ) : isDemo ? (
+              <>
+                <button
+                  className="btn-primary w-full text-lg active:translate-y-[2px]"
+                  disabled={building}
+                  onClick={onDemoDeposit}
+                >
+                  {building ? "Đang xây tầng…" : "Mô phỏng gửi tiền"}
+                </button>
+                {(account?.principal ?? 0n) > 0n && (
+                  <button className="btn-ghost w-full" disabled={building} onClick={() => setSheetMode("withdraw")}>
+                    Rút gốc
+                  </button>
+                )}
+              </>
             ) : (
               <>
                 <button
                   className="btn-primary w-full text-lg active:translate-y-[2px]"
                   onClick={() => setSheetMode("deposit")}
                 >
-                  {isDemo ? "Mô phỏng gửi tiền" : goalDone ? "Gửi thêm" : `Gửi ${fmt(remaining)} mUSDC hoàn thành tầng`}
+                  {goalDone ? "Gửi thêm" : `Gửi ${fmt(remaining)} mUSDC hoàn thành tầng`}
                 </button>
                 {(account?.principal ?? 0n) > 0n && (
                   <button className="btn-ghost w-full" onClick={() => setSheetMode("withdraw")}>
@@ -250,7 +266,7 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, i
                 )}
               </>
             )}
-            {urgent && !isNewWallet && <FreezeEpochButton />}
+            {urgent && !isNewWallet && !isDemo && <FreezeEpochButton />}
           </div>
         </div>
       </div>

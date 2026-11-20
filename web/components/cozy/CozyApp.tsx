@@ -1,18 +1,16 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useAccount, useChainId } from "wagmi";
 import { ConnectButton } from "@/components/ConnectButton";
 import { HomeTab } from "@/components/cozy/HomeTab";
 import { GoalsTab } from "@/components/cozy/GoalsTab";
 import { RewardsTab } from "@/components/cozy/RewardsTab";
 import { MeTab } from "@/components/cozy/MeTab";
-import { IdentityAvatar } from "@/lib/identity";
 import { useVaultData, type VaultData } from "@/lib/useVaultData";
-import { shortAddr } from "@/lib/format";
 import { targetChainId } from "@/lib/config";
 import { Icon, type IconName } from "@/components/cozy/icons";
-import { isMuted, setMuted, sfx, unlockAudio } from "@/lib/sound";
+import { sfx, unlockAudio } from "@/lib/sound";
 import { Onboarding } from "@/components/cozy/Onboarding";
 import { setDemoMode } from "@/lib/demo";
 import type { ThemeMode } from "@/components/cozy/useThemeLanding";
@@ -38,17 +36,27 @@ interface CozyAppProps {
 export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnected, onExitDemo }: CozyAppProps) {
   const live = useVaultData({ enabled: !demoData });
   const [demoBoost, setDemoBoost] = useState(0);
+  const [demoSim, setDemoSim] = useState<{ tokenSpent: bigint; principalAdded: bigint; staged: boolean }>({
+    tokenSpent: 0n,
+    principalAdded: 0n,
+    staged: false,
+  });
   const demoAcc = demoData?.account;
   const data = demoData
     ? {
         ...demoData,
+        tokenBalance: (demoData.tokenBalance ?? 0n) - demoSim.tokenSpent,
         account: demoAcc
           ? {
               ...demoAcc,
+              principal: demoAcc.principal + demoSim.principalAdded,
               streak: demoAcc.streak + BigInt(demoBoost),
               currentEpoch: demoAcc.currentEpoch + BigInt(demoBoost),
               depositCount: (demoAcc.depositCount ?? 0n) + BigInt(demoBoost),
-              ...(demoBoost > 0 ? { currentProgress: 0n, currentDeposited: 0n } : {}),
+              currentProgress:
+                demoBoost > 0 ? 0n : demoSim.staged ? demoAcc.currentTarget : demoAcc.currentProgress,
+              currentDeposited:
+                demoBoost > 0 ? 0n : demoSim.staged ? demoAcc.currentTarget : demoAcc.currentDeposited,
             }
           : demoAcc,
       }
@@ -64,7 +72,6 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
   const [tab, setTab] = useState<TabKey>("home");
   const night = theme === "night";
   const wrongChain = !demoData && chainId !== targetChainId;
-  const [muted, setMutedState] = useState(isMuted());
 
   useEffect(() => {
     const unlock = () => unlockAudio();
@@ -81,13 +88,31 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
   const [celebrateKey, setCelebrateKey] = useState(0);
   const [buildKey, setBuildKey] = useState(0);
 
+  function handleDemoDeposit() {
+    const acc = data.account;
+    if (!acc || building || demoSim.staged) return;
+    const target = acc.currentTarget ?? 0n;
+    const progress = acc.currentProgress ?? 0n;
+    const remaining = target > progress ? target - progress : 0n;
+    if (remaining <= 0n) return;
+    setDemoSim((s) => ({
+      tokenSpent: s.tokenSpent + remaining,
+      principalAdded: s.principalAdded + remaining,
+      staged: true,
+    }));
+    setBuildKey((k) => k + 1);
+  }
+
   useEffect(() => {
     if (buildKey === 0) return;
     setBuilding(true);
     const t1 = setTimeout(() => {
       setBuilding(false);
       setCelebrateKey((k) => k + 1);
-      if (demoData) setDemoBoost((b) => b + 1);
+      if (demoData) {
+        setDemoBoost((b) => b + 1);
+        setDemoSim((s) => ({ ...s, staged: false }));
+      }
     }, 4600);
     return () => clearTimeout(t1);
   }, [buildKey, demoData]);
@@ -126,20 +151,28 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
           </div>
 
           {/* Desktop tabs */}
-          <nav className="hidden items-center gap-1 rounded-2xl border border-border bg-surface/90 p-1 shadow-card backdrop-blur-md lg:flex">
-            {TABS.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => switchTab(t.key)}
-                aria-current={tab === t.key ? "page" : undefined}
-                className={`flex min-h-[40px] items-center gap-2 rounded-xl px-4 py-1.5 text-sm font-bold transition ${
-                  tab === t.key ? "bg-cta text-white shadow-button" : "text-ink-soft hover:bg-surface-sunken hover:text-ink"
-                }`}
-              >
-                <Icon name={t.icon} size={18} />
-                {t.label}
-              </button>
-            ))}
+          <nav className="hidden items-center gap-6 lg:flex" aria-label="Điều hướng chính">
+            {TABS.map((t) => {
+              const active = tab === t.key;
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => switchTab(t.key)}
+                  aria-current={active ? "page" : undefined}
+                  className={`group relative flex min-h-[44px] items-center gap-2 px-1 py-2 text-sm font-bold transition ${
+                    active ? "text-ink" : "text-ink-soft hover:text-ink"
+                  }`}
+                >
+                  <Icon name={t.icon} size={18} />
+                  {t.label}
+                  <span
+                    className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-cta transition-transform ${
+                      active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-50"
+                    }`}
+                  />
+                </button>
+              );
+            })}
           </nav>
 
           <div className="flex items-center gap-2">
@@ -153,15 +186,7 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
                 Thoát bản thử
               </button>
             )}
-            <HeaderIconButton
-              label={night ? "Chuyển ban ngày" : "Chuyển ban đêm"}
-              onClick={() => onThemeChange(night ? "day" : "night")}
-            >
-              <Icon name={night ? "sun" : "moon"} size={18} />
-            </HeaderIconButton>
-            <div className="hidden md:block">
-              <ConnectButton />
-            </div>
+            <ConnectButton />
           </div>
         </div>
       </header>
@@ -169,37 +194,15 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
       {/* Mobile header compact */}
       <div className="fixed left-0 right-0 top-0 z-30 lg:hidden">
         <div className="mx-auto flex h-14 max-w-app items-center justify-between px-4 pt-1">
-          <div className="flex items-center gap-2.5 rounded-full border border-border bg-surface/95 px-3 py-1.5 shadow-card backdrop-blur-md">
-            <IdentityAvatar address={data.address} className="h-8 w-8" />
-            <div>
-              <div className="font-cozy text-sm font-extrabold leading-none text-ink">Cozy Save</div>
-              <div className="text-[10px] font-semibold text-ink-soft">
-                {data.address ? shortAddr(data.address) : "Tiết kiệm mọc nhà"}
-              </div>
-            </div>
+          <div className="flex items-center gap-2.5">
+            <span className="font-cozy text-xl font-extrabold text-ink">Cozy Save</span>
+            {demoData && (
+              <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-bold text-ink-soft">
+                Bản thử
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-1.5">
-            <HeaderIconButton
-              label={night ? "Chuyển ban ngày" : "Chuyển ban đêm"}
-              onClick={() => onThemeChange(night ? "day" : "night")}
-            >
-              <Icon name={night ? "sun" : "moon"} size={18} />
-            </HeaderIconButton>
-            <HeaderIconButton
-              label={muted ? "Bật âm thanh" : "Tắt âm thanh"}
-              onClick={() => {
-                const m = !muted;
-                setMuted(m);
-                setMutedState(m);
-                if (!m) sfx.click();
-              }}
-            >
-              <Icon name="volume" size={17} className={muted ? "opacity-40" : undefined} />
-            </HeaderIconButton>
-            <div className="md:hidden">
-              <ConnectButton />
-            </div>
-          </div>
+          <ConnectButton />
         </div>
       </div>
 
@@ -211,6 +214,7 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
             building={building}
             celebrateKey={celebrateKey}
             onDepositStart={() => setBuildKey((k) => k + 1)}
+            onDemoDeposit={handleDemoDeposit}
             isDemo={!!demoData}
           />
         )}
@@ -245,15 +249,4 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
   );
 }
 
-function HeaderIconButton({ children, onClick, label }: { children: ReactNode; onClick: () => void; label: string }) {
-  return (
-    <button
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-ink-soft shadow-card transition hover:bg-surface-sunken hover:text-ink active:translate-y-[1px]"
-      onClick={onClick}
-      title={label}
-      aria-label={label}
-    >
-      {children}
-    </button>
-  );
-}
+

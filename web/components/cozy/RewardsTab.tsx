@@ -7,6 +7,7 @@ import { fmt } from "@/lib/format";
 import { TxFeedback, useTx } from "@/components/useTx";
 import { FeatureCard, Stat } from "@/components/cozy/panel";
 import { Icon } from "@/components/cozy/icons";
+import { isDemoMode } from "@/lib/demo";
 import type { VaultData } from "@/lib/useVaultData";
 
 export function RewardsTab({ data }: { data: VaultData }) {
@@ -115,9 +116,10 @@ function BadgesCard({ data }: { data: VaultData }) {
 function CheckInCard() {
   const tx = useTx();
   const { address } = useAccount();
+  const isDemo = isDemoMode();
 
   const state = useReadContracts({
-    contracts: address
+    contracts: address && !isDemo
       ? [
           { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "today", args: [] },
           { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "lastCheckInDay", args: [address] },
@@ -126,15 +128,16 @@ function CheckInCard() {
           { address: contracts.dailyCheckIn, abi: dailyCheckInAbi, functionName: "rewardPool", args: [] },
         ]
       : [],
-    query: { refetchInterval: 30_000, enabled: !!address },
+    query: { refetchInterval: 30_000, enabled: !!address && !isDemo },
   });
   const todayDay = state.data?.[0]?.result as bigint | undefined;
   const lastDay = state.data?.[1]?.result as bigint | undefined;
-  const streak = (state.data?.[2]?.result as bigint | undefined) ?? 0n;
-  const reward = (state.data?.[3]?.result as bigint | undefined) ?? 0n;
-  const pool = (state.data?.[4]?.result as bigint | undefined) ?? 0n;
-  const canCheckIn = todayDay !== undefined && lastDay !== todayDay;
-  const loading = state.isLoading;
+  const M = 1_000_000n;
+  const streak = isDemo ? 5n : ((state.data?.[2]?.result as bigint | undefined) ?? 0n);
+  const reward = isDemo ? 2n * M : ((state.data?.[3]?.result as bigint | undefined) ?? 0n);
+  const pool = isDemo ? 1_234n * M : ((state.data?.[4]?.result as bigint | undefined) ?? 0n);
+  const canCheckIn = isDemo ? false : todayDay !== undefined && lastDay !== todayDay;
+  const loading = !isDemo && state.isLoading;
 
   async function doCheckIn() {
     await tx.run("Điểm danh", [
@@ -145,16 +148,16 @@ function CheckInCard() {
   return (
     <FeatureCard icon="calendar" title="Điểm danh mỗi ngày" desc="mUSDC thật mỗi ngày — chuỗi càng dài thưởng càng lớn">
       <div className="grid grid-cols-3 gap-2">
-        <Stat label="Chuỗi ngày" value={loading ? undefined : address ? streak.toString() : "—"} tone="text-terracotta" />
-        <Stat label="Thưởng hôm nay" value={loading ? undefined : address ? `${fmt(reward)} mUSDC` : "—"} tone="text-cta" />
-        <Stat label="Pool còn" value={loading ? undefined : address ? `${fmt(pool)} mUSDC` : "—"} />
+        <Stat label="Chuỗi ngày" value={loading ? undefined : `${streak.toString()}`} tone="text-terracotta" />
+        <Stat label="Thưởng hôm nay" value={loading ? undefined : `${fmt(reward)} mUSDC`} tone="text-cta" />
+        <Stat label="Pool còn" value={loading ? undefined : `${fmt(pool)} mUSDC`} />
       </div>
       <button
         className="btn-primary mt-4 w-full"
-        disabled={tx.step !== null || !address || !canCheckIn}
+        disabled={tx.step !== null || !address || !canCheckIn || isDemo}
         onClick={doCheckIn}
       >
-        {address ? (canCheckIn ? "Điểm danh ngay" : "Đã điểm danh hôm nay") : "Kết nối ví để điểm danh"}
+        {isDemo ? "Điểm danh trong bản thử" : address ? (canCheckIn ? "Điểm danh ngay" : "Đã điểm danh hôm nay") : "Kết nối ví để điểm danh"}
       </button>
       <TxFeedback state={tx} />
     </FeatureCard>
