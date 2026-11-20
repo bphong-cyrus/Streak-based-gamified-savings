@@ -2,7 +2,9 @@
 
 [![CI](https://github.com/bphong-cyrus/Streak-based-gamified-savings/actions/workflows/ci.yml/badge.svg)](https://github.com/bphong-cyrus/Streak-based-gamified-savings/actions/workflows/ci.yml)
 
-**Streak-based gamified savings trên Avalanche Fuji**: gửi đủ mục tiêu mỗi kỳ → streak tăng, phần thưởng lãi tăng, tòa nhà 3D của bạn mọc thêm một tầng. Bỏ kỳ → streak về 0. Tiền gốc luôn của bạn, rút anytime — mọi thứ ghi on-chain, đối chiếu được trên Snowtrace.
+**Streak-based gamified savings trên Avalanche Fuji**: gửi đủ mục tiêu mỗi kỳ → streak tăng, phần thưởng tăng, tòa nhà 3D của bạn mọc thêm một tầng. Bỏ kỳ → streak về 0. Tiền gốc luôn của bạn, rút anytime — kể cả khi contract đang pause — mọi thứ ghi on-chain, đối chiếu được trên Snowtrace.
+
+> **Minh bạch dữ liệu:** mUSDC là token testnet của dự án, và nguồn "lãi" hiện tại là **ngân sách do sponsor nạp vào `MockYieldSource`** (mock yield), không phải lãi lending tự sinh. UI luôn ghi rõ "nguồn lãi mô phỏng" và chế độ `?demo=1` đeo nhãn "Bản thử — không phải số dư thật". Tích hợp Aave/Benqi nằm ở roadmap (phụ lục bonus).
 
 ## Bài toán
 
@@ -22,6 +24,13 @@ Ngườ trẻ khó giữ thói quen gửi tiền đều: thiếu động lực, 
 | `FaucetDrip` | Onboard ví mới: 5 mUSDC thẳng vào vault + target đầu | `0xFc65B124A127C7cD2176f8CaEf7b6A3Eee6543DA` |
 
 Vòng đờ một kỳ: đặt mục tiêu tuần → gửi đủ trước hạn chót → kỳ được **finalize** (hành động công khai, ai cũng gọi được) → ngân sách yield chia cho ví giữ streak → user **claim** lãi. Song song: điểm danh mỗi ngày nhận mUSDC, đủ mốc streak mint huy hiệu NFT, cam kết mục tiêu lớn bằng `SavingsGoal`.
+
+## Chính sách gốc & phí (đã chốt, có test đối kháng)
+
+- **Gốc luôn của bạn**: `withdraw` và `emergencyWithdraw` cố tình *không* mang `whenNotPaused` — pause chỉ chặn nạp/thao tác rủi ro, không bao giờ chặn lối rút của chủ gốc.
+- **Trần phí trên gốc: 10%** (`MAX_PRINCIPAL_FEE_BPS`) cho `withdrawFeeBps`, `emergencyPenaltyBps`, `whaleFeeBps` — mặc định bằng 0 và owner không đặt vượt trần được.
+- **Trần phí trên lãi: 20%** (`MAX_YIELD_FEE_BPS` trong `YieldDistributor`) cho `yieldFeeBps` / `referralBps` — phí chỉ đánh trên phần thưởng, không động gốc.
+- Bảo vệ streak (freeze / insurance / revive) là **dịch vụ tự chọn trả phí**, không ảnh hưởng quy tắc "bỏ kỳ reset về 0" nếu không dùng.
 
 ## Chạy local (3 lệnh)
 
@@ -45,16 +54,16 @@ cd web && npm i && npm run dev   # mở http://localhost:3000
 ## Test, QA & bảo mật
 
 ```bash
-cd contracts && forge test     # 61 tests: unit + fuzz + invariant + security
+cd contracts && forge test     # 74 tests: unit + fuzz + invariant + security
 cd web && npx tsc --noEmit     # typecheck
 cd web && npm run build        # production build
-cd web && npx playwright test  # E2E desktop + mobile (10 tests)
+cd web && npx playwright test  # E2E desktop (1440×900) + mobile (390×844)
 ```
 
-- **Smart contracts:** 61 tests pass, 6 stateful invariants × 256 runs × 64 depth = 16 384 calls, bằng chứng CEI + ReentrancyGuard + access control.
+- **Smart contracts:** 74 tests pass, 6 stateful invariants × 256 runs × 64 depth = 16 384 calls, bằng chứng CEI + ReentrancyGuard + access control; test đối kháng cho trần phí và rút-khi-pause.
 - **Gas report:** `contracts/.gas-snapshot` — `finalizeEpoch` với 20 ví ~2.57M gas.
-- **Báo cáo audit:** [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) (defense-in-depth, 0 critical/high, checklist pre-mainnet).
-- **E2E QA:** Playwright kiểm thử 4 màn hình core trên Desktop (1440×900) & Mobile (390×844), bắt toàn bộ `console.error` / `pageerror` / HTTP 4xx/5xx.
+- **Báo cáo audit:** [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) — *self review nội bộ* (defense-in-depth, checklist pre-mainnet), không phải audit độc lập.
+- **E2E QA:** Playwright kiểm thử 4 màn hình core trên Desktop (1440×900) & Mobile (390×844), bắt toàn bộ `console.error` / `pageerror` / HTTP 4xx/5xx; selector dùng role/aria-label/`data-testid` ổn định; upload trace khi fail trong CI.
 
 ## Cấu trúc repo
 
@@ -69,12 +78,12 @@ web/
   components/cozy # 4 màn core: Dashboard, Goals, Rewards, Hồ sơ + nhà 3D (Three.js)
   e2e/            # Playwright QA suite
   lib/            # abis.ts (8 ABI, ~57KB), config, hooks
-  public/identities/ # bộ nhân vật SVG
-.github/workflows/ # CI: forge test + Next build + typecheck
+  public/identities/ # bộ nhân vật (SVG avatar + mô hình 3D Pet3D trong cảnh nhà)
+.github/workflows/ # CI: forge test + typecheck + Next build + Playwright E2E (có trace khi fail)
 docs/             # SECURITY_AUDIT.md, DESIGN_SYSTEM.md
 ```
 
-Frontend: Next.js 14 + wagmi/viem + React Three Fiber. Nhà 3D isometric mọc tầng theo streak, âm thanh WebAudio tổng hợp, skeleton loading, aria-live cho giao dịch, theme ngày/đêm.
+Frontend: Next.js 14 + wagmi/viem + React Three Fiber. Nhà 3D isometric mọc tầng theo streak với cư dân là mô hình mèo/thỏ 3D (Pet3D: 5 nhân vật, phụ kiện riêng, mắt chớp + đuôi vẫy), âm thanh WebAudio tổng hợp, skeleton loading, aria-live cho giao dịch, theme ngày/đêm.
 
 ## Ghi chú
 

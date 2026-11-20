@@ -144,7 +144,10 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
           <div className="flex items-center gap-3">
             <span className="font-cozy text-2xl font-extrabold text-ink">Cozy Save</span>
             {demoData && (
-              <span className="hidden rounded-full border border-border bg-surface px-2.5 py-0.5 text-[11px] font-bold text-ink-soft sm:inline-block">
+              <span
+                data-testid="demo-badge"
+                className="hidden rounded-full border border-border bg-surface px-2.5 py-0.5 text-[11px] font-bold text-ink-soft sm:inline-block"
+              >
                 Bản thử
               </span>
             )}
@@ -197,7 +200,7 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
           <div className="flex items-center gap-2.5">
             <span className="font-cozy text-xl font-extrabold text-ink">Cozy Save</span>
             {demoData && (
-              <span className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-bold text-ink-soft">
+              <span data-testid="demo-badge" className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-bold text-ink-soft">
                 Bản thử
               </span>
             )}

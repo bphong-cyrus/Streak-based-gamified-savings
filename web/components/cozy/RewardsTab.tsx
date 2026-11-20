@@ -185,6 +185,11 @@ function YieldCard({ data }: { data: VaultData }) {
 
   return (
     <FeatureCard icon="chart" title="Lãi tiết kiệm" desc="Yield từ nguồn lãi mô phỏng — chia theo gốc và streak, đối chiếu được on-chain">
+      {isDemoMode() && (
+        <p data-testid="demo-notice" className="mb-2 rounded-lg border border-dashed border-cta/50 bg-cta/5 px-2 py-1 text-center text-[11px] font-bold text-ink-soft" role="note">
+          Bản thử — số liệu mô phỏng, không phải thưởng thật.
+        </p>
+      )}
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Chờ nhận" value={`${fmt(claimable)} mUSDC`} tone="text-cta" />
         <Stat label="Đã nhận" value={`${fmt(claimed)} mUSDC`} />

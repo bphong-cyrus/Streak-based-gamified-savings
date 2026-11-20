@@ -101,8 +101,11 @@ contract YieldDistributor is ReentrancyGuard, Pausable, Ownable {
         emit TreasurySet(treasury_);
     }
 
+    /// @notice Trần phí trên LÃI (không động vào gốc): 20%.
+    uint256 public constant MAX_YIELD_FEE_BPS = 2_000;
+
     function setYieldFeeBps(uint256 bps) external onlyOwner {
-        require(bps <= BPS_DENOMINATOR, "fee>100%");
+        require(bps <= MAX_YIELD_FEE_BPS, "fee>20%");
         yieldFeeBps = bps;
     }
 
@@ -113,7 +116,7 @@ contract YieldDistributor is ReentrancyGuard, Pausable, Ownable {
     }
 
     function setReferralBps(uint256 bps) external onlyOwner {
-        require(bps <= BPS_DENOMINATOR, "bps>100%");
+        require(bps <= MAX_YIELD_FEE_BPS, "bps>20%");
         referralBps = bps;
     }
 

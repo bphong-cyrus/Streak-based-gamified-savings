@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { Pet3D } from "@/components/cozy/Pet3D";
 
 const WALL_COLOR = "#F7E8C8";
 const ROOF_COLOR = "#AA6149";
@@ -196,42 +197,6 @@ function Tree({ position, s = 1, leaf, trunk }: { position: [number, number, num
   );
 }
 
-function useSvgTexture(src: string) {
-  const [tex, setTex] = useState<THREE.CanvasTexture | null>(null);
-  useEffect(() => {
-    let alive = true;
-    const img = new Image();
-    img.onload = () => {
-      const c = document.createElement("canvas");
-      c.width = 240; c.height = 300;
-      c.getContext("2d")?.drawImage(img, 0, 0, 240, 300);
-      const t = new THREE.CanvasTexture(c);
-      t.colorSpace = THREE.SRGBColorSpace;
-      if (alive) setTex(t);
-    };
-    img.src = src;
-    return () => { alive = false; };
-  }, [src]);
-  return tex;
-}
-
-function Cat({ src, position, scale = 1 }: { src: string; position: [number, number, number]; scale?: number }) {
-  const tex = useSvgTexture(src);
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame(({ camera, clock }) => {
-    if (!ref.current) return;
-    ref.current.quaternion.copy(camera.quaternion);
-    ref.current.position.y = position[1] + Math.sin(clock.getElapsedTime() * 1.5) * 0.03;
-  });
-  if (!tex) return null;
-  return (
-    <mesh ref={ref} position={position} scale={[0.85 * scale, 1.05 * scale, 1]}>
-      <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial map={tex} transparent />
-    </mesh>
-  );
-}
-
 export interface HouseSceneProps {
   floors: number;
   night: boolean;
@@ -304,9 +269,18 @@ export function HouseScene({ floors, night, building, celebrating, width, height
       <Tree position={[3.3, 0, 1.4]} s={0.85} leaf={p.leaf} trunk={p.trunk} />
       <Tree position={[-2.4, 0, 2.4]} s={0.7} leaf={p.leaf} trunk={p.trunk} />
 
-      <Cat src="/identities/rabbit-office.svg" position={[-1.2, 0.55, 2.6]} />
-      <Cat src="/identities/cat-wizard.svg" position={[0.8, 0.55, 2.75]} scale={0.9} />
-      {!building && <Cat src="/identities/cat-farmer.svg" position={[0.4, 0.05 + total * floorH + 1.35, 1.15]} scale={0.8} />}
+      {/* Cư dân 3D thực thụ — thay thế ảnh SVG billboard cũ */}
+      <Pet3D variant="rabbit-office" position={[-1.5, 0.12, 2.55]} rotationY={0.5} phase={0} />
+      <Pet3D variant="cat-wizard" position={[1.15, 0.12, 2.75]} rotationY={-0.25} scale={0.92} phase={1} />
+      {!building && (
+        <Pet3D
+          variant="cat-farmer"
+          position={[0.15, 0.05 + total * floorH + 1.62, 0.35]}
+          rotationY={0.6}
+          scale={0.72}
+          phase={2}
+        />
+      )}
     </Canvas>
   );
 }

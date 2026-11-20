@@ -2,13 +2,18 @@
 
 **Ngày:** 2026-11-20 · **Môi trường:** Avalanche Fuji (43113), fork local Anvil · **Nguyên tắc:** mọi PoC chạy trên fork/testnet — **không đụng tiền của ngườ dùng nào**.
 
+> **Phạm vi cam kết:** đây là **self review nội bộ** (unit/fuzz/invariant/security test do chính nhóm viết và chạy), không phải audit độc lập bởi bên thứ ba. Số liệu chỉ công bố kết quả vừa chạy lại tại commit hiện tại.
+
 ## 1. Tổng quan kết quả
 
 | Hạng mục | Kết quả |
 |---|---|
-| Unit / fuzz / security tests | **61 pass 100%** (`forge test`) |
+| Unit / fuzz / security tests | **74 pass 100%** (`forge test`) |
 | Stateful invariant | **6 invariants × 256 runs × 64 depth = 16 384 calls** pass (`Core8Invariant.t.sol`) |
 | Reentrancy & CEI | Mọi hàm chuyển token (`withdraw`, `emergencyWithdraw`, `claimYield`, `checkIn`, `drip`, `fundEpoch`) đều dùng `nonReentrant` + state trước transfer sau |
+| Trần phí gốc | `MAX_PRINCIPAL_FEE_BPS = 10%` chặn `withdrawFeeBps` / `emergencyPenaltyBps` / `whaleFeeBps` (mặc định 0) — có test đối kháng |
+| Trần phí lãi | `MAX_YIELD_FEE_BPS = 20%` chặn `yieldFeeBps` / `referralBps` |
+| Rút khi pause | `withdraw` / `emergencyWithdraw` **không** mang `whenNotPaused` — pause không bao giờ chặn chủ gốc rút tiền — có test đối kháng |
 | Access control | Admin (`onlyOwner`) giới hạn ở config/pause/rescue; không có đường rút tiền user trái phép |
 | Secret hygiene | Không `.env` / private key / mnemonic trong git; `.env.local` đã gitignore |
 | Web vectors | Không `dangerouslySetInnerHTML` với dữ liệu không tin cậy; link ngoài có `rel="noopener noreferrer"` |
@@ -37,7 +42,7 @@
 
 **Mô tả:** Owner có thể pause, đổi phí, đổi cap, set treasury. `initializer` của `StreakVault`/`MockYieldSource` set distributor đúng 1 lần.
 
-**Tác động:** Nếu private key owner bị lộ, attacker có thể pause hệ thống hoặc đổi param. Không có đường rút tiền user trái phép (treasury chỉ nhận phí/yield đã công khai).
+**Tác động:** Nếu private key owner bị lộ, attacker có thể pause hệ thống hoặc đổi param trong trần đã chặn. Không có đường rút tiền user trái phép (treasury chỉ nhận phí/yield đã công khai), và pause không chặn được `withdraw`/`emergencyWithdraw` (xem F11).
 
 **Trạng thái:** **Accepted** cho testnet/demo. Trước mainnet cần timelock + multisig (checklist cuối).
 
@@ -117,7 +122,19 @@
 
 **Mô tả:** Bộ kiểm thử tự động chạy trên Desktop (1440×900) và Mobile (390×844) với cả `?demo=1` và chế độ chưa kết nối ví. Mọi test pass, bắt toàn bộ `console.error`, `pageerror`, HTTP 4xx/5xx.
 
-**Trạng thái:** **Verified** — `npx playwright test` 10/10 pass.
+**Trạng thái:** **Verified** — `npx playwright test` pass trên cả 2 project desktop + mobile.
+
+### F11 — Phí rút/phạt thiết lập được tới 100% và pause chặn rút gốc — Medium / Fixed
+
+**Vị trí:** `src/StreakVault.sol` (`setWithdrawFeeBps`, `setEmergencyPenaltyBps`, `setWhaleDiscount`, `withdraw`, `emergencyWithdraw`), `src/YieldDistributor.sol` (`setYieldFeeBps`, `setReferralBps`).
+
+**Mô tả:** (1) Các setter phí chỉ chặn `bps <= 100%`, owner có thể đặt phí rút 100% — mâu thuẫn lợi hứa "gốc luôn của bạn, rút bất cứ lúc nào". (2) `withdraw`/`emergencyWithdraw` mang `whenNotPaused`: khi owner pause, chủ gốc bị chặn rút tiền. (3) `setWhaleDiscount` không kiểm tra `bps`.
+
+**Tác động:** Lòng tin ngườ dùng: phí rút cao bất thường hoặc rút bị kẹt khi pause.
+
+**Trạng thái:** **Fixed / Verified** — thêm `MAX_PRINCIPAL_FEE_BPS = 10%` (gốc) và `MAX_YIELD_FEE_BPS = 20%` (lãi); bỏ `whenNotPaused` ở hai hàm rút; bổ sung 6 test đối kháng (`test_setWithdrawFeeAboveCapReverts`, `test_setEmergencyPenaltyAboveCapReverts`, `test_setWhaleDiscountAboveCapReverts`, `test_setYieldFeeAboveCapReverts`, `test_withdrawWorksWhilePaused`, `test_emergencyWithdrawWorksWhilePaused`) — `forge test` 74/74 pass.
+
+> Lưu ý triển khai: các thay đổi này là ABI-compatible nhưng cần **redeploy Fuji mới** để có hiệu lực on-chain; địa chỉ trong `deployments/43113.json` hiện tại vẫn là bản cũ (phí mặc định 0, chưa ai kích hoạt phí nào).
 
 ## 4. Kiểm chứng tính toàn vẹn tiền (chạy thật trên Fuji)
 

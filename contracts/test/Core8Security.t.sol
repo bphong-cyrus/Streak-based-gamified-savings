@@ -340,6 +340,87 @@ contract Core8SecurityTest is Test {
     }
 
     // ------------------------------------------------------------------
+    // Fee bounds & pause policy (G1: gốc luôn của bạn)
+    // ------------------------------------------------------------------
+
+    function test_setWithdrawFeeAboveCapReverts() public {
+        vm.startPrank(deployer);
+        vm.expectRevert("fee>10%");
+        vault.setWithdrawFeeBps(1_001);
+        vault.setWithdrawFeeBps(1_000); // đúng trần 10% vẫn được
+        assertEq(vault.withdrawFeeBps(), 1_000);
+        vm.stopPrank();
+    }
+
+    function test_setEmergencyPenaltyAboveCapReverts() public {
+        vm.startPrank(deployer);
+        vm.expectRevert("penalty>10%");
+        vault.setEmergencyPenaltyBps(10_000);
+        vm.stopPrank();
+    }
+
+    function test_setWhaleDiscountAboveCapReverts() public {
+        vm.startPrank(deployer);
+        vm.expectRevert("whaleFee>10%");
+        vault.setWhaleDiscount(100 * ONE, 10_000);
+        vm.stopPrank();
+    }
+
+    function test_setYieldFeeAboveCapReverts() public {
+        vm.startPrank(deployer);
+        vm.expectRevert("fee>20%");
+        distributor.setYieldFeeBps(2_001);
+        vm.expectRevert("bps>20%");
+        distributor.setReferralBps(2_001);
+        vm.stopPrank();
+    }
+
+    function test_withdrawWorksWhilePaused() public {
+        vm.warp(1_700_000_000 + 1 days);
+        vm.startPrank(alice);
+        vault.setWeeklyTarget(2 * ONE);
+        vm.stopPrank();
+        vm.prank(deployer);
+        token.mint(alice, 5 * ONE);
+        vm.startPrank(alice);
+        token.approve(address(vault), 5 * ONE);
+        vault.deposit(5 * ONE);
+        vm.stopPrank();
+
+        // Owner pause toàn bộ vault — nạp bị chặn nhưng rút gốc vẫn phải mở.
+        vm.prank(deployer);
+        vault.pause();
+        vm.prank(alice);
+        vm.expectRevert(); // deposit khi pause bị chặn
+        vault.deposit(1 * ONE);
+
+        vm.prank(alice);
+        vault.withdraw(5 * ONE);
+        assertEq(vault.getAccount(alice).principal, 0);
+        assertEq(token.balanceOf(alice), 5 * ONE);
+    }
+
+    function test_emergencyWithdrawWorksWhilePaused() public {
+        vm.warp(1_700_000_000 + 1 days);
+        vm.startPrank(alice);
+        vault.setWeeklyTarget(2 * ONE);
+        vm.stopPrank();
+        vm.prank(deployer);
+        token.mint(alice, 5 * ONE);
+        vm.startPrank(alice);
+        token.approve(address(vault), 5 * ONE);
+        vault.deposit(5 * ONE);
+        vm.stopPrank();
+
+        vm.prank(deployer);
+        vault.pause();
+        vm.prank(alice);
+        vault.emergencyWithdraw();
+        assertEq(vault.getAccount(alice).principal, 0);
+        assertEq(token.balanceOf(alice), 5 * ONE);
+    }
+
+    // ------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------
 

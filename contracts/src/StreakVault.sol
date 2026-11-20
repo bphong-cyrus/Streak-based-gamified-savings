@@ -20,6 +20,9 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
 
     uint256 public constant MAX_PARTICIPANTS = 20;
     uint256 public constant BPS_DENOMINATOR = 10_000;
+    /// @notice Trần phí/phạt trên gốc: 10%. Lợi nhuận sản phẩm là "gốc luôn của bạn"
+    ///         nên owner không bao giờ được đặt phí rút/phạt vượt mức này.
+    uint256 public constant MAX_PRINCIPAL_FEE_BPS = 1_000;
     /// @notice Số kỳ tối đa sau kỳ thất bại để gọi revive.
     uint256 public constant REVIVE_WINDOW = 2;
     /// @notice Phí mặc định cho freeze/revive/bảo hiểm (owner có thể đổi).
@@ -148,17 +151,20 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
     }
 
     function setWithdrawFeeBps(uint256 bps) external onlyOwner {
-        require(bps <= BPS_DENOMINATOR, "fee>100%");
+        require(bps <= MAX_PRINCIPAL_FEE_BPS, "fee>10%");
         withdrawFeeBps = bps;
     }
 
     function setEmergencyPenaltyBps(uint256 bps) external onlyOwner {
-        require(bps <= BPS_DENOMINATOR, "penalty>100%");
+        require(bps <= MAX_PRINCIPAL_FEE_BPS, "penalty>10%");
         emergencyPenaltyBps = bps;
     }
 
     /// @notice Tính năng 28/29: ưu đãi whale + miễn phí lần rút đầu mỗi kỳ.
+    /// @dev whaleFeeBps cũng bị chặn ở MAX_PRINCIPAL_FEE_BPS — đây là mức *giảm* phí,
+    ///      không được biến thành cửa sau tăng phí vượt trần.
     function setWhaleDiscount(uint256 threshold, uint256 bps) external onlyOwner {
+        require(bps <= MAX_PRINCIPAL_FEE_BPS, "whaleFee>10%");
         whaleThreshold = threshold;
         whaleFeeBps = bps;
     }
@@ -290,8 +296,10 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
         emit Deposited(wallet, epoch, amount, acc.principal);
     }
 
-    /// @notice Rút gốc của chính msg.sender, bất kỳ lúc nào. Trừ phí rút (nếu cấu hình) về treasury.
-    function withdraw(uint256 amount) external override nonReentrant whenNotPaused {
+    /// @notice Rút gốc của chính msg.sender, bất kỳ lúc nào — kể cả khi contract đang pause
+    ///         (pause chỉ ngăn nạp/thao tác rủi ro, không bao giờ chặn lối rút của chủ gốc).
+    ///         Trừ phí rút (tối đa MAX_PRINCIPAL_FEE_BPS, mặc định 0) về treasury.
+    function withdraw(uint256 amount) external override nonReentrant {
         if (amount == 0) revert ZeroAmount();
         uint256 epoch = _requireStartedEpoch();
 
@@ -321,7 +329,8 @@ contract StreakVault is IStreakVault, ReentrancyGuard, Pausable, Ownable {
     }
 
     /// @notice Rút toàn bộ gốc với phạt (vẫn ghi tiến độ kỳ như withdraw thường).
-    function emergencyWithdraw() external override nonReentrant whenNotPaused {
+    /// @dev Cố tình KHÔNG mang whenNotPaused: đây là lối rút khẩn cấp, phải luôn mở.
+    function emergencyWithdraw() external override nonReentrant {
         uint256 epoch = _requireStartedEpoch();
         Account storage acc = _accounts[msg.sender];
         uint256 amount = acc.principal;

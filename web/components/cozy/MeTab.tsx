@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useDisconnect } from "wagmi";
 import { contracts } from "@/lib/config";
 import { fmt, shortAddr } from "@/lib/format";
@@ -12,6 +13,16 @@ import type { VaultData } from "@/lib/useVaultData";
 import { RecentTxPanel } from "@/components/cozy/RecentTxPanel";
 import { Icon } from "@/components/cozy/icons";
 import { isMuted, setMuted, sfx } from "@/lib/sound";
+
+// WebGL chỉ chạy client — tắt SSR để tránh lỗi hydrate/render máy chủ.
+const IdentityPreview3D = dynamic(() => import("@/components/cozy/IdentityPreview3D").then((m) => m.IdentityPreview3D), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-44 w-full items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-cta" />
+    </div>
+  ),
+});
 
 interface Props {
   data: VaultData;
@@ -67,6 +78,19 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
               <div className="font-cozy text-lg font-extrabold tabular-nums text-ink">{fmt(tokenBalance, 2)} mUSDC</div>
             </div>
           </div>
+        </div>
+
+        {/* Xem trước nhân vật 3D */}
+        <div className="card overflow-hidden p-4">
+          <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
+            <Icon name="cat" size={18} className="text-ink-soft" /> Nhân vật 3D của bạn
+          </h4>
+          <div className="mt-2 h-44 w-full">
+            <IdentityPreview3D variant={currentIdentity.key} />
+          </div>
+          <p className="text-center text-xs font-semibold text-ink-soft">
+            {currentIdentity.name} · {currentIdentity.vi} — xoay chậm để ngắm từ mọi góc.
+          </p>
         </div>
 
         {/* Chọn nhân vật */}

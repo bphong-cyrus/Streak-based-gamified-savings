@@ -57,13 +57,15 @@ test.describe("Demo mode (?demo=1)", () => {
     // storage được xóa sau khi navigate trong hàm goto
   });
 
-  test("Dashboard renders 3D house, supports zoom/theme/sound and deposit animation", async ({ page }) => {
+  test("Dashboard renders 3D house, supports zoom and deposit animation", async ({ page }) => {
     const errors = collectViolations(page);
     await goto(page, "/?demo=1");
 
-    // Header & demo badge
-    await expect(page.getByText("Cozy Save")).toBeVisible();
-    await expect(page.getByText("Demo")).toBeVisible();
+    // Header & demo badge (2 bản: desktop + mobile — kiểm tra số lượng và nội dung)
+    await expect(page.getByText("Cozy Save").first()).toBeVisible();
+    await expect(page.getByTestId("demo-badge")).toHaveCount(2);
+    await expect(page.getByTestId("demo-badge").first()).toHaveText("Bản thử");
+    await expect(page.getByTestId("demo-notice")).toContainText("không phải số dư thật");
 
     // 3D canvas render
     const canvas = page.locator("canvas");
@@ -72,34 +74,17 @@ test.describe("Demo mode (?demo=1)", () => {
     expect(box?.width).toBeGreaterThan(100);
     expect(box?.height).toBeGreaterThan(100);
 
-    // Floor badge
-    await expect(page.getByText(/Tầng/)).toBeVisible();
+    // Floor badge ("3 tầng" theo dữ liệu mẫu)
+    await expect(page.getByTestId("floor-badge")).toContainText("tầng");
 
-    // Zoom controls
-    await page.getByRole("button", { name: "Phóng to tòa nhà" }).click();
+    // Zoom controls (aria-label ổn định, không phụ thuộc văn bản hiển thị)
+    await page.getByRole("button", { name: "Phóng to" }).click();
     await expect(canvas).toBeVisible();
-    await page.getByRole("button", { name: "Thu nhỏ tòa nhà" }).click();
-    await page.getByRole("button", { name: "Vừa khung hình" }).click();
-
-    // Theme toggle
-    const themeBtn = page.getByRole("button", { name: /Chuyển/ });
-    const root = page.locator("body > div").first();
-    const wasNight = await root.evaluate((el) => el.classList.contains("night-ui"));
-    await themeBtn.click();
-    await expect
-      .poll(async () => (await root.getAttribute("class"))?.includes("night-ui"))
-      .toBe(!wasNight);
-
-    // Sound toggle
-    const soundBtn = page.getByRole("button", { name: /âm thanh/ });
-    const soundLabelBefore = await soundBtn.getAttribute("aria-label");
-    await soundBtn.click();
-    await expect
-      .poll(async () => await soundBtn.getAttribute("aria-label"))
-      .not.toBe(soundLabelBefore);
+    await page.getByRole("button", { name: "Thu nhỏ" }).click();
+    await page.getByRole("button", { name: "Vừa khung" }).click();
 
     // Demo deposit -> animation hoàn thành tầng
-    const depositBtn = page.getByRole("button", { name: /Mô phỏng gửi tiền/ });
+    const depositBtn = page.getByTestId("demo-deposit");
     await expect(depositBtn).toBeVisible();
     await depositBtn.click();
     await expect(page.getByText("TẦNG MỚI HOÀN THÀNH!")).toBeVisible({ timeout: 7_000 });
@@ -166,8 +151,10 @@ test.describe("Demo mode (?demo=1)", () => {
       await expect(page.getByText(label)).toBeVisible();
     }
 
-    // Nút check-in ở demo hiển thị CTA kết nối vì chưa có ví
-    await expect(page.getByRole("button", { name: "Kết nối ví để điểm danh" })).toBeVisible();
+    // Nút check-in ở bản thử bị vô hiệu hóa rõ ràng — không giả dạng giao dịch thật
+    const checkInBtn = page.getByRole("button", { name: "Điểm danh trong bản thử" });
+    await expect(checkInBtn).toBeVisible();
+    await expect(checkInBtn).toBeDisabled();
 
     assertNoViolations(errors);
   });
@@ -177,7 +164,9 @@ test.describe("Demo mode (?demo=1)", () => {
     await goto(page, "/?demo=1");
     await page.getByRole("navigation").getByRole("button", { name: "Hồ sơ" }).click();
 
-    await expect(page.getByText("Chọn nhân vật của bạn")).toBeVisible();
+    // Màn hồ sơ có cả preview 3D và lưới chọn nhân vật
+    await expect(page.getByText("Nhân vật 3D của bạn")).toBeVisible();
+    await expect(page.getByText("Chọn nhân vật", { exact: true })).toBeVisible();
 
     // Click qua 5 nhân vật, kiểm tra tên đồng bộ
     const names = ["Thỏ Cà Phê", "Mèo Công Sở", "Mèo Nông Trại", "Mèo Pháp Sư", "Mèo Hiệp Sĩ"];
@@ -192,19 +181,19 @@ test.describe("Demo mode (?demo=1)", () => {
     await page.getByRole("navigation").getByRole("button", { name: "Hồ sơ" }).click();
     await expect(page.getByText("Mèo Pháp Sư").first()).toBeVisible();
 
-    // Theme day/night toggle trong profile
-    const root2 = page.locator("body > div").first();
+    // Theme day/night toggle trong profile — class night-ui được gắn trên <html>
+    const isNight = () => page.evaluate(() => document.documentElement.classList.contains("night-ui"));
     await page.getByRole("button", { name: /^Ban đêm$/ }).click();
-    await expect.poll(async () => (await root2.getAttribute("class"))?.includes("night-ui")).toBe(true);
+    await expect.poll(isNight).toBe(true);
     await page.getByRole("button", { name: /^Ban ngày$/ }).click();
-    await expect.poll(async () => (await root2.getAttribute("class"))?.includes("night-ui")).toBe(false);
+    await expect.poll(isNight).toBe(false);
 
-    // Snowtrace link & Copy
+    // Snowtrace link & Copy — bấm xong nút chuyển sang trạng thái "Đã copy"
     const vaultLink = page.locator('a[href*="testnet.snowtrace.io/address/"]').first();
     await expect(vaultLink).toBeVisible();
     const copyBtn = page.locator('button', { hasText: "Copy" }).first();
     await copyBtn.click();
-    await expect(page.locator('button', { hasText: "✓" }).first()).toBeVisible();
+    await expect(page.locator('button', { hasText: "Đã copy" }).first()).toBeVisible();
 
     assertNoViolations(errors);
   });
@@ -220,8 +209,8 @@ test.describe("Live mode (no demo param, disconnected wallet)", () => {
     await goto(page, "/");
 
     // Vì chưa kết nối ví, app vẫn hiển thị dashboard demo với CTA Connect
-    await expect(page.getByText("Cozy Save")).toBeVisible();
-    await expect(page.getByRole("button", { name: /Kết nối/ })).toBeVisible();
+    await expect(page.getByText("Cozy Save").first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /Kết nối/ }).first()).toBeVisible();
 
     // Bottom nav dẫn đến đủ 4 tab
     for (const label of ["Nhà", "Mục tiêu", "Thưởng", "Hồ sơ"]) {

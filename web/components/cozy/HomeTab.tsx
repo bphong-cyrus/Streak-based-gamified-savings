@@ -195,6 +195,16 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
     <div className="space-y-4 lg:grid lg:grid-cols-12 lg:gap-6 lg:space-y-0">
       {/* Cột trái — HUD chính */}
       <div className="space-y-4 lg:col-span-5">
+        {isDemo && (
+          <div
+            data-testid="demo-notice"
+            className="rounded-2xl border border-dashed border-cta/50 bg-cta/5 p-3 text-center text-xs font-bold text-ink-soft"
+            role="note"
+          >
+            Bản thử — số liệu mô phỏng, <span className="text-ink">không phải số dư thật</span>. Kết nối ví để
+            giao dịch on-chain.
+          </div>
+        )}
         <div className="card p-5">
           <div className="text-xs font-bold uppercase tracking-wide text-ink-muted">Gốc đã gửi</div>
           <div className="mt-1 flex items-baseline gap-2">
@@ -239,6 +249,7 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
             ) : isDemo ? (
               <>
                 <button
+                  data-testid="demo-deposit"
                   className="btn-primary w-full text-lg active:translate-y-[2px]"
                   disabled={building}
                   onClick={onDemoDeposit}
@@ -274,7 +285,7 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
       {/* Cột phải — Nhà 3D */}
       <div className="space-y-3 lg:col-span-7">
         <div className={`relative overflow-hidden rounded-2xl border border-border p-3 shadow-card ${night ? "bg-[#1A2049]" : "bg-gradient-to-b from-[#B8E3F5] to-[#E8F6FC]"}`}>
-          <div className="absolute left-3 top-3 z-10 rounded-xl border border-border bg-surface/95 px-3 py-1.5 shadow-card backdrop-blur-sm">
+          <div data-testid="floor-badge" className="absolute left-3 top-3 z-10 rounded-xl border border-border bg-surface/95 px-3 py-1.5 shadow-card backdrop-blur-sm">
             <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">Nhà của bạn</div>
             <div className="font-cozy text-lg font-extrabold tabular-nums text-ink">
               {floors === 0 ? "Chưa có tầng tích lũy" : `${floors} tầng`}
