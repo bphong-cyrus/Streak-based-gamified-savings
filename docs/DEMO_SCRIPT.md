@@ -7,7 +7,7 @@ bật hiển thị chuột. Quay trước giờ pitch ít nhất nửa ngày đ�
 **Chuẩn bị trước khi bấm quay:**
 - Máy đã cài ví Core (hoặc MetaMask) với 2 ví demo: **Demo A** (có ~0.5 AVAX + 100 mUSDC) và **Demo B**
   (nếu đã dùng hết thì xin thêm ở faucet — hướng dẫn trong docs/HUONG_DAN_TEST_FUJI.md).
-- Mở sẵn 2 tab: app https://cozy-save.vercel.app và Snowtrace https://testnet.snowtrace.io.
+- Mở sẵn 2 tab: app https://savient.vercel.app và Snowtrace https://testnet.snowtrace.io.
 - Mở sẵn README của repo ở mục "Bằng chứng giao dịch thật" (để chiếu bảng tx hash khi cần).
 - Đồng hồ kỳ là 180 giây: toàn bộ lượt demo quay = **1 kỳ rưỡi ≈ 5 phút**; nếu ví đã có gốc từ trước,
   cắt bỏ bước nạp, còn ~3 phút.

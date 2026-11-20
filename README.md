@@ -3,7 +3,7 @@
 **Saving · Convenient · Consistent** — nền tảng tiết kiệm được gamified hóa trên Avalanche.
 
 [![CI](https://github.com/bphong-cyrus/Streak-based-gamified-savings/actions/workflows/ci.yml/badge.svg)](https://github.com/bphong-cyrus/Streak-based-gamified-savings/actions/workflows/ci.yml)
-[![Demo](https://img.shields.io/badge/demo-cozy--save.vercel.app-2f9e6e)](https://cozy-save.vercel.app)
+[![Demo](https://img.shields.io/badge/demo-cozy--save.vercel.app-2f9e6e)](https://savient.vercel.app)
 [![Chain](https://img.shields.io/badge/network-Avalanche%20Fuji%2043113-red)](https://docs.avax.network)
 [![Contracts](https://img.shields.io/badge/tests-73%20passed-blue)](docs/CI_LOCAL_RUN.md)
 
@@ -41,7 +41,7 @@ Mọi trạng thái (gốc, tiến độ, streak, phần thưởng, lịch sử 
 
 ## Demo
 
-- **Trực tuyến:** https://cozy-save.vercel.app — không cần ví; màn đầu cho chọn rõ **"Xem bản thử (dữ liệu mẫu)"**
+- **Trực tuyến:** https://savient.vercel.app — không cần ví; màn đầu cho chọn rõ **"Xem bản thử (dữ liệu mẫu)"**
   hoặc **"Kết nối ví Avalanche Fuji"**. Bản thử đeo nhãn "không phải số dư thật" ở mọi cụm số.
 - **Kịch bản quay/pitch:** [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) — script 4 phút kèm shot-list.
 - **Tự chạy trên Fuji:** [docs/HUONG_DAN_TEST_FUJI.md](docs/HUONG_DAN_TEST_FUJI.md) — deploy mới + seed + vòng
