@@ -1,6 +1,8 @@
 # Cozy Save — Tiết kiệm mọc nhà
 
-**Streak-based gamified savings trên Avalanche**: gửi đủ mục tiêu mỗi kỳ → streak tăng, phần thưởng lãi tăng, tòa nhà 3D của bạn mọc thêm một tầng. Bỏ kỳ → streak về 0. Tiền gốc luôn của bạn, rút anytime — mọi thứ ghi on-chain, đối chiếu được trên Snowtrace.
+[![CI](https://github.com/bphong-cyrus/Streak-based-gamified-savings/actions/workflows/ci.yml/badge.svg)](https://github.com/bphong-cyrus/Streak-based-gamified-savings/actions/workflows/ci.yml)
+
+**Streak-based gamified savings trên Avalanche Fuji**: gửi đủ mục tiêu mỗi kỳ → streak tăng, phần thưởng lãi tăng, tòa nhà 3D của bạn mọc thêm một tầng. Bỏ kỳ → streak về 0. Tiền gốc luôn của bạn, rút anytime — mọi thứ ghi on-chain, đối chiếu được trên Snowtrace.
 
 ## Bài toán
 
@@ -40,14 +42,19 @@ cd web && npm i && npm run dev   # mở http://localhost:3000
 
 Địa chỉ local được ghi vào `contracts/deployments/31337.json` — frontend tự đọc. Với Fuji, các địa chỉ ở bảng trên được hardcode làm fallback trong `web/lib/config.ts` (vẫn có thể override bằng `.env.local`, file này đã nằm trong `.gitignore`).
 
-## Test & bảo mật
+## Test, QA & bảo mật
 
 ```bash
-cd contracts && forge test     # 42 test: vault, distributor, faucet, check-in, goal, NFT
+cd contracts && forge test     # 61 tests: unit + fuzz + invariant + security
+cd web && npx tsc --noEmit     # typecheck
+cd web && npm run build        # production build
+cd web && npx playwright test  # E2E desktop + mobile (10 tests)
 ```
 
-- Báo cáo audit: [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) (Slither 0 High/Medium, PoC PRNG trên fork, checklist pre-mainnet).
-- Hồ sơ thiết kế: [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) (Design Thinking, WCAG 2.2 AA, Nielsen heuristics).
+- **Smart contracts:** 61 tests pass, 6 stateful invariants × 256 runs × 64 depth = 16 384 calls, bằng chứng CEI + ReentrancyGuard + access control.
+- **Gas report:** `contracts/.gas-snapshot` — `finalizeEpoch` với 20 ví ~2.57M gas.
+- **Báo cáo audit:** [docs/SECURITY_AUDIT.md](docs/SECURITY_AUDIT.md) (defense-in-depth, 0 critical/high, checklist pre-mainnet).
+- **E2E QA:** Playwright kiểm thử 4 màn hình core trên Desktop (1440×900) & Mobile (390×844), bắt toàn bộ `console.error` / `pageerror` / HTTP 4xx/5xx.
 
 ## Cấu trúc repo
 
@@ -55,13 +62,15 @@ cd contracts && forge test     # 42 test: vault, distributor, faucet, check-in, 
 contracts/
   src/            # 8 core contract + interfaces/
   script/         # Deploy.s.sol, Seed.s.sol, export-abi.mjs
-  test/           # 4 suite (BaseTest + StreakVault + YieldDistributor + Core8)
+  test/           # 6 suite (unit + fuzz + invariant + security)
   deployments/    # địa chỉ theo chainId
 web/
   app/            # landing + shell (Next.js 14, App Router)
   components/cozy # 4 màn core: Dashboard, Goals, Rewards, Hồ sơ + nhà 3D (Three.js)
+  e2e/            # Playwright QA suite
   lib/            # abis.ts (8 ABI, ~57KB), config, hooks
   public/identities/ # bộ nhân vật SVG
+.github/workflows/ # CI: forge test + Next build + typecheck
 docs/             # SECURITY_AUDIT.md, DESIGN_SYSTEM.md
 ```
 
