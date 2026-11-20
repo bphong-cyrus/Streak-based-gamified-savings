@@ -53,7 +53,9 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
         {/* Hồ sơ gọn */}
         <div className="card p-4">
           <div className="flex items-center gap-4">
-            <IdentityAvatar address={address} className="h-16 w-16" index={currentIdx} />
+            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-cocoa-700/50 bg-cream-50 shadow-chunkySm">
+              <PetThumb3D variant={currentIdentity.key} />
+            </div>
             <div className="flex-1">
               <h3 className="font-cozy text-xl font-extrabold text-ink">{currentIdentity.name}</h3>
               <p className="text-sm font-semibold text-ink-soft">{currentIdentity.vi}</p>

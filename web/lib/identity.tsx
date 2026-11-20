@@ -20,10 +20,11 @@ export function identityIndex(address: string | undefined): number {
   return parseInt(address.slice(2, 8), 16) % IDENTITIES.length;
 }
 
-const storageKey = (address: string | undefined) => `cozy-identity:${(address ?? "").toLowerCase()}`;
+// Bản thử (chưa kết nối ví) dùng khóa riêng — vẫn chọn/lưu được nhân vật.
+const storageKey = (address: string | undefined) => `cozy-identity:${(address ?? "__demo__").toLowerCase()}`;
 
 export function getStoredIdentity(address: string | undefined): number | null {
-  if (typeof window === "undefined" || !address) return null;
+  if (typeof window === "undefined") return null;
   const raw = localStorage.getItem(storageKey(address));
   if (raw === null) return null;
   const n = Number(raw);
@@ -32,7 +33,8 @@ export function getStoredIdentity(address: string | undefined): number | null {
 
 /** Ngườ dùng chọn identity; báo cho mọi component đang hiển thị avatar cập nhật. */
 export function pickIdentity(address: string | undefined, idx: number) {
-  if (!address || typeof window === "undefined") return;
+  if (typeof window === "undefined") return;
+  // address undefined = bản thử → lưu vào khóa riêng "__demo__", vẫn chuyển được nhân vật.
   localStorage.setItem(storageKey(address), String(idx));
   window.dispatchEvent(new Event("cozy-identity"));
 }

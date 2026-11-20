@@ -176,7 +176,8 @@ test.describe("Demo mode (?demo=1)", () => {
     const names = ["Thỏ Cà Phê", "Mèo Công Sở", "Mèo Nông Trại", "Mèo Pháp Sư", "Mèo Hiệp Sĩ"];
     for (const name of names) {
       await page.locator("button", { hasText: name }).click();
-      await expect(page.getByText(name).first()).toBeVisible();
+      // Preview 3D phải đổi theo — kiểm tra caption dưới sân khấu, không chỉ tên trong lưới.
+      await expect(page.locator("text=xoay chậm")).toContainText(name, { timeout: 8_000 });
     }
 
     // Chọn Mèo Pháp Sư, reload vẫn giữ

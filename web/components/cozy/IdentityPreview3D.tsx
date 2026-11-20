@@ -20,10 +20,10 @@ export function IdentityPreview3D({ variant }: { variant: PetVariant }) {
   return (
     <Canvas
       dpr={[1, 1.5]}
-      camera={{ position: [1.7, 1.5, 2.6], fov: 32 }}
+      camera={{ position: [2.0, 1.75, 3.1], fov: 34 }}
       gl={{ alpha: true, antialias: true }}
       style={{ background: "transparent" }}
-      onCreated={({ camera }) => camera.lookAt(0, 0.72, 0)}
+      onCreated={({ camera }) => camera.lookAt(0, 0.85, 0)}
     >
       <ambientLight intensity={0.55} color="#FFF4E0" />
       <directionalLight position={[4, 6, 4]} intensity={1.15} color="#FFEDC8" />

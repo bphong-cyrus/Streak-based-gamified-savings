@@ -13,11 +13,11 @@ export function PetThumb3D({ variant }: { variant: PetVariant }) {
     <Canvas
       dpr={1}
       frameloop="demand"
-      camera={{ position: [1.05, 1.05, 1.75], fov: 34 }}
+      camera={{ position: [1.2, 1.2, 2.05], fov: 34 }}
       gl={{ alpha: true, antialias: true, preserveDrawingBuffer: true }}
       style={{ background: "transparent" }}
       onCreated={({ camera, scene }) => {
-        camera.lookAt(0, 0.68, 0);
+        camera.lookAt(0, 0.78, 0);
         scene.traverse((o) => {
           if (o instanceof THREE.Mesh) o.updateMatrixWorld();
         });
