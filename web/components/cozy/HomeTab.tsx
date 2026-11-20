@@ -109,6 +109,8 @@ function StreakHeatmap({ data }: { data: VaultData }) {
                 | { progress: bigint; target: bigint; settled: boolean; qualified: boolean }
                 | undefined;
               const isCurrent = e === current;
+              // 5 trạng thái rõ rệt: đạt / lỡ / chờ chốt (đã gửi, kỳ đã kết thúc nhưng chưa ai chốt) / kỳ này / chưa tham gia
+              const participated = !!s && (s.target > 0n || s.progress > 0n);
               const cls = !s
                 ? "skeleton"
                 : s.settled && s.qualified
@@ -117,14 +119,26 @@ function StreakHeatmap({ data }: { data: VaultData }) {
                     ? "bg-streak-missed"
                     : isCurrent
                       ? "animate-pulse bg-streak-current"
-                      : "bg-border";
+                      : participated
+                        ? "bg-terracotta/60"
+                        : "bg-surface-sunken";
               return (
                 <div key={e.toString()} className="flex flex-1 flex-col items-center gap-1">
                   <div
                     className={`h-12 w-full rounded-lg ${cls} ${isCurrent ? "ring-2 ring-streak-current/60" : ""}`}
                     title={
                       s
-                        ? `Kỳ #${e.toString()}: ${s.settled ? (s.qualified ? "đạt" : "lỡ") : "đang diễn ra"} · ${fmt(s.progress)}/${fmt(s.target)} mUSDC`
+                        ? `Kỳ #${e.toString()}: ${
+                            s.settled
+                              ? s.qualified
+                                ? "đạt"
+                                : "lỡ"
+                              : isCurrent
+                                ? "đang diễn ra"
+                                : participated
+                                  ? "đã gửi — chờ chốt kỳ"
+                                  : "chưa tham gia"
+                          } · ${fmt(s.progress)}/${fmt(s.target)} mUSDC`
                         : `Kỳ #${e.toString()}`
                     }
                   />
@@ -133,10 +147,12 @@ function StreakHeatmap({ data }: { data: VaultData }) {
               );
             })}
           </div>
-          <div className="mt-2 flex items-center gap-3 text-[10px] font-semibold text-ink-soft">
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-ink-soft">
             <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-cta" /> Đạt</span>
             <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-streak-missed" /> Lỡ</span>
+            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-terracotta/60" /> Chờ chốt</span>
             <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 animate-pulse rounded-sm bg-streak-current" /> Kỳ này</span>
+            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-surface-sunken ring-1 ring-border" /> Chưa tham gia</span>
           </div>
         </>
       )}
