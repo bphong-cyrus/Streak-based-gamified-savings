@@ -1,4 +1,4 @@
-# Cozy Save — Tiết kiệm mọc nhà
+# Savient — Tiết kiệm mọc nhà
 
 [![CI](https://github.com/bphong-cyrus/Streak-based-gamified-savings/actions/workflows/ci.yml/badge.svg)](https://github.com/bphong-cyrus/Streak-based-gamified-savings/actions/workflows/ci.yml)
 
@@ -8,7 +8,7 @@
 
 ## Bài toán
 
-Ngườ trẻ khó giữ thói quen gửi tiền đều: thiếu động lực, dễ bỏ cuộc sau vài tuần. Cozy Save game hoá kỷ luật tài chính bằng streak + tòa nhà 3D lớn lên cùng thói quen tốt, và biến phần thưởng thành lãi thật chia từ nguồn yield.
+Ngườ trẻ khó giữ thói quen gửi tiền đều: thiếu động lực, dễ bỏ cuộc sau vài tuần. Savient game hoá kỷ luật tài chính bằng streak + tòa nhà 3D lớn lên cùng thói quen tốt, và biến phần thưởng thành lãi thật chia từ nguồn yield.
 
 ## Kiến trúc — 8 core contract
 
@@ -39,6 +39,26 @@ Vòng đờ một kỳ: đặt mục tiêu tuần → gửi đủ trước hạn
 - **Triển khai**: đã **redeploy Fuji** bản mới (phí gốc = 0 vĩnh viễn, kỳ 180 giây, deployBlock 61371331) —
   địa chỉ bảng trên khớp `contracts/deployments/43113.json` và fallback trong `web/lib/config.ts`.
   Hướng dẫn chạy lại từ đầu: [docs/HUONG_DAN_TEST_FUJI.md](docs/HUONG_DAN_TEST_FUJI.md).
+
+## Cho giám khảo — tổng quan 2 phút
+
+**Savient** (Saving · Convenient · Consistent) — streak-based gamified savings trên Avalanche Fuji:
+gửi đủ mục tiêu mỗi kỳ → streak tăng, phần thưởng tăng, tòa nhà 3D mọc tầng. Bỏ kỳ → streak về 0.
+Rút gốc luôn đủ 100%, bất kỳ lúc nào, kể cả khi contract đang pause — không có phí trên gốc.
+
+- **Demo chạy được ngay**: https://cozy-save.vercel.app (không cần ví — chế độ "Bản thử" đeo nhãn rõ ràng).
+- **Giao dịch thật đã chứng minh**: 2 ví, 2 kỳ, 12 tx hash kiểm chứng được trên Snowtrace (bảng ngay dưới).
+- **Contract**: 8 hợp đồng đã verify logic bằng 73 test + 6 invariant fuzz (16 384 calls); phí gốc bị **gỡ hoàn toàn khỏi source**.
+- **Minh bạch**: mUSDC là token testnet; "lãi" là ngân sách do sponsor nạp (mock yield) chia theo streak on-chain — không giới thiệu là lãi lending thật. Nguồn yield Aave/Benqi nằm ở roadmap.
+- **Kiểm thử**: xem [docs/CI_LOCAL_RUN.md](docs/CI_LOCAL_RUN.md) (73/73 forge · tsc sạch · build OK · E2E 10/10 trên desktop + mobile). GitHub Actions hiện bị khoá billing ở cấp tài khoản (không phải lỗi test — có quote từ GitHub API trong file đó).
+- **Pitch/demo script**: [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md) — kịch bản quay 4 phút kèm shot-list.
+
+Kết quả đối chiếu 2 ví (đọc trực tiếp từ contract sau khi chốt kỳ 13):
+
+| Ví | Kỳ 12 | Kỳ 13 | Streak | Lãi nhận | Gốc rút |
+|---|---|---|---|---|---|
+| A `0xe00EA…0734` | đạt 5/5 | đạt 5/5 | **2** | **13 mUSDC** | 10/10 — 100% |
+| B `0x472E…2FB3` | đạt 10/2 | **lỡ → reset 0** | **0** | **9 mUSDC** | 10/10 — 100% |
 
 ## Bằng chứng giao dịch thật trên Fuji (2 ví, kỳ 12–13 · 20/11/2026)
 

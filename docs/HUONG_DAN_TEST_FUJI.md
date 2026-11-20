@@ -51,7 +51,7 @@ seed fund theo **kỳ hiện tại** + mint 100 mUSDC cho A/B → in địa ch�
 
 ## 3. Cập nhật frontend trỏ sang địa chỉ mới
 
-Cách nhanh nhất nếu deploy Vercel: vào **Vercel → Project Cozy Save → Settings →
+Cách nhanh nhất nếu deploy Vercel: vào **Vercel → Project Savient → Settings →
 Environment Variables**, sửa 3 biến (lấy giá trị từ `deployments/43113.json`):
 
 | Biến | Trường trong JSON |

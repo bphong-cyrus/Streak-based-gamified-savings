@@ -44,7 +44,7 @@ export function Onboarding() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Hướng dẫn sử dụng Cozy Save"
+        aria-label="Hướng dẫn sử dụng Savient"
         className="w-full max-w-md rounded-t-2xl border border-border bg-surface p-5 pb-8 shadow-card md:rounded-2xl md:pb-6"
         onClick={(e) => e.stopPropagation()}
         style={{ animation: "bannerPop 0.4s var(--ease-spring) both" }}

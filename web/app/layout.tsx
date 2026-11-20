@@ -3,18 +3,18 @@ import "./globals.css";
 import { Providers } from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "Cozy Save — Tiết kiệm mọc nhà",
+  title: "Savient — Tiết kiệm mọc nhà",
   description:
     "Gửi tiền đều mỗi kỳ, giữ streak, xây tòa nhà 3D của bạn trên Avalanche Fuji. Streak càng dài, phần thưởng lãi càng lớn — gốc luôn của bạn, rút anytime.",
-  applicationName: "Cozy Save",
+  applicationName: "Savient",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "Cozy Save",
+    title: "Savient",
     statusBarStyle: "default",
   },
   openGraph: {
-    title: "Cozy Save — Tiết kiệm mọc nhà",
+    title: "Savient — Tiết kiệm mọc nhà",
     description:
       "Streak-based gamified savings trên Avalanche: gửi đều mỗi kỳ → +1 tầng nhà 3D, streak càng dài thưởng càng lớn.",
     type: "website",
