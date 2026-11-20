@@ -172,35 +172,35 @@ export function Pet3D({ variant, position = [0, 0, 0], scale = 1, rotationY = 0,
       <group ref={body}>
         <Part
           color={variant === "cat-farmer" ? C.plaid : variant === "cat-knight" ? C.armor : pet.fur}
-          position={[0, 0.33, 0]}
-          scale={[1, 1.02, 0.92]}
+          position={[0, 0.35, 0.05]}
+          scale={[1, 1, 0.94]}
           outline={1.09}
-          geo={<sphereGeometry args={[0.27, 20, 16]} />}
+          geo={<sphereGeometry args={[0.29, 20, 16]} />}
         />
-        <Part color={pet.belly} position={[0, 0.32, 0.11]} scale={[0.78, 0.9, 0.5]} outline={1.12} geo={<sphereGeometry args={[0.185, 14, 12]} />} />
+        <Part color={pet.belly} position={[0, 0.34, 0.16]} scale={[0.78, 0.9, 0.55]} outline={1.12} geo={<sphereGeometry args={[0.185, 14, 12]} />} />
       </group>
 
       {/* Bàn chân to trắng — đặc trưng của mẫu */}
-      <Part color={C.paw} position={[-0.16, 0.08, 0.15]} scale={[1, 0.68, 1.5]} outline={1.16} geo={<sphereGeometry args={[0.115, 12, 10]} />} />
-      <Part color={C.paw} position={[0.16, 0.08, 0.15]} scale={[1, 0.68, 1.5]} outline={1.16} geo={<sphereGeometry args={[0.115, 12, 10]} />} />
+      <Part color={C.paw} position={[-0.16, 0.09, 0.2]} scale={[1, 0.7, 1.5]} outline={1.16} geo={<sphereGeometry args={[0.12, 12, 10]} />} />
+      <Part color={C.paw} position={[0.16, 0.09, 0.2]} scale={[1, 0.7, 1.5]} outline={1.16} geo={<sphereGeometry args={[0.115, 12, 10]} />} />
 
       {/* Đầu cực to */}
-      <group ref={head} position={[0, 0.86, 0.04]}>
-        <Part color={pet.fur} geo={<sphereGeometry args={[0.5, 26, 22]} />} outline={1.06} />
+      <group ref={head} position={[0, 0.76, 0.02]}>
+        <Part color={pet.fur} geo={<sphereGeometry args={[0.47, 26, 22]} />} outline={1.06} />
 
         {/* Mảng calico nửa mặt bên phải — y chang mẫu */}
         {pet.patch && (
           <Part
             color={pet.patch}
             outline={1.02}
-            geo={<sphereGeometry args={[0.51, 24, 20, -Math.PI / 2, Math.PI]} />}
+            geo={<sphereGeometry args={[0.478, 24, 20, -Math.PI / 2, Math.PI]} />}
           />
         )}
 
         {/* Tai to tròn (chỉ con không đội mũ) */}
         {pet.bareEars && (
           <>
-            <group ref={earL} position={[-0.27, 0.4, -0.02]}>
+            <group ref={earL} position={[-0.25, 0.3, -0.02]}>
               {pet.longEars ? (
                 <>
                   <Part color={pet.fur} position={[0, 0.26, 0]} outline={1.1} geo={<capsuleGeometry args={[0.095, 0.34, 4, 12]} />} />
@@ -213,7 +213,7 @@ export function Pet3D({ variant, position = [0, 0, 0], scale = 1, rotationY = 0,
                 </>
               )}
             </group>
-            <group ref={earR} position={[0.27, 0.4, -0.02]}>
+            <group ref={earR} position={[0.25, 0.3, -0.02]}>
               {pet.longEars ? (
                 <>
                   <Part color={pet.fur} position={[0, 0.26, 0]} outline={1.1} geo={<capsuleGeometry args={[0.095, 0.34, 4, 12]} />} />
@@ -231,31 +231,31 @@ export function Pet3D({ variant, position = [0, 0, 0], scale = 1, rotationY = 0,
 
         {/* Mặt — mắt tròn nâu đỏ to, đốm sáng, mũi cam, miệng ω, má hồng to (theo mẫu) */}
         <group ref={eyes}>
-          <Detail color={C.eye} position={[-0.18, 0.06, 0.44]} roughness={0.35} geo={<sphereGeometry args={[0.085, 14, 12]} />} />
-          <Detail color={C.eye} position={[0.18, 0.06, 0.44]} roughness={0.35} geo={<sphereGeometry args={[0.085, 14, 12]} />} />
-          <Detail color="#FFFFFF" position={[-0.152, 0.1, 0.495]} scale={0.55} roughness={0.3} geo={<sphereGeometry args={[0.032, 8, 8]} />} />
-          <Detail color="#FFFFFF" position={[0.208, 0.1, 0.495]} scale={0.55} roughness={0.3} geo={<sphereGeometry args={[0.032, 8, 8]} />} />
+          <Detail color={C.eye} position={[-0.17, 0.05, 0.415]} roughness={0.35} geo={<sphereGeometry args={[0.085, 14, 12]} />} />
+          <Detail color={C.eye} position={[0.17, 0.05, 0.415]} roughness={0.35} geo={<sphereGeometry args={[0.085, 14, 12]} />} />
+          <Detail color="#FFFFFF" position={[-0.143, 0.09, 0.463]} scale={0.55} roughness={0.3} geo={<sphereGeometry args={[0.032, 8, 8]} />} />
+          <Detail color="#FFFFFF" position={[0.197, 0.09, 0.463]} scale={0.55} roughness={0.3} geo={<sphereGeometry args={[0.032, 8, 8]} />} />
         </group>
-        <Detail color={C.nose} position={[0, -0.05, 0.478]} scale={[1.3, 0.85, 0.65]} roughness={0.6} geo={<sphereGeometry args={[0.042, 10, 8]} />} />
-        <Detail color={OUTLINE} position={[-0.045, -0.125, 0.462]} rotation={[0, 0, Math.PI]} geo={<torusGeometry args={[0.038, 0.012, 8, 12, Math.PI]} />} roughness={0.5} />
-        <Detail color={OUTLINE} position={[0.045, -0.125, 0.462]} rotation={[0, 0, Math.PI]} geo={<torusGeometry args={[0.038, 0.012, 8, 12, Math.PI]} />} roughness={0.5} />
-        <Detail color={C.blush} position={[-0.3, -0.09, 0.345]} scale={[1.15, 0.72, 0.5]} roughness={0.85} geo={<sphereGeometry args={[0.062, 10, 8]} />} />
-        <Detail color={C.blush} position={[0.3, -0.09, 0.345]} scale={[1.15, 0.72, 0.5]} roughness={0.85} geo={<sphereGeometry args={[0.062, 10, 8]} />} />
+        <Detail color={C.nose} position={[0, -0.045, 0.448]} scale={[1.3, 0.85, 0.65]} roughness={0.6} geo={<sphereGeometry args={[0.042, 10, 8]} />} />
+        <Detail color={OUTLINE} position={[-0.042, -0.115, 0.435]} rotation={[0, 0, Math.PI]} geo={<torusGeometry args={[0.038, 0.012, 8, 12, Math.PI]} />} roughness={0.5} />
+        <Detail color={OUTLINE} position={[0.042, -0.115, 0.435]} rotation={[0, 0, Math.PI]} geo={<torusGeometry args={[0.038, 0.012, 8, 12, Math.PI]} />} roughness={0.5} />
+        <Detail color={C.blush} position={[-0.28, -0.08, 0.325]} scale={[1.15, 0.72, 0.5]} roughness={0.85} geo={<sphereGeometry args={[0.062, 10, 8]} />} />
+        <Detail color={C.blush} position={[0.28, -0.08, 0.325]} scale={[1.15, 0.72, 0.5]} roughness={0.85} geo={<sphereGeometry args={[0.062, 10, 8]} />} />
 
         {/* Mũ rơm nông dân */}
         {variant === "cat-farmer" && (
-          <group position={[0, 0.36, 0]}>
-            <Part color={C.straw} position={[0, 0.03, 0]} rotation={[0.05, 0, 0.03]} outline={1.1} geo={<cylinderGeometry args={[0.56, 0.58, 0.055, 20]} />} />
-            <Part color={C.straw} position={[0, 0.19, 0]} rotation={[0.05, 0, 0.03]} outline={1.1} geo={<coneGeometry args={[0.32, 0.32, 16]} />} />
-            <Detail color={C.strawBand} position={[0, 0.1, 0]} rotation={[0.05, 0, 0.03]} roughness={0.85} geo={<cylinderGeometry args={[0.34, 0.35, 0.065, 16]} />} />
+          <group position={[0, 0.28, 0]}>
+            <Part color={C.straw} position={[0, 0.04, 0]} rotation={[0.04, 0, 0.03]} outline={1.1} geo={<cylinderGeometry args={[0.5, 0.52, 0.05, 20]} />} />
+            <Part color={C.straw} position={[0, 0.16, 0]} rotation={[0.04, 0, 0.03]} outline={1.1} geo={<coneGeometry args={[0.3, 0.22, 16]} />} />
+            <Detail color={C.strawBand} position={[0, 0.09, 0]} rotation={[0.04, 0, 0.03]} roughness={0.85} geo={<cylinderGeometry args={[0.3, 0.31, 0.06, 16]} />} />
           </group>
         )}
 
         {/* Mũ pháp sư */}
         {variant === "cat-wizard" && (
-          <group position={[0, 0.34, 0]}>
-            <Part color={C.robeDark} position={[0, 0.02, 0]} rotation={[0.08, 0, 0.06]} outline={1.1} geo={<cylinderGeometry args={[0.55, 0.57, 0.05, 20]} />} />
-            <Part color={C.robe} position={[0, 0.34, 0]} rotation={[0.08, 0, 0.06]} outline={1.1} geo={<coneGeometry args={[0.3, 0.6, 16]} />} />
+          <group position={[0, 0.27, 0]}>
+            <Part color={C.robeDark} position={[0, 0.02, 0]} rotation={[0.08, 0, 0.06]} outline={1.1} geo={<cylinderGeometry args={[0.5, 0.52, 0.05, 20]} />} />
+            <Part color={C.robe} position={[0, 0.28, 0]} rotation={[0.08, 0, 0.06]} outline={1.1} geo={<coneGeometry args={[0.28, 0.55, 16]} />} />
             <Detail color={C.robeDark} position={[0, 0.11, 0]} rotation={[0.08, 0, 0.06]} roughness={0.85} geo={<cylinderGeometry args={[0.31, 0.32, 0.065, 16]} />} />
             <Detail color={C.star} position={[0.1, 0.42, 0.17]} rotation={[0.4, 0.3, 0]} emissive={C.star} emissiveIntensity={0.5} geo={<octahedronGeometry args={[0.06]} />} />
             <Detail color={C.star} position={[-0.13, 0.2, 0.22]} emissive={C.star} emissiveIntensity={0.5} geo={<octahedronGeometry args={[0.042]} />} />
@@ -265,9 +265,9 @@ export function Pet3D({ variant, position = [0, 0, 0], scale = 1, rotationY = 0,
         {/* Mũ giáp hiệp sĩ — che trán, hở mặt */}
         {variant === "cat-knight" && (
           <group>
-            <Part color={C.armor} position={[0, 0.05, -0.02]} outline={1.05} roughness={0.55} geo={<sphereGeometry args={[0.53, 22, 16, 0, Math.PI * 2, 0, Math.PI * 0.5]} />} />
-            <Part color={C.armor} position={[-0.4, 0.26, 0]} rotation={[0, 0, 0.5]} outline={1.12} roughness={0.55} geo={<coneGeometry args={[0.1, 0.26, 8]} />} />
-            <Part color={C.armor} position={[0.4, 0.26, 0]} rotation={[0, 0, -0.5]} outline={1.12} roughness={0.55} geo={<coneGeometry args={[0.1, 0.26, 8]} />} />
+            <Part color={C.armor} position={[0, 0.03, -0.02]} outline={1.05} roughness={0.55} geo={<sphereGeometry args={[0.49, 22, 16, 0, Math.PI * 2, 0, Math.PI * 0.5]} />} />
+            <Part color={C.armor} position={[-0.37, 0.2, 0]} rotation={[0, 0, 0.5]} outline={1.12} roughness={0.55} geo={<coneGeometry args={[0.1, 0.26, 8]} />} />
+            <Part color={C.armor} position={[0.37, 0.2, 0]} rotation={[0, 0, -0.5]} outline={1.12} roughness={0.55} geo={<coneGeometry args={[0.1, 0.26, 8]} />} />
             <Detail color={C.armorDark} position={[0, 0.22, 0.45]} rotation={[0.25, 0, 0]} roughness={0.55} geo={<boxGeometry args={[0.52, 0.11, 0.09]} />} />
             <Detail color={C.armorDark} position={[0, 0.02, 0.5]} roughness={0.55} geo={<boxGeometry args={[0.07, 0.18, 0.05]} />} />
           </group>
@@ -277,10 +277,10 @@ export function Pet3D({ variant, position = [0, 0, 0], scale = 1, rotationY = 0,
       {/* Yếm nông dân */}
       {variant === "cat-farmer" && (
         <group>
-          <Part color={C.overalls} position={[0, 0.32, 0.08]} scale={[0.92, 0.95, 0.62]} outline={1.06} geo={<sphereGeometry args={[0.272, 16, 12]} />} />
-          <Detail color={C.overalls} position={[-0.11, 0.56, 0.13]} rotation={[0.22, 0, 0]} roughness={0.85} geo={<boxGeometry args={[0.06, 0.22, 0.025]} />} />
-          <Detail color={C.overalls} position={[0.11, 0.56, 0.13]} rotation={[0.22, 0, 0]} roughness={0.85} geo={<boxGeometry args={[0.06, 0.22, 0.025]} />} />
-          <Detail color={C.overallsDark} position={[0, 0.36, 0.235]} roughness={0.85} geo={<boxGeometry args={[0.11, 0.09, 0.025]} />} />
+          <Part color={C.overalls} position={[0, 0.34, 0.13]} scale={[0.92, 0.95, 0.62]} outline={1.06} geo={<sphereGeometry args={[0.272, 16, 12]} />} />
+          <Detail color={C.overalls} position={[-0.11, 0.57, 0.18]} rotation={[0.22, 0, 0]} roughness={0.85} geo={<boxGeometry args={[0.06, 0.22, 0.025]} />} />
+          <Detail color={C.overalls} position={[0.11, 0.57, 0.18]} rotation={[0.22, 0, 0]} roughness={0.85} geo={<boxGeometry args={[0.06, 0.22, 0.025]} />} />
+          <Detail color={C.overallsDark} position={[0, 0.38, 0.27]} roughness={0.85} geo={<boxGeometry args={[0.11, 0.09, 0.025]} />} />
           <group position={[0.33, 0.4, 0.06]} rotation={[0, 0, -0.2]}>
             <Detail color={C.wood} position={[0, 0.08, 0]} roughness={0.85} geo={<cylinderGeometry args={[0.02, 0.02, 0.8, 8]} />} />
             <Detail color={C.armorDark} position={[0, 0.5, 0]} roughness={0.6} geo={<cylinderGeometry args={[0.013, 0.013, 0.15, 6]} />} />
@@ -323,8 +323,8 @@ export function Pet3D({ variant, position = [0, 0, 0], scale = 1, rotationY = 0,
       {/* Pháp sư: áo choàng + gậy */}
       {variant === "cat-wizard" && (
         <group>
-          <Part color={C.robe} position={[0, 0.32, 0]} outline={1.08} doubleSide geo={<cylinderGeometry args={[0.15, 0.34, 0.52, 16, 1, true]} />} />
-          <Detail color={C.robeDark} position={[0, 0.56, 0]} rotation={[Math.PI / 2, 0, 0]} roughness={0.85} geo={<torusGeometry args={[0.145, 0.03, 8, 16]} />} />
+          <Part color={C.robe} position={[0, 0.33, 0.02]} outline={1.08} doubleSide geo={<cylinderGeometry args={[0.16, 0.35, 0.54, 16, 1, true]} />} />
+          <Detail color={C.robeDark} position={[0, 0.58, 0.02]} rotation={[Math.PI / 2, 0, 0]} roughness={0.85} geo={<torusGeometry args={[0.145, 0.03, 8, 16]} />} />
           <Detail color={C.star} position={[0.15, 0.38, 0.22]} emissive={C.star} emissiveIntensity={0.5} geo={<octahedronGeometry args={[0.032]} />} />
           <group position={[-0.33, 0.36, 0.06]} rotation={[0, 0, 0.15]}>
             <Detail color={C.wood} position={[0, 0.08, 0]} roughness={0.85} geo={<cylinderGeometry args={[0.022, 0.027, 0.85, 8]} />} />

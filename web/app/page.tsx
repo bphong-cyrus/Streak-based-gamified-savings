@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useConnect } from "wagmi";
 import { CozyApp } from "@/components/cozy/CozyApp";
 import { useCozyTheme } from "@/components/cozy/useThemeLanding";
 import { buildMockData } from "@/lib/mockData";
@@ -58,6 +58,53 @@ function GlobalErrorBadge({ err, onClose }: { err: string; onClose: () => void }
   );
 }
 
+/** Màn chọn khi chưa kết nối ví: tách bạch rõ "dữ liệu mẫu" và "ví thật"
+ *  để ngườ mới không đọc nhầm số demo thành tài sản của mình. */
+function LandingGate({ onTryDemo }: { onTryDemo: () => void }) {
+  const { connect, connectors, isPending } = useConnect();
+  const [err, setErr] = useState<string | null>(null);
+  return (
+    <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.png" alt="Savient" className="h-20 w-20 rounded-2xl shadow-card" draggable={false} />
+      <h1 className="mt-4 font-cozy text-4xl font-extrabold text-ink">Savient</h1>
+      <p className="mt-1 text-sm font-bold tracking-wide text-ink-soft">Saving · Convenient · Consistent</p>
+      <p className="mt-3 max-w-sm text-sm font-semibold text-ink-soft">
+        Tiết kiệm gamified trên Avalanche Fuji — gửi đủ mỗi kỳ, nhà 3D mọc tầng, streak càng dài thưởng càng lớn.
+        Rút gốc luôn đủ 100%.
+      </p>
+      <div className="mt-6 flex w-full max-w-xs flex-col gap-3">
+        <button
+          data-testid="try-demo"
+          className="btn-primary w-full text-lg active:translate-y-[2px]"
+          onClick={onTryDemo}
+        >
+          Xem bản thử (dữ liệu mẫu)
+        </button>
+        <button
+          data-testid="connect-cta"
+          className="btn-secondary w-full"
+          disabled={isPending}
+          onClick={() => {
+            setErr(null);
+            try {
+              connect({ connector: connectors[0] });
+            } catch {
+              setErr("Không tìm thấy ví — hãy cài Core hoặc MetaMask rồi tải lại trang.");
+            }
+          }}
+        >
+          {isPending ? "Đang mở ví…" : "Kết nối ví Avalanche Fuji"}
+        </button>
+      </div>
+      {err && <p className="mt-3 text-xs font-bold text-danger">{err}</p>}
+      <p className="mt-4 text-[11px] font-semibold text-ink-muted">
+        Bản thử = số liệu mô phỏng, không phải số dư thật · Mạng Fuji (testnet) — không dùng tiền thật.
+      </p>
+    </div>
+  );
+}
+
 export default function Home() {
   const { isConnected } = useAccount();
   const [theme, setTheme] = useCozyTheme();
@@ -77,7 +124,16 @@ export default function Home() {
     return <div className="min-h-screen bg-[var(--paper)]" />;
   }
 
-  const showDemo = demoForced === true || !isConnected;
+  const showDemo = demoForced === true;
+  // Chưa kết nối và chưa ép demo → màn chọn, không tự đưa vào dashboard mô phỏng.
+  if (!isConnected && !showDemo) {
+    return (
+      <div className="min-h-screen">
+        <LandingGate onTryDemo={() => setDemoForced(true)} />
+        {err && <GlobalErrorBadge err={err} onClose={clear} />}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

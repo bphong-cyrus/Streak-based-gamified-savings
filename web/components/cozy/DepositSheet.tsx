@@ -152,7 +152,7 @@ export function DepositSheet({ data, mode, onClose, onDeposited }: Props) {
 
       {isDeposit ? (
         <p className="mb-3 text-sm font-semibold text-ink-soft">
-          Gửi đủ mục tiêu trước hạn chót để +1 tầng và giữ streak. Tiến độ kỳ này:{" "}
+          Gửi đủ mục tiêu trước khi kỳ kết thúc — kỳ được chốt sẽ +1 tầng và giữ streak. Tiến độ kỳ này:{" "}
           <span className="text-ink">{fmt(progress)} / {fmt(target)} mUSDC</span>
         </p>
       ) : (
@@ -191,14 +191,14 @@ export function DepositSheet({ data, mode, onClose, onDeposited }: Props) {
       <div id="amount-help" className="mt-2 text-xs font-semibold text-ink-soft">
         {isDeposit
           ? `Ví bạn có ${fmt(tokenBalance, 2)} mUSDC · nhập số thập phân, tối đa 6 chữ số lẻ`
-          : "Rút trong kỳ sẽ trừ tiến độ tuần này"}
+          : "Rút trong kỳ sẽ trừ tiến độ kỳ này"}
       </div>
 
       {validation && <div className="mt-2 text-xs font-bold text-danger" role="alert">{validation}</div>}
 
       <button className="btn-primary mt-5 w-full" disabled={busy || !parsed || parsed <= 0n || parsed > maxBalance} onClick={submit}>
         {isDeposit ? (
-          <span className="inline-flex items-center gap-1.5"><Icon name="hammer" size={17} /> Gửi & xây tầng</span>
+          <span className="inline-flex items-center gap-1.5"><Icon name="hammer" size={17} /> Gửi tiền</span>
         ) : (
           "Rút về ví"
         )}

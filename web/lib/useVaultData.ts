@@ -107,6 +107,11 @@ export function useVaultData({ enabled = true }: { enabled?: boolean } = {}) {
 
   return {
     address,
+    isError: base.isError || wallet.isError,
+    refetch: () => {
+      base.refetch();
+      wallet.refetch();
+    },
     startAt,
     epochDuration,
     hasStarted,

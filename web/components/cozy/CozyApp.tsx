@@ -17,6 +17,23 @@ import type { ThemeMode } from "@/components/cozy/useThemeLanding";
 
 type TabKey = "home" | "goals" | "rewards" | "me";
 
+/** Nút chuyển sáng/tối nhanh ở header, kế bên nút kết nối ví. */
+function ThemeToggle({ night, onToggle }: { night: boolean; onToggle: () => void }) {
+  return (
+    <button
+      onClick={() => {
+        sfx.click();
+        onToggle();
+      }}
+      aria-label={night ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
+      title={night ? "Giao diện tối — bấm để sáng" : "Giao diện sáng — bấm để tối"}
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-ink-soft shadow-card transition hover:bg-surface-sunken hover:text-ink active:translate-y-[1px]"
+    >
+      <Icon name={night ? "sun" : "moon"} size={17} />
+    </button>
+  );
+}
+
 const TABS: Array<{ key: TabKey; icon: IconName; label: string }> = [
   { key: "home", icon: "home", label: "Nhà" },
   { key: "goals", icon: "target", label: "Mục tiêu" },
@@ -100,20 +117,23 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
       principalAdded: s.principalAdded + remaining,
       staged: true,
     }));
+  }
+
+  // Bước 2 của bản thử: chốt kỳ (mô phỏng) — lúc này tầng/streak/thưởng mới tăng cùng nhau.
+  function handleDemoSettle() {
+    if (!demoData || building || !demoSim.staged) return;
     setBuildKey((k) => k + 1);
   }
 
   useEffect(() => {
-    if (buildKey === 0) return;
+    if (buildKey === 0 || !demoData) return;
     setBuilding(true);
     const t1 = setTimeout(() => {
       setBuilding(false);
       setCelebrateKey((k) => k + 1);
-      if (demoData) {
-        setDemoBoost((b) => b + 1);
-        setDemoSim((s) => ({ ...s, staged: false }));
-      }
-    }, 4600);
+      setDemoBoost((b) => b + 1);
+      setDemoSim((s) => ({ ...s, staged: false }));
+    }, 2200);
     return () => clearTimeout(t1);
   }, [buildKey, demoData]);
 
@@ -139,12 +159,17 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
   return (
     <div className="relative z-10 mx-auto min-h-screen w-full max-w-app px-4 pb-32 pt-24 md:px-6 md:pb-28 md:pt-28 lg:px-10">
       {/* Desktop header */}
-      <header className="fixed left-0 right-0 top-0 z-30">
+      <header className="fixed left-0 right-0 top-0 z-30 hidden lg:block">
         <div className="mx-auto flex h-16 max-w-app items-center justify-between px-4 md:px-6 lg:px-10">
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Savient" className="h-8 w-8 rounded-[9px] shadow-chunkySm" draggable={false} />
-            <span className="font-cozy text-2xl font-extrabold text-ink">Savient</span>
+            <img
+              src={night ? "/logo.png" : "/logo-light.png"}
+              alt="Savient"
+              className="h-8 w-8 rounded-[9px] shadow-chunkySm"
+              draggable={false}
+            />
+            <span data-testid="brand" className="font-cozy text-2xl font-extrabold text-ink">Savient</span>
             {demoData && (
               <span
                 data-testid="demo-badge"
@@ -191,6 +216,7 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
                 Thoát bản thử
               </button>
             )}
+            <ThemeToggle night={night} onToggle={() => onThemeChange(night ? "day" : "night")} />
             <ConnectButton />
           </div>
         </div>
@@ -201,15 +227,18 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
         <div className="mx-auto flex h-14 max-w-app items-center justify-between px-4 pt-1">
           <div className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.png" alt="Savient" className="h-7 w-7 rounded-lg" draggable={false} />
-            <span className="font-cozy text-xl font-extrabold text-ink">Savient</span>
+            <img src={night ? "/logo.png" : "/logo-light.png"} alt="Savient" className="h-7 w-7 rounded-lg" draggable={false} />
+            <span data-testid="brand" className="font-cozy text-xl font-extrabold text-ink">Savient</span>
             {demoData && (
               <span data-testid="demo-badge" className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-bold text-ink-soft">
                 Bản thử
               </span>
             )}
           </div>
-          <ConnectButton />
+          <div className="flex items-center gap-1.5">
+            <ThemeToggle night={night} onToggle={() => onThemeChange(night ? "day" : "night")} />
+            <ConnectButton />
+          </div>
         </div>
       </div>
 
@@ -220,8 +249,13 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
             night={night}
             building={building}
             celebrateKey={celebrateKey}
-            onDepositStart={() => setBuildKey((k) => k + 1)}
+            onDepositStart={() => {
+              // Live mode: deposit chỉ ghi nhận giao dịch; tầng chỉ tăng SAU KHI kỳ được chốt on-chain.
+              if (demoData) setBuildKey((k) => k + 1);
+            }}
             onDemoDeposit={handleDemoDeposit}
+            onDemoSettle={handleDemoSettle}
+            demoStaged={demoSim.staged}
             isDemo={!!demoData}
           />
         )}

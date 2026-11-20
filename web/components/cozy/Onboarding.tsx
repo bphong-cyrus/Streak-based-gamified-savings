@@ -14,7 +14,7 @@ const STEPS: Array<{ icon: IconName; title: string; desc: string }> = [
   {
     icon: "hammer",
     title: "Gửi đủ trước hạn",
-    desc: "Gửi đủ mục tiêu trước khi kỳ kết thúc → tòa nhà 3D mọc thêm một tầng, streak +1 kỳ.",
+    desc: "Gửi đủ trước khi kỳ kết thúc, rồi chờ chốt kỳ (ai cũng có thể gọi) — tòa nhà mọc thêm một tầng, streak +1.",
   },
   {
     icon: "gift",

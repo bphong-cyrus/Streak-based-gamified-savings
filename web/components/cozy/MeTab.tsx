@@ -24,6 +24,10 @@ const IdentityPreview3D = dynamic(() => import("@/components/cozy/IdentityPrevie
     </div>
   ),
 });
+const PetThumb3D = dynamic(() => import("@/components/cozy/PetThumb3D").then((m) => m.PetThumb3D), {
+  ssr: false,
+  loading: () => <div className="mx-auto h-20 w-full animate-pulse rounded-xl bg-surface-sunken" />,
+});
 
 interface Props {
   data: VaultData;
@@ -66,7 +70,7 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
           <div className="mt-4 flex items-center gap-4 border-t border-border pt-3">
             <div>
               <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">Chuỗi hiện tại</div>
-              <div className="font-cozy text-lg font-extrabold tabular-nums text-ink">{account?.streak.toString() ?? 0} tuần</div>
+              <div className="font-cozy text-lg font-extrabold tabular-nums text-ink">{account?.streak.toString() ?? 0} kỳ</div>
             </div>
             <div className="h-8 w-px bg-border" />
             <div>
@@ -122,12 +126,9 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
                   }`}
                   onClick={() => select(i)}
                 >
-                  <img
-                    src={`/identities/${id.key}.svg`}
-                    alt={id.name}
-                    className="mx-auto h-20 w-auto object-contain"
-                    draggable={false}
-                  />
+                  <div className="mx-auto h-20 w-full">
+                    <PetThumb3D variant={id.key} />
+                  </div>
                   <div className="mt-1 truncate text-[10px] font-bold text-ink">{id.name}</div>
                   <div className="truncate text-[9px] font-semibold text-ink-soft">{id.vi}</div>
                   {mine && <div className="mt-0.5 text-[9px] font-extrabold text-cta">Đang dùng</div>}
@@ -140,6 +141,7 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
 
       <div className="space-y-4">
         <RecentTxPanel />
+        <OnChainInfoCard />
 
         <div className="card p-4">
           <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
@@ -210,32 +212,37 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
           </button>
         </div>
 
-        {/* Thông tin on-chain */}
-        <div className="card p-4">
-          <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
-            <Icon name="bank" size={18} className="text-ink-soft" /> Thông tin trên chuỗi (Fuji Testnet)
-          </h4>
-          <dl className="mt-3 space-y-2 text-xs font-semibold text-ink-soft">
-            {(
-              [
-                ["Vault (gốc & streak)", contracts.vault],
-                ["Distributor (thưởng)", contracts.distributor],
-                ["DailyCheckIn (điểm danh)", contracts.dailyCheckIn],
-                ["SavingsGoal (mục tiêu)", contracts.goal],
-                ["StreakNFT (huy hiệu)", contracts.nft],
-                ["FaucetDrip (vòi mới)", contracts.faucetDrip],
-                ["Token mUSDC", contracts.token],
-              ] as const
-            ).map(([label, addr]) => (
-              <ContractRow key={label} label={label} addr={addr} />
-            ))}
-          </dl>
-          <p className="mt-3 text-[11px] font-semibold text-ink-soft">
-            Mọi giao dịch trong app đều kèm link Snowtrace để đối chiếu — không server nào giữ tiền ngườ dùng.
-          </p>
-        </div>
       </div>
     </div>
+  );
+}
+
+/** Địa chỉ contract trên Fuji — bằng chứng nhanh cho giám khảo. */
+function OnChainInfoCard() {
+  return (
+  <div className="card p-4">
+    <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
+      <Icon name="bank" size={18} className="text-ink-soft" /> Thông tin trên chuỗi (Fuji Testnet)
+    </h4>
+    <dl className="mt-3 space-y-2 text-xs font-semibold text-ink-soft">
+      {(
+        [
+          ["Vault (gốc & streak)", contracts.vault],
+          ["Distributor (thưởng)", contracts.distributor],
+          ["DailyCheckIn (điểm danh)", contracts.dailyCheckIn],
+          ["SavingsGoal (mục tiêu)", contracts.goal],
+          ["StreakNFT (huy hiệu)", contracts.nft],
+          ["FaucetDrip (vòi mới)", contracts.faucetDrip],
+          ["Token mUSDC", contracts.token],
+        ] as const
+      ).map(([label, addr]) => (
+        <ContractRow key={label} label={label} addr={addr} />
+      ))}
+    </dl>
+    <p className="mt-3 text-[11px] font-semibold text-ink-soft">
+      Mọi giao dịch trong app đều kèm link Snowtrace để đối chiếu — không server nào giữ tiền ngườ dùng.
+    </p>
+  </div>
   );
 }
 

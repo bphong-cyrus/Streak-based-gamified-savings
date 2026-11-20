@@ -25,9 +25,9 @@ export function RewardsTab({ data }: { data: VaultData }) {
 }
 
 const TIERS = [
-  { tier: 3n, label: "3 tuần", desc: "Khởi đầu bền bỉ", icon: "sprout" as const, color: "#7fd8a4" },
-  { tier: 7n, label: "7 tuần", desc: "Một quý kiên trì", icon: "flame" as const, color: "#f26d8d" },
-  { tier: 30n, label: "30 tuần", desc: "Huyền thoại cozy", icon: "crown" as const, color: "#a794e6" },
+  { tier: 3n, label: "3 kỳ", desc: "Khởi đầu bền bỉ", icon: "sprout" as const, color: "#7fd8a4" },
+  { tier: 7n, label: "7 kỳ", desc: "7 kỳ kiên trì", icon: "flame" as const, color: "#f26d8d" },
+  { tier: 30n, label: "30 kỳ", desc: "Huyền thoại Savient", icon: "crown" as const, color: "#a794e6" },
 ];
 
 function BadgesCard({ data }: { data: VaultData }) {
@@ -60,7 +60,7 @@ function BadgesCard({ data }: { data: VaultData }) {
   const canMint = eligible > 0n && !owned(eligibleIndex);
 
   return (
-    <FeatureCard icon="trophy" title="Huy hiệu streak" desc="NFT ghi lại cột mốc chuỗi tuần của bạn — vĩnh viễn trên chuỗi">
+    <FeatureCard icon="trophy" title="Huy hiệu streak" desc="NFT ghi lại cột mốc chuỗi kỳ của bạn — vĩnh viễn trên chuỗi">
       <div className="space-y-3">
         {TIERS.map((t, i) => {
           const has = owned(i);
@@ -94,7 +94,7 @@ function BadgesCard({ data }: { data: VaultData }) {
                   has ? "bg-cta text-white" : canUnlock ? "bg-terracotta text-white" : "bg-border text-ink-soft"
                 }`}
               >
-                {loading ? "…" : has ? "Đã sở hữu" : canUnlock ? "Có thể nhận" : weeksLeft === 0 ? "Đã mở khóa" : `còn ${weeksLeft} tuần`}
+                {loading ? "…" : has ? "Đã sở hữu" : canUnlock ? "Có thể nhận" : weeksLeft === 0 ? "Đã mở khóa" : `còn ${weeksLeft} kỳ`}
               </span>
             </div>
           );
@@ -102,11 +102,11 @@ function BadgesCard({ data }: { data: VaultData }) {
       </div>
       {address && canMint && (
         <button className="btn-primary mt-4 w-full" disabled={tx.step !== null} onClick={mint}>
-          Nhận huy hiệu {eligible.toString()} tuần ngay
+          Nhận huy hiệu {eligible.toString()} kỳ ngay
         </button>
       )}
       <p className="mt-2 text-[11px] font-semibold text-ink-soft">
-        Streak hiện tại: {streak.toString()} tuần · Huy hiệu mint theo tiêu chuẩn ERC-1155, đối chiếu được trên Snowtrace.
+        Streak hiện tại: {streak.toString()} kỳ · Huy hiệu mint theo tiêu chuẩn ERC-1155, đối chiếu được trên Snowtrace.
       </p>
       <TxFeedback state={tx} />
     </FeatureCard>
@@ -146,7 +146,7 @@ function CheckInCard() {
   }
 
   return (
-    <FeatureCard icon="calendar" title="Điểm danh mỗi ngày" desc="mUSDC thật mỗi ngày — chuỗi càng dài thưởng càng lớn">
+    <FeatureCard icon="calendar" title="Điểm danh mỗi ngày" desc="Thưởng mUSDC thử nghiệm mỗi ngày — chuỗi càng dài thưởng càng lớn">
       <div className="grid grid-cols-3 gap-2">
         <Stat label="Chuỗi ngày" value={loading ? undefined : `${streak.toString()}`} tone="text-terracotta" />
         <Stat label="Thưởng hôm nay" value={loading ? undefined : `${fmt(reward)} mUSDC`} tone="text-cta" />
@@ -184,7 +184,7 @@ function YieldCard({ data }: { data: VaultData }) {
   const busy = claim.step !== null || finalize.step !== null;
 
   return (
-    <FeatureCard icon="chart" title="Lãi tiết kiệm" desc="Yield từ nguồn lãi mô phỏng — chia theo gốc và streak, đối chiếu được on-chain">
+    <FeatureCard icon="chart" title="Lãi tiết kiệm" desc="Ngân sách thưởng do sponsor nạp (chưa phải lãi lending) — chia theo gốc và streak, đối chiếu được on-chain">
       {isDemoMode() && (
         <p data-testid="demo-notice" className="mb-2 rounded-lg border border-dashed border-cta/50 bg-cta/5 px-2 py-1 text-center text-[11px] font-bold text-ink-soft" role="note">
           Bản thử — số liệu mô phỏng, không phải thưởng thật.

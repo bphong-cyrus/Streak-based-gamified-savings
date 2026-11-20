@@ -122,7 +122,8 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
 
   async function setGoal() {
     const amt = parseAmount(amount);
-    const dl = BigInt(deadline || "0");
+    // deadline nhập theo SỐ KỲ (tương đối) → đổi sang kỳ tuyệt đối trước khi ghi chuỗi.
+    const dl = BigInt(deadline || "0") + currentEpoch;
     if (!amt || dl <= currentEpoch) return;
     const ok = await tx.run("Đặt mục tiêu tiết kiệm", [
       { label: "Đang đăng ký mục tiêu on-chain…", call: { address: contracts.goal, abi: savingsGoalAbi, functionName: "setGoal", args: [amt, dl] } },
@@ -194,23 +195,50 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
             </ActionRow>
           </div>
           <div>
-            <FieldLabel>Hạn chót (kỳ #, đang ở kỳ #{currentEpoch.toString()})</FieldLabel>
+            <FieldLabel>Hạn chót — chọn theo số kỳ (đang ở kỳ #{currentEpoch.toString()})</FieldLabel>
+            <div className="mt-1 flex flex-wrap gap-2">
+              {[
+                { n: 3, label: "3 kỳ" },
+                { n: 7, label: "7 kỳ" },
+                { n: 30, label: "30 kỳ" },
+              ].map(({ n, label }) => {
+                const selected = deadline === String(n);
+                return (
+                  <button
+                    key={n}
+                    className={`rounded-lg border px-3 py-1.5 text-xs font-extrabold shadow-card transition active:translate-y-[1px] ${
+                      selected ? "border-cta bg-cta text-white" : "border-border bg-surface text-ink-soft hover:border-cta hover:text-cta"
+                    }`}
+                    aria-pressed={selected}
+                    onClick={() => setDeadline(String(n))}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
             <ActionRow>
               <input
                 className="input mt-2 flex-1"
                 inputMode="numeric"
-                placeholder={`VD: ${(currentEpoch + 4n).toString()}`}
+                placeholder="Hoặc nhập số kỳ…"
+                aria-label="Số kỳ làm hạn chót"
                 value={deadline}
                 onChange={(e) => setDeadline(e.target.value.replace(/[^0-9]/g, ""))}
               />
               <button
                 className="btn-primary mt-2 shrink-0"
-                disabled={tx.step !== null || !parseAmount(amount) || !deadline || BigInt(deadline) <= currentEpoch}
+                disabled={tx.step !== null || !parseAmount(amount) || !deadline || BigInt(deadline) <= 0n || currentEpoch + BigInt(deadline) <= currentEpoch}
                 onClick={setGoal}
               >
                 Cam kết
               </button>
             </ActionRow>
+            {deadline && BigInt(deadline) > 0n && (
+              <p className="mt-1 text-[11px] font-semibold text-ink-soft">
+                Tương ứng kỳ #{(currentEpoch + BigInt(deadline)).toString()} — ghi trực tiếp lên chuỗi khi bấm Cam kết.
+              </p>
+            )}
           </div>
         </div>
       )}

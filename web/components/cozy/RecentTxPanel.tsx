@@ -1,25 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAccount, useChainId } from "wagmi";
 import { explorerTx } from "@/lib/config";
 import { readTxLog, type TxLogEntry } from "@/components/useTx";
 import { FeatureCard } from "@/components/cozy/panel";
 import { shortAddr } from "@/lib/format";
 
 export function RecentTxPanel() {
+  const { address } = useAccount();
+  const chainId = useChainId();
   const [log, setLog] = useState<TxLogEntry[]>([]);
 
   useEffect(() => {
-    const update = () => setLog(readTxLog());
+    const update = () => setLog(address ? readTxLog(address, chainId) : []);
     update();
     window.addEventListener("cozy-txlog", update);
     return () => window.removeEventListener("cozy-txlog", update);
-  }, []);
+  }, [address, chainId]);
 
   if (log.length === 0) return null;
 
   return (
-    <FeatureCard icon="refresh" title="Giao dịch gần đây" desc="Mỗi dòng đều kiểm chứng được trên Snowtrace">
+    <FeatureCard icon="refresh" title="Giao dịch gần đây" desc="Mỗi dòng kiểm chứng được trên Snowtrace · lịch sử chỉ lưu trên thiết bị này, theo từng ví">
       <ul className="space-y-1.5">
         {log.map((e) => (
           <li key={e.hash} className="flex items-center justify-between gap-2 rounded-xl border border-border bg-surface px-3 py-1.5 text-sm">
@@ -38,7 +41,7 @@ export function RecentTxPanel() {
       <button
         className="btn-secondary mt-3 w-full !py-1.5 text-xs"
         onClick={() => {
-          localStorage.removeItem("cozy-txlog");
+          if (address) localStorage.removeItem(`cozy-txlog:${chainId}:${address.toLowerCase()}`);
           window.dispatchEvent(new Event("cozy-txlog"));
         }}
       >

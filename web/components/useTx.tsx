@@ -23,7 +23,7 @@ async function liveChainId(): Promise<number | null> {
   }
 }
 
-/** Giới hạn chờ ví ký; quá lâu → báo lỗi hướng dẫn thay vì treo spinner vô thờ hạn
+/** Giới hạn chờ ví ký; quá lâu → báo lỗi hướng dẫn thay vì treo spinner vô thời hạn
  *  (ví dụ MetaMask đang ở "Unsupported Network" và không tự popup ký). */
 const WALLET_TIMEOUT_MS = 75_000;
 function withWalletTimeout<T>(p: Promise<T>): Promise<T> {
@@ -45,27 +45,34 @@ export interface TxState {
   /** Vị trí bước hiện tại / tổng số bước (1-based) cho tx stepper. */
   stepIndex?: number;
   stepTotal?: number;
+  /** Giao dịch thành công — giữ thẻ bằng chứng cho đến khi ngườ dùng đóng. */
+  done?: boolean;
 }
 
 export interface TxLogEntry {
   label: string;
   hash: string;
   at: number;
+  address: string;
+  chainId: number;
 }
 
-/** Nhật ký giao dịch thành công gần đây — lưu localStorage, hiển thị ở tab Hồ sơ. */
-export function readTxLog(): TxLogEntry[] {
+/** Nhật ký giao dịch thành công — lưu localStorage THEO TỪNG VÍ (chainId + địa chỉ),
+ *  đổi ví không thấy giao dịch của ví trước trên cùng trình duyệt. */
+export function readTxLog(address?: string, chainId?: number): TxLogEntry[] {
   if (typeof window === "undefined") return [];
+  const key = address ? `cozy-txlog:${chainId ?? 0}:${address.toLowerCase()}` : "cozy-txlog";
   try {
-    return JSON.parse(localStorage.getItem("cozy-txlog") ?? "[]") as TxLogEntry[];
+    return JSON.parse(localStorage.getItem(key) ?? "[]") as TxLogEntry[];
   } catch {
     return [];
   }
 }
 
-function pushTxLog(entry: TxLogEntry) {
-  const log = [entry, ...readTxLog()].slice(0, 8);
-  localStorage.setItem("cozy-txlog", JSON.stringify(log));
+function pushTxLog(entry: TxLogEntry, address: string, chainId: number) {
+  const key = `cozy-txlog:${chainId}:${address.toLowerCase()}`;
+  const log = [entry, ...readTxLog(address, chainId)].slice(0, 8);
+  localStorage.setItem(key, JSON.stringify(log));
   window.dispatchEvent(new Event("cozy-txlog"));
 }
 
@@ -115,7 +122,7 @@ function decodeError(err: BaseError): string {
     { key: "AlreadyFrozen", vi: "Bạn đã đóng băng kỳ này rồi." },
     { key: "AlreadyInsured", vi: "Bạn đã mua bảo hiểm kỳ này rồi." },
     { key: "NothingToRevive", vi: "Không có streak nào cần hồi sinh." },
-    { key: "ReviveWindowClosed", vi: "Đã quá thờ hạn để hồi sinh streak." },
+    { key: "ReviveWindowClosed", vi: "Đã quá thời hạn để hồi sinh streak." },
     { key: "NotStarted", vi: "Chưa đến giờ mở kỳ đầu tiên." },
     { key: "ZeroAmount", vi: "Số tiền phải lớn hơn 0." },
     { key: "ZeroAddress", vi: "Địa chỉ không hợp lệ." },
@@ -153,10 +160,12 @@ export function useTx() {
             throw new Error("Ví vẫn ở mạng khác — hãy chuyển sang Avalanche Fuji trong ví rồi thử lại.");
           }
         }
+        let lastHash: string | null = null;
         for (let i = 0; i < calls.length; i++) {
           const c = calls[i];
           setState((s) => ({ ...s, step: c.label, stepIndex: i + 1, stepTotal: calls.length }));
           const hash = await withWalletTimeout(writeContractAsync(c.call));
+          lastHash = hash;
           setState((s) => ({ ...s, hash }));
           await waitForTransactionReceipt(wagmiConfig, {
             hash,
@@ -165,9 +174,10 @@ export function useTx() {
             retryCount: 5,
             retryDelay: 2_000,
           });
-          pushTxLog({ label: c.label, hash, at: Date.now() });
+          const acc = getAccount(wagmiConfig);
+          pushTxLog({ label: c.label, hash, at: Date.now(), address: acc.address ?? "", chainId: acc.chainId ?? 0 }, acc.address ?? "", acc.chainId ?? 0);
         }
-        setState({ step: null, hash: null, error: null });
+        setState({ step: null, hash: lastHash, error: null, done: true, info: null });
         sfx.success();
         return true;
       } catch (e) {
@@ -180,11 +190,36 @@ export function useTx() {
     [writeContractAsync, switchChainAsync],
   );
 
-  return { run, ...state };
+  const clear = useCallback(() => setState({ step: null, hash: null, error: null, done: false }), []);
+
+  return { run, clear, ...state };
 }
 
-/** Stepper trạng thái giao dịch: Approve (bước 1/n) -> ... -> Success kèm link Snowtrace. */
-export function TxFeedback({ state }: { state: TxState }) {
+/** Stepper trạng thái giao dịch: Approve (bước 1/n) -> ... -> Success kèm link Snowtrace.
+ *  Thẻ thành công ĐƯỢC GIỮ cho đến khi ngườ dùng đóng — ngườ dùng kịp chụp/đối chiếu hash. */
+export function TxFeedback({ state, onDismiss }: { state: TxState; onDismiss?: () => void }) {
+  if (state.done && state.hash && !state.step && !state.error) {
+    return (
+      <div role="status" aria-live="polite" className="mt-3 rounded-xl border border-cta/40 bg-cta/10 px-3 py-2.5 text-sm">
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-cozy font-extrabold text-cta">✓ Giao dịch thành công</span>
+          {onDismiss && (
+            <button className="text-xs font-bold text-ink-soft hover:text-ink" onClick={onDismiss}>
+              Đóng
+            </button>
+          )}
+        </div>
+        <a
+          className="mt-0.5 block truncate text-xs font-bold underline"
+          href={explorerTx(state.hash)}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Xem trên Snowtrace: {state.hash}
+        </a>
+      </div>
+    );
+  }
   if (state.info && !state.step && !state.error) {
     return (
       <div role="status" aria-live="polite" className="mt-3 rounded-xl border border-border bg-surface px-3 py-2 text-sm font-semibold text-ink-soft">

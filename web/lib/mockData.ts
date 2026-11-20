@@ -5,7 +5,9 @@ const M = 1_000_000n; // 1 mUSDC
 /** Dữ liệu mẫu để xem trước giao diện (không cần ví) cho demo/pitch. */
 export function buildMockData(): VaultData {
   return {
-    address: "0xCozy00000000000000000000000000000Demo42",
+    address: undefined,
+    isError: false,
+    refetch: () => {},
     startAt: BigInt(Math.floor(Date.now() / 1000) - 6 * 180),
     epochDuration: 180n,
     hasStarted: true,

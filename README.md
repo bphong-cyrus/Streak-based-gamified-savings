@@ -14,14 +14,14 @@ Ngườ trẻ khó giữ thói quen gửi tiền đều: thiếu động lực, 
 
 | Contract | Vai trò | Địa chỉ Fuji (43113) |
 |---|---|---|
-| `MockUSDC` | Tiền tệ demo (6 decimals) | `0x1c0684ad8e5e6B8C1551B9197ACD6Ea821870Efe` |
-| `StreakVault` | **Trái tim**: deposit/withdraw, target, streak, freeze kỳ | `0x898676aB9838a23258C98f68D454D0aeFCA44E1E` |
-| `MockYieldSource` | Nguồn lãi (`fundEpoch`/`release`) | `0xB4A5Fe5620F6F8D5609483819806e7118Add1517` |
-| `YieldDistributor` | Chia thưởng theo gốc + streak, `finalizeEpoch`, `claimYield` | `0xC8Dc7Bf74e7dF17625698B7F41F37287F9e4c98F` |
-| `DailyCheckIn` | Điểm danh ngày — thưởng mUSDC từ pool | `0xF115668e510356E3c3b5191f6707Ab7C912f00C8` |
-| `SavingsGoal` | Mục tiêu gốc + hạn kỳ, ghi nhận đạt on-chain | `0x0aAC7c26418d98F036ab55224b4083D0A516557c` |
-| `StreakNFT` | Huy hiệu ERC-1155 theo mốc streak 3 / 7 / 30 tuần | `0xc812eD731d58a893e45336c930a0eF6C283c4c8A` |
-| `FaucetDrip` | Onboard ví mới: 5 mUSDC thẳng vào vault + target đầu | `0xFc65B124A127C7cD2176f8CaEf7b6A3Eee6543DA` |
+| `MockUSDC` | Tiền tệ demo (6 decimals) | `0xfb898F5D855d5B54F266c6b3D57ED879B619cbbB` |
+| `StreakVault` | **Trái tim**: deposit/withdraw, target, streak, freeze kỳ | `0x63Da6fAD88E18888003BFb0DbE1e8F2bfDC01Cd8` |
+| `MockYieldSource` | Nguồn lãi (`fundEpoch`/`release`) | `0x3110b2D90FB2e6BB2Ae753a98B00b7c86FDade31` |
+| `YieldDistributor` | Chia thưởng theo gốc + streak, `finalizeEpoch`, `claimYield` | `0x90172773fDe524FD9165138b48169D435D9b0150` |
+| `DailyCheckIn` | Điểm danh ngày — thưởng mUSDC từ pool | `0x3FdB50B5977A0d0de1D1819cA0dD5ad558af333C` |
+| `SavingsGoal` | Mục tiêu gốc + hạn kỳ, ghi nhận đạt on-chain | `0x6a29Bc0FDafeB58c6160864439b5465f07d4BEb0` |
+| `StreakNFT` | Huy hiệu ERC-1155 theo mốc streak 3 / 7 / 30 tuần | `0x81AAd1918466Eb736c5Aaa482cd9FA055169d989` |
+| `FaucetDrip` | Onboard ví mới: 5 mUSDC thẳng vào vault + target đầu | `0xA140DF43E89A32487C52c0c90ba8de398c20AC01` |
 
 Vòng đờ một kỳ: đặt mục tiêu tuần → gửi đủ trước hạn chót → kỳ được **finalize** (hành động công khai, ai cũng gọi được) → ngân sách yield chia cho ví giữ streak → user **claim** lãi. Song song: điểm danh mỗi ngày nhận mUSDC, đủ mốc streak mint huy hiệu NFT, cam kết mục tiêu lớn bằng `SavingsGoal`.
 

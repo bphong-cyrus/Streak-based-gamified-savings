@@ -62,7 +62,7 @@ test.describe("Demo mode (?demo=1)", () => {
     await goto(page, "/?demo=1");
 
     // Header & demo badge (2 bản: desktop + mobile — kiểm tra số lượng và nội dung)
-    await expect(page.getByText("Savient").first()).toBeVisible();
+    await expect(page.locator('[data-testid="brand"]:visible')).toHaveCount(1);
     await expect(page.getByTestId("demo-badge")).toHaveCount(2);
     await expect(page.getByTestId("demo-badge").first()).toHaveText("Bản thử");
     await expect(page.getByTestId("demo-notice")).toContainText("không phải số dư thật");
@@ -83,11 +83,15 @@ test.describe("Demo mode (?demo=1)", () => {
     await page.getByRole("button", { name: "Thu nhỏ" }).click();
     await page.getByRole("button", { name: "Vừa khung" }).click();
 
-    // Demo deposit -> animation hoàn thành tầng
+    // Demo 2 bước trung thực: gửi tiền -> "chờ chốt kỳ" -> chốt kỳ mới mọc tầng
     const depositBtn = page.getByTestId("demo-deposit");
     await expect(depositBtn).toBeVisible();
     await depositBtn.click();
-    await expect(page.getByText("TẦNG MỚI HOÀN THÀNH!")).toBeVisible({ timeout: 7_000 });
+    await expect(page.getByText(/chờ chốt kỳ/)).toBeVisible();
+    const settleBtn = page.getByTestId("demo-settle");
+    await expect(settleBtn).toBeVisible();
+    await settleBtn.click();
+    await expect(page.getByText("KỲ ĐÃ ĐƯỢC CHỐT!")).toBeVisible({ timeout: 7_000 });
 
     assertNoViolations(errors);
   });
@@ -120,7 +124,7 @@ test.describe("Demo mode (?demo=1)", () => {
     await page.locator("button", { hasText: /^50$/ }).first().click();
     const goalAmountInput = page.locator('input[placeholder="VD: 50"]').first();
     await expect(goalAmountInput).toHaveValue("50");
-    const deadlineInput = page.locator('input[placeholder^="VD:"]').last();
+    const deadlineInput = page.locator('input[aria-label="Số kỳ làm hạn chót"]');
     await deadlineInput.fill("0");
     await expect(page.getByRole("button", { name: "Cam kết" })).toBeDisabled();
     await deadlineInput.fill("999");
@@ -207,12 +211,18 @@ test.describe("Live mode (no demo param, disconnected wallet)", () => {
     // storage được xóa sau khi navigate trong hàm goto
   });
 
-  test("Landing prompts connect wallet and navigates all core tabs", async ({ page }) => {
+  test("Landing separates demo from wallet flow and navigates all core tabs", async ({ page }) => {
     const errors = collectViolations(page);
     await goto(page, "/");
 
-    // Vì chưa kết nối ví, app vẫn hiển thị dashboard demo với CTA Connect
-    await expect(page.getByText("Savient").first()).toBeVisible();
+    // Màn chọn: tách bạch "Xem bản thử" và "Kết nối ví" — không tự nhảy vào dashboard mô phỏng
+    await expect(page.getByTestId("connect-cta")).toBeVisible();
+    await expect(page.getByTestId("try-demo")).toBeVisible();
+    await expect(page.getByText(/không phải số dư thật/i)).toBeVisible();
+
+    // Chọn bản thử thì vào dashboard và đủ 4 tab
+    await page.getByTestId("try-demo").click();
+    await expect(page.locator('[data-testid="brand"]:visible')).toHaveCount(1);
     await expect(page.getByRole("button", { name: /Kết nối/ }).first()).toBeVisible();
 
     // Bottom nav dẫn đến đủ 4 tab

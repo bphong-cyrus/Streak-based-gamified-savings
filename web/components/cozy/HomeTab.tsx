@@ -20,6 +20,8 @@ interface Props {
   celebrateKey: number;
   onDepositStart: () => void;
   onDemoDeposit?: () => void;
+  onDemoSettle?: () => void;
+  demoStaged?: boolean;
   isDemo?: boolean;
 }
 
@@ -103,7 +105,9 @@ function StreakHeatmap({ data }: { data: VaultData }) {
         <p className="text-sm font-semibold text-ink-soft">Kết nối ví để xem lịch sử streak của bạn.</p>
       ) : (
         <>
-          <div className="mt-1 flex justify-between gap-1.5">
+          {/* Cuộn ngang trên mobile — 12 cột không bị bóp nhỏ dưới 375px */}
+          <div className="mt-1 overflow-x-auto pb-1">
+            <div className="flex min-w-[440px] gap-1.5">
             {epochs.map((e, i) => {
               const s = reads.data?.[i]?.result as
                 | { progress: bigint; target: bigint; settled: boolean; qualified: boolean }
@@ -142,10 +146,11 @@ function StreakHeatmap({ data }: { data: VaultData }) {
                         : `Kỳ #${e.toString()}`
                     }
                   />
-                  <span className="text-[8px] font-bold text-ink-muted">{e.toString()}</span>
+                  <span className="text-[10px] font-bold text-ink-muted">{e.toString()}</span>
                 </div>
               );
             })}
+            </div>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-ink-soft">
             <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-cta" /> Đạt</span>
@@ -160,7 +165,7 @@ function StreakHeatmap({ data }: { data: VaultData }) {
   );
 }
 
-export function HomeTab({ data, night, building, celebrateKey, onDepositStart, onDemoDeposit, isDemo }: Props) {
+export function HomeTab({ data, night, building, celebrateKey, onDepositStart, onDemoDeposit, onDemoSettle, demoStaged, isDemo }: Props) {
   const [sheetMode, setSheetMode] = useState<"deposit" | "withdraw" | null>(null);
   const [showParty, setShowParty] = useState(false);
   const [zoom, setZoom] = useState<number | null>(null);
@@ -191,6 +196,9 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
     return () => clearTimeout(t);
   }, [celebrateKey]);
 
+  if ((data as { isError?: boolean }).isError) {
+    return <ErrorState onRetry={(data as { refetch?: () => void }).refetch} />;
+  }
   if (data === undefined || hasStarted === undefined) return <LoadingState />;
   if (hasStarted === false) return <NotStartedState countdown={countdown} />;
 
@@ -264,14 +272,30 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
               <FaucetCard />
             ) : isDemo ? (
               <>
-                <button
-                  data-testid="demo-deposit"
-                  className="btn-primary w-full text-lg active:translate-y-[2px]"
-                  disabled={building}
-                  onClick={onDemoDeposit}
-                >
-                  {building ? "Đang xây tầng…" : "Mô phỏng gửi tiền"}
-                </button>
+                {demoStaged ? (
+                  <button
+                    data-testid="demo-settle"
+                    className="btn-primary w-full text-lg active:translate-y-[2px]"
+                    disabled={building}
+                    onClick={onDemoSettle}
+                  >
+                    {building ? "Đang chốt kỳ…" : "Chốt kỳ (mô phỏng) — nhận tầng & thưởng"}
+                  </button>
+                ) : (
+                  <button
+                    data-testid="demo-deposit"
+                    className="btn-primary w-full text-lg active:translate-y-[2px]"
+                    disabled={building}
+                    onClick={onDemoDeposit}
+                  >
+                    Mô phỏng gửi tiền
+                  </button>
+                )}
+                {demoStaged && !building && (
+                  <p className="text-center text-xs font-semibold text-ink-soft">
+                    Đã gửi đủ mục tiêu · chờ chốt kỳ — giống hệt luồng thật: tầng chỉ mọc sau khi kỳ được chốt.
+                  </p>
+                )}
                 {(account?.principal ?? 0n) > 0n && (
                   <button className="btn-ghost w-full" disabled={building} onClick={() => setSheetMode("withdraw")}>
                     Rút gốc
@@ -284,7 +308,7 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
                   className="btn-primary w-full text-lg active:translate-y-[2px]"
                   onClick={() => setSheetMode("deposit")}
                 >
-                  {goalDone ? "Gửi thêm" : `Gửi ${fmt(remaining)} mUSDC hoàn thành tầng`}
+                  {goalDone ? "Gửi thêm" : `Gửi ${fmt(remaining)} mUSDC đạt mục tiêu kỳ này`}
                 </button>
                 {(account?.principal ?? 0n) > 0n && (
                   <button className="btn-ghost w-full" onClick={() => setSheetMode("withdraw")}>
@@ -326,10 +350,10 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
             {showParty && !building && (
               <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center">
                 <div className="rounded-2xl border border-border bg-surface px-5 py-2.5 text-center font-cozy text-lg font-extrabold text-ink shadow-card" style={{ animation: "bannerPop 0.5s var(--ease-spring) both" }}>
-                  TẦNG MỚI HOÀN THÀNH!
+                  KỲ ĐÃ ĐƯỢC CHỐT!
                 </div>
                 <div className="mt-3 rounded-full border border-cta/30 bg-cta/10 px-3 py-1 font-cozy text-xs font-extrabold text-cta" style={{ animation: "bannerPop 0.5s 0.2s var(--ease-spring) both" }}>
-                  +1 chuỗi kiên trì · +1 tầng mới
+                  +1 chuỗi · +1 tầng · +thưởng kỳ (mô phỏng)
                 </div>
               </div>
             )}
@@ -363,8 +387,8 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
         <div className="card flex flex-col divide-y divide-border md:flex-row md:divide-x md:divide-y-0">
           <StatItem icon={<Icon name="chart" size={18} />} label="Lãi chờ nhận" value={`+${fmt(claimable)}`} sub="mUSDC" />
           <StatItem icon={<Icon name="wallet" size={18} />} label="Số dư ví" value={fmt(tokenBalance, 2)} sub="mUSDC" />
-          <StatItem icon={<Icon name="flame" size={18} />} label="Chuỗi hiện tại" value={account?.streak.toString() ?? "—"} sub="tuần liên tiếp" />
-          <StatItem icon={<Icon name="bank" size={18} />} label="Lãi tích lũy" value={`+${fmt(interestTotal)}`} sub="mUSDC" />
+          <StatItem icon={<Icon name="flame" size={18} />} label="Chuỗi hiện tại" value={account?.streak.toString() ?? "—"} sub="kỳ liên tiếp" />
+          <StatItem icon={<Icon name="bank" size={18} />} label="Tổng thưởng được phân bổ" value={`+${fmt(interestTotal)}`} sub="mUSDC" />
         </div>
         <StreakHeatmap data={data} />
       </div>
@@ -418,7 +442,7 @@ function FaucetCard() {
   const tx = useTx();
   async function drip() {
     const { faucetDripAbi } = await import("@/lib/abis");
-    await tx.run("Vòi nước ngườ mới", [
+    await tx.run("Vòi token ngườ mới", [
       { label: "Đang nhận 5 mUSDC + đặt mục tiêu đầu…", call: { address: contracts.faucetDrip, abi: faucetDripAbi, functionName: "drip", args: [] } },
     ]);
   }
@@ -429,10 +453,10 @@ function FaucetCard() {
         <Icon name="droplet" size={22} className="text-cta" /> Chào mừng chủ nhân mới!
       </div>
       <p className="mt-1 text-sm font-semibold text-ink-soft">
-        Nhận <strong>5 mUSDC</strong> gửi thẳng vào tòa nhà + mục tiêu kỳ đầu được đặt sẵn — bấm một nút là xong.
+        Nhận <strong>5 mUSDC dùng thử</strong> gửi thẳng vào tòa nhà + mục tiêu kỳ đầu được đặt sẵn — bấm một nút là xong.
       </p>
       <button className="btn-primary mt-3 w-full" disabled={tx.step !== null} onClick={drip}>
-        Nhận 5 mUSDC miễn phí & bắt đầu
+        Nhận 5 mUSDC dùng thử & bắt đầu
       </button>
       <TxFeedback state={tx} />
     </div>
