@@ -1,12 +1,40 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { useWriteContract, useSwitchChain, useChainId } from "wagmi";
-import { waitForTransactionReceipt } from "@wagmi/core";
+import { useWriteContract, useSwitchChain } from "wagmi";
+import { waitForTransactionReceipt, getAccount } from "@wagmi/core";
 import { BaseError } from "viem";
 import { wagmiConfig, targetChainId, fuji, explorerTx } from "@/lib/config";
 import { sfx } from "@/lib/sound";
 import { isDemoMode } from "@/lib/demo";
+
+/** Đọc trực tiếp eth_chainId từ provider của ví — phản ánh đúng mạng MetaMask
+ *  đang chọn ngay lúc gửi, không phụ thuộc state chainId có thể đã lỗi thờ của wagmi. */
+async function liveChainId(): Promise<number | null> {
+  try {
+    const connector = getAccount(wagmiConfig).connector;
+    if (!connector) return null;
+    const provider = (await connector.getProvider()) as {
+      request: (args: { method: string }) => Promise<unknown>;
+    };
+    return Number(await provider.request({ method: "eth_chainId" }));
+  } catch {
+    return null;
+  }
+}
+
+/** Giới hạn chờ ví ký; quá lâu → báo lỗi hướng dẫn thay vì treo spinner vô thờ hạn
+ *  (ví dụ MetaMask đang ở "Unsupported Network" và không tự popup ký). */
+const WALLET_TIMEOUT_MS = 75_000;
+function withWalletTimeout<T>(p: Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("WalletTimeout")), WALLET_TIMEOUT_MS);
+    p.then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); reject(e); },
+    );
+  });
+}
 
 export interface TxState {
   step: string | null;
@@ -52,6 +80,9 @@ function decodeError(err: BaseError): string {
   }
   if (raw.includes("HTTP request failed") || raw.includes("fetch")) {
     return "Kết nối RPC Fuji bị gián đoạn — thử lại sau vài giây (giao dịch có thể đã thực hiện, kiểm tra Snowtrace trước khi gửi lại).";
+  }
+  if (raw.includes("WalletTimeout")) {
+    return "Ví không phản hồi — MetaMask có thể đang ở mạng không hỗ trợ. Mở ví, chuyển sang Avalanche Fuji rồi thử lại (nếu đã bấm ký, kiểm tra Snowtrace trước khi gửi lại).";
   }
   if (raw.includes("insufficient funds")) {
     return "Không đủ AVAX để trả phí gas.";
@@ -101,7 +132,6 @@ function decodeError(err: BaseError): string {
 export function useTx() {
   const { writeContractAsync } = useWriteContract();
   const { switchChainAsync } = useSwitchChain();
-  const currentChainId = useChainId();
   const [state, setState] = useState<TxState>({ step: null, hash: null, error: null });
 
   const run = useCallback(
@@ -112,14 +142,21 @@ export function useTx() {
         return false;
       }
       try {
-        if (currentChainId !== targetChainId) {
+        // Kiểm tra lại mạng thật của ví ngay trước khi gửi — tránh treo tx khi
+        // MetaMask đang ở mạng khác mà state wagmi vẫn báo đúng Fuji.
+        const live = await liveChainId();
+        if (live !== null && live !== targetChainId) {
           setState((s) => ({ ...s, step: "Đang chuyển sang Avalanche Fuji…" }));
-          await switchChainAsync({ chainId: targetChainId, ...fuji });
+          await switchChainAsync({ chainId: targetChainId });
+          const after = await liveChainId();
+          if (after !== null && after !== targetChainId) {
+            throw new Error("Ví vẫn ở mạng khác — hãy chuyển sang Avalanche Fuji trong ví rồi thử lại.");
+          }
         }
         for (let i = 0; i < calls.length; i++) {
           const c = calls[i];
           setState((s) => ({ ...s, step: c.label, stepIndex: i + 1, stepTotal: calls.length }));
-          const hash = await writeContractAsync(c.call);
+          const hash = await withWalletTimeout(writeContractAsync(c.call));
           setState((s) => ({ ...s, hash }));
           await waitForTransactionReceipt(wagmiConfig, {
             hash,
@@ -140,7 +177,7 @@ export function useTx() {
         return false;
       }
     },
-    [writeContractAsync, switchChainAsync, currentChainId],
+    [writeContractAsync, switchChainAsync],
   );
 
   return { run, ...state };
