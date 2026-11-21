@@ -49,16 +49,25 @@ function usePalette(night: boolean) {
 
 function CameraRig({ targetY, floors, width, height, scale }: { targetY: number; floors: number; width: number; height: number; scale: number }) {
   const { camera } = useThree();
-  useEffect(() => {
-    if (width <= 0 || height <= 0) return;
+  // Áp zoom trong useFrame thay vì useEffect: mọi lần React re-render canvas (refetch dữ liệu
+  // live mode) R3F có thể reset prop camera — useFrame chạy mỗi frame nên zoom luôn thắng,
+  // nút Phóng to/Thu nhỏ không còn bị "nuốt" sau vài giây khi kết nối ví.
+  const cfg = useRef({ targetY, floors, width, height, scale });
+  cfg.current = { targetY, floors, width, height, scale };
+  useFrame(() => {
+    const { width: w, height: h, targetY: ty, scale: s } = cfg.current;
+    if (w <= 0 || h <= 0) return;
     const houseWidth = 5.2;
-    const houseHeight = Math.max(3, targetY + 2.5);
-    const pxPerUnit = Math.min(width / houseWidth, height / houseHeight) * 0.8 * scale;
-    camera.zoom = Math.max(20, Math.min(400, pxPerUnit));
-    camera.position.set(8, 7, 8);
-    camera.lookAt(0, targetY * 0.35, 0);
-    camera.updateProjectionMatrix();
-  }, [camera, width, height, targetY, floors, scale]);
+    const houseHeight = Math.max(3, ty + 2.5);
+    const pxPerUnit = Math.min(w / houseWidth, h / houseHeight) * 0.8 * s;
+    const zoom = Math.max(20, Math.min(400, pxPerUnit));
+    if (camera.zoom !== zoom) {
+      camera.zoom = zoom;
+      camera.position.set(8, 7, 8);
+      camera.lookAt(0, ty * 0.35, 0);
+      camera.updateProjectionMatrix();
+    }
+  });
   return null;
 }
 
@@ -334,7 +343,7 @@ export function HouseScene({ floors, night, building, celebrating, width, height
   return (
     <Canvas
       orthographic
-      camera={{ position: [8, 7, 8], zoom: 70, near: 0.1, far: 100 }}
+      camera={{ position: [8, 7, 8], near: 0.1, far: 100 }}
       shadows
       dpr={[1, 1.5]}
       style={{ background: "transparent" }}
