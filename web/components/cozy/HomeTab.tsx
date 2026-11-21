@@ -70,6 +70,59 @@ function NotStartedState({ countdown }: { countdown: string }) {
   );
 }
 
+
+/** Lớp phủ trờ SVG — hiển thị mọi mức zoom của cảnh 3D (trăng khuyết, sao 4 cánh nhấp nháy, mặt trờ, mây). */
+function SceneSkyOverlay({ night }: { night: boolean }) {
+  const spark = (cls: string, delay: string) => (
+    <svg viewBox="0 0 24 24" className={`sky-sparkle ${cls}`} style={{ animationDelay: delay }} aria-hidden>
+      <path d="M12 0 C13 7 17 11 24 12 C17 13 13 17 12 24 C11 17 7 13 0 12 C7 11 11 7 12 0 Z" fill="#FFF7D6" />
+    </svg>
+  );
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
+      {night ? (
+        <>
+          {/* Trăng khuyết */}
+          <svg viewBox="0 0 64 64" className="sky-moon">
+            <path d="M43 6 a26 26 0 1 0 13 47 a21 21 0 1 1 -13 -47 Z" fill="#F7F0D2" />
+            <circle cx="18" cy="20" r="2.4" fill="#E7DFBB" />
+            <circle cx="14" cy="38" r="1.7" fill="#E7DFBB" />
+          </svg>
+          {spark("left-[8%] top-[18%] w-5", "0s")}
+          {spark("left-[20%] top-[55%] w-4", "0.9s")}
+          {spark("left-[38%] top-[10%] w-3.5", "1.7s")}
+          {spark("right-[30%] top-[14%] w-4", "0.4s")}
+          {spark("right-[12%] top-[45%] w-5", "1.2s")}
+          {spark("left-[55%] top-[38%] w-3", "2.1s")}
+        </>
+      ) : (
+        <>
+          {/* Mặt trờ */}
+          <svg viewBox="0 0 64 64" className="sky-sun">
+            <g stroke="#FFD34D" strokeWidth="3.4" strokeLinecap="round">
+              <line x1="32" y1="2" x2="32" y2="10" /><line x1="32" y1="54" x2="32" y2="62" />
+              <line x1="2" y1="32" x2="10" y2="32" /><line x1="54" y1="32" x2="62" y2="32" />
+              <line x1="11" y1="11" x2="16.5" y2="16.5" /><line x1="47.5" y1="47.5" x2="53" y2="53" />
+              <line x1="53" y1="11" x2="47.5" y2="16.5" /><line x1="16.5" y1="47.5" x2="11" y2="53" />
+            </g>
+            <circle cx="32" cy="32" r="13" fill="#FFE58A" stroke="#FFD34D" strokeWidth="2.5" />
+          </svg>
+          {/* Mây */}
+          <svg viewBox="0 0 96 40" className="sky-cloud left-[6%] top-[16%] w-24" style={{ animationDuration: "26s" }}>
+            <ellipse cx="30" cy="26" rx="20" ry="12" fill="#FFFFFF" opacity="0.95" />
+            <ellipse cx="52" cy="20" rx="18" ry="13" fill="#FFFFFF" />
+            <ellipse cx="70" cy="27" rx="16" ry="10" fill="#F4F8FC" />
+          </svg>
+          <svg viewBox="0 0 96 40" className="sky-cloud right-[8%] top-[30%] w-20" style={{ animationDuration: "34s" }}>
+            <ellipse cx="30" cy="26" rx="20" ry="12" fill="#FFFFFF" opacity="0.9" />
+            <ellipse cx="52" cy="20" rx="18" ry="13" fill="#FFFFFF" />
+          </svg>
+        </>
+      )}
+    </div>
+  );
+}
+
 /** Heatmap 12 kỳ gần nhất: xanh = đạt, hồng = lỡ, nhấp nháy xanh dương = kỳ đang diễn ra. */
 function StreakHeatmap({ data }: { data: VaultData }) {
   const { address } = useAccount();
@@ -336,6 +389,7 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
             ref={sceneRef}
             className="relative h-[300px] w-full md:h-[440px]"
           >
+            <SceneSkyOverlay night={night} />
             <Building
               key={celebrateKey}
               floors={floors}

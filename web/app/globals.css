@@ -251,3 +251,17 @@ body {
   border-radius: 2px;
   animation: confettiFall 1.4s ease-in forwards;
 }
+
+/* ---- Lớp phủ trờ của cảnh 3D ---- */
+.sky-sparkle { position: absolute; opacity: 0.85; animation: skyTwinkle 2.6s ease-in-out infinite; }
+.sky-moon { position: absolute; right: 6%; top: 7%; width: 64px; filter: drop-shadow(0 0 14px rgba(247, 240, 210, 0.45)); }
+.sky-sun { position: absolute; left: 7%; top: 8%; width: 68px; filter: drop-shadow(0 0 16px rgba(255, 213, 77, 0.5)); animation: skyTwinkle 4s ease-in-out infinite; }
+.sky-cloud { position: absolute; animation: skyDrift 30s ease-in-out infinite alternate; }
+@keyframes skyTwinkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+@keyframes skyDrift {
+  from { transform: translateX(0); }
+  to { transform: translateX(26px); }
+}
