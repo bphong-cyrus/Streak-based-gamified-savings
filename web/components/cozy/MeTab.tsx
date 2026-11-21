@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useDisconnect } from "wagmi";
 import { contracts } from "@/lib/config";
@@ -37,6 +37,13 @@ interface Props {
 
 export function MeTab({ data, theme, onThemeChange }: Props) {
   const { disconnect } = useDisconnect();
+  // 2 bước xác nhận khi ngắt kết nối (chống bấm nhầm).
+  const [confirming, setConfirming] = useState(false);
+  useEffect(() => {
+    if (!confirming) return;
+    const t = setTimeout(() => setConfirming(false), 3000);
+    return () => clearTimeout(t);
+  }, [confirming]);
   const { address, tokenBalance, claimed, account } = data;
   const currentIdx = useIdentityIndex(address);
   const currentIdentity = IDENTITIES[currentIdx] ?? IDENTITIES[0];
@@ -64,8 +71,19 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
               )}
             </div>
             {!isDemo && address && (
-              <button className="btn-secondary !h-9 !px-3 !py-1.5 text-xs" onClick={() => disconnect()}>
-                Ngắt
+              <button
+                data-testid="disconnect-btn"
+                className={`btn-secondary !h-9 !px-3 !py-1.5 text-xs ${confirming ? "!border-danger/60 !bg-danger/10 text-danger" : ""}`}
+                onClick={() => {
+                  if (!confirming) {
+                    setConfirming(true);
+                    return;
+                  }
+                  setConfirming(false);
+                  disconnect();
+                }}
+              >
+                {confirming ? "Chắc chắn ngắt?" : "Ngắt"}
               </button>
             )}
           </div>

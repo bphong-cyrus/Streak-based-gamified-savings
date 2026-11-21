@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccount, useConnect, useDisconnect, useSwitchChain, useChainId } from "wagmi";
 import { targetChainId, fuji } from "@/lib/config";
 
@@ -28,6 +28,13 @@ export function ConnectButton() {
   const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
+  // Ngắt kết nối là hành động dễ bấm nhầm — yêu cầu bấm 2 lần (lần 2 xác nhận), tự huỷ sau 3 giây.
+  const [confirming, setConfirming] = useState(false);
+  useEffect(() => {
+    if (!confirming) return;
+    const t = setTimeout(() => setConfirming(false), 3000);
+    return () => clearTimeout(t);
+  }, [confirming]);
   const [notice, setNotice] = useState<string | null>(null);
 
   if (!isConnected) {
@@ -93,8 +100,19 @@ export function ConnectButton() {
       <span className="hidden rounded-lg border border-border bg-surface px-2.5 py-1.5 font-mono text-xs font-bold text-ink-soft sm:inline">
         {address?.slice(0, 6)}…{address?.slice(-4)}
       </span>
-      <button className="btn-secondary !h-9 !px-3 !py-1.5 text-xs" onClick={() => disconnect()}>
-        Ngắt
+      <button
+        data-testid="disconnect-btn"
+        className={`btn-secondary !h-9 !px-3 !py-1.5 text-xs ${confirming ? "!border-danger/60 !bg-danger/10 text-danger" : ""}`}
+        onClick={() => {
+          if (!confirming) {
+            setConfirming(true);
+            return;
+          }
+          setConfirming(false);
+          disconnect();
+        }}
+      >
+        {confirming ? "Chắc chắn ngắt?" : "Ngắt"}
       </button>
     </div>
   );
