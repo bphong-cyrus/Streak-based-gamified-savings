@@ -2,16 +2,22 @@
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {MockUSDC} from "../src/MockUSDC.sol";
+import {StreakVault} from "../src/StreakVault.sol";
+import {MockYieldSource} from "../src/MockYieldSource.sol";
+import {YieldDistributor} from "../src/YieldDistributor.sol";
+import {DailyCheckIn} from "../src/DailyCheckIn.sol";
 import {LuckyWheel} from "../src/LuckyWheel.sol";
 
-/// @notice Test cho LuckyWheel: sổ sách pool, cooldown, solvency, phân phối giải.
-/// @dev Entropy là blockhash testnet — test chỉ quan tâm accounting, không kiểm chứng tính ngẫu nhiên.
+/// @notice Test LuckyWheel v3: cấp lượt theo kỳ chốt đạt (chống farm), không thu phí,
+///         dừng phục vụ khi quỹ thiếu, điểm trang trí, boundary bảng giải.
 contract LuckyWheelTest is Test {
     uint256 internal constant ONE = 1e6;
 
     MockUSDC internal token;
+    StreakVault internal vault;
+    MockYieldSource internal source;
+    YieldDistributor internal distributor;
     LuckyWheel internal wheel;
 
     address internal deployer;
@@ -22,115 +28,176 @@ contract LuckyWheelTest is Test {
         alice = makeAddr("alice");
         vm.startPrank(deployer);
         token = new MockUSDC(deployer);
-        wheel = new LuckyWheel(token, 1 * ONE, 60);
+        vault = new StreakVault(token, block.timestamp, 180); // kỳ 180 giây như Fuji
+        source = new MockYieldSource(token, vault);
+        distributor = new YieldDistributor(token, vault, source);
+        vault.setDistributor(address(distributor));
+        source.setDistributor(address(distributor));
+        wheel = new LuckyWheel(token, vault, 10);
         token.mint(deployer, 10_000 * ONE);
         token.mint(alice, 100 * ONE);
-        token.approve(address(wheel), 1_000 * ONE);
-        wheel.fund(100 * ONE); // sponsor pool 100 mUSDC
+        token.approve(address(wheel), 500 * ONE);
+        wheel.fund(50 * ONE); // quỹ 50 mUSDC
+        vm.stopPrank();
+    }
+
+    /// @dev Cho alice đặt target + gửi đủ trong kỳ `e`, rồi chốt kỳ đó (sponsor fund + finalize).
+    function _qualifyAlice(uint256 e) internal {
+        uint256 start = vault.startAt();
+        vm.warp(start + e * 180 + 10); // đầu kỳ e
+        vm.startPrank(alice);
+        vault.setWeeklyTarget(2 * ONE);
+        token.approve(address(vault), 10 * ONE);
+        vault.deposit(2 * ONE);
         vm.stopPrank();
 
-        vm.prank(alice);
-        token.approve(address(wheel), 100 * ONE);
-    }
-
-    // ------------------------------------------------------------------
-    // Accounting & solvency
-    // ------------------------------------------------------------------
-
-    function test_PoolFunded() public view {
-        assertEq(wheel.pool(), 100 * ONE);
-        assertEq(token.balanceOf(address(wheel)), 100 * ONE);
-    }
-
-    function test_SpinDeductsFeeAddsToPool() public {
-        uint256 poolBefore = wheel.pool();
-        vm.prank(alice);
-        (uint256 prizeIndex, uint256 prizeAmount) = wheel.spin();
-        // Pool thay đổi đúng: +fee -prize
-        assertEq(wheel.pool(), poolBefore + 1 * ONE - prizeAmount);
-        // Tiền alice đúng: -fee +prize
-        assertEq(token.balanceOf(alice), 100 * ONE - 1 * ONE + prizeAmount);
-        // Giải nằm trong bảng
-        assertLt(prizeIndex, 6);
-        (uint256[] memory amounts,,) = wheel.prizeTable();
-        assertEq(prizeAmount, amounts[prizeIndex]);
-    }
-
-    function test_CooldownBlocksImmediateSecondSpin() public {
-        vm.prank(alice);
-        wheel.spin();
-        vm.expectRevert(abi.encodeWithSelector(LuckyWheel.CooldownActive.selector, block.timestamp + 60));
-        vm.prank(alice);
-        wheel.spin();
-        // Hết cooldown thì quay lại được.
-        vm.warp(block.timestamp + 61);
-        vm.prank(alice);
-        wheel.spin();
-    }
-
-    function test_NextSpinAtView() public {
-        assertEq(wheel.nextSpinAt(alice), 0);
-        vm.prank(alice);
-        wheel.spin();
-        assertEq(wheel.nextSpinAt(alice), block.timestamp + 60);
-    }
-
-    function test_PoolNeverGoesNegative() public {
-        // Quay thật nhiều lượt (nhiều ví khác nhau để né cooldown): pool không bao giờ âm
-        // và mọi payout đều ≤ số dư thật của contract. Fund thêm để 40 lượt không cạn pool.
         vm.startPrank(deployer);
-        token.approve(address(wheel), 400 * ONE);
-        wheel.fund(400 * ONE);
+        token.approve(address(source), 1 * ONE);
+        source.fundEpoch(e, 1 * ONE);
         vm.stopPrank();
-        for (uint256 i; i < 40; ++i) {
-            address player = makeAddr(string.concat("p", vm.toString(i)));
-            vm.startPrank(deployer);
-            token.mint(player, 10 * ONE);
-            vm.stopPrank();
-            vm.startPrank(player);
-            token.approve(address(wheel), 10 * ONE);
-            wheel.spin();
-            vm.stopPrank();
-            assertGe(token.balanceOf(address(wheel)), wheel.pool());
-            assertGe(wheel.pool(), 0);
-            vm.warp(block.timestamp + 61);
-        }
-    }
 
-    function test_InsolventPoolReverts() public {
-        // Rút cạn pool bằng cách đặt pool nhỏ hơn mọi giải > 0 → spin phải revert khi trúng giải lớn.
-        // Trường hợp thực tế: pool còn 0, giải 0 (Chúc may mắn, amount 0) vẫn quay được.
-        vm.prank(deployer);
-        wheel.setCooldown(0);
-        // Alice quay cho đến khi pool dưới 25 mUSDC (giải lớn nhất) thì mọi lượt trúng giải lớn revert —
-        // ở đây kiểm chứng trực tiếp: pool hiện tại phải luôn >= giải vừa trả.
-        uint256 spins;
-        while (wheel.pool() >= 25 * ONE && spins < 200) {
-            vm.prank(alice);
-            wheel.spin();
-            spins++;
-        }
-        // Sau vòng lặp pool < 25 mUSDC: contract vẫn solvent.
-        assertLt(wheel.pool(), 25 * ONE);
-        assertGe(token.balanceOf(address(wheel)), wheel.pool());
+        vm.warp(start + (e + 1) * 180 + 1); // hết kỳ
+        distributor.finalizeEpoch(e);
     }
 
     // ------------------------------------------------------------------
-    // Access control
+    // Cấp lượt theo kỳ đạt
     // ------------------------------------------------------------------
 
-    function test_NonOwnerCannotSetFee() public {
+    function test_ClaimEpochAfterSettledQualified() public {
+        _qualifyAlice(0);
         vm.prank(alice);
-        vm.expectRevert();
-        wheel.setSpinFee(2 * ONE);
+        wheel.claimEpoch(0);
+        assertEq(wheel.freeSpins(alice), 1);
+
+        // Trùng kỳ → từ chối.
+        vm.expectRevert(abi.encodeWithSelector(LuckyWheel.EpochAlreadyGranted.selector, alice, 0));
+        vm.prank(alice);
+        wheel.claimEpoch(0);
     }
 
-    function test_OwnerCanSetFeeAndCooldown() public {
-        vm.startPrank(deployer);
-        wheel.setSpinFee(2 * ONE);
-        wheel.setCooldown(120);
+    function test_ClaimRevertsBeforeSettledOrWhenMissed() public {
+        // Kỳ 0 chưa chốt → chưa được cấp.
+        uint256 start = vault.startAt();
+        vm.warp(start + 10);
+        vm.startPrank(alice);
+        vault.setWeeklyTarget(2 * ONE);
+        token.approve(address(vault), 10 * ONE);
+        vault.deposit(2 * ONE);
+        vm.expectRevert(abi.encodeWithSelector(LuckyWheel.EpochNotQualified.selector, alice, 0));
+        wheel.claimEpoch(0);
         vm.stopPrank();
-        assertEq(wheel.spinFee(), 2 * ONE);
-        assertEq(wheel.cooldown(), 120);
+
+        // Kỳ 1: alice gửi rồi RÚT HẾT trong kỳ → không đạt → không có lượt (chống farm).
+        vm.warp(start + 180 + 10);
+        vm.startPrank(alice);
+        vault.deposit(2 * ONE);
+        vault.withdraw(2 * ONE);
+        vm.stopPrank();
+        vm.startPrank(deployer);
+        token.approve(address(source), 1 * ONE);
+        source.fundEpoch(1, 1 * ONE);
+        vm.stopPrank();
+        vm.warp(start + 1 * 180 + 1);
+        distributor.finalizeEpoch(0); // chốt tuần tự — kỳ 0 trước
+        vm.warp(start + 2 * 180 + 1);
+        distributor.finalizeEpoch(1);
+        vm.expectRevert(abi.encodeWithSelector(LuckyWheel.EpochNotQualified.selector, alice, 1));
+        vm.prank(alice);
+        wheel.claimEpoch(1);
+    }
+
+    function test_TwoQualifiedEpochsTwoGrants() public {
+        _qualifyAlice(0);
+        _qualifyAlice(1);
+        vm.startPrank(alice);
+        wheel.claimEpoch(0);
+        wheel.claimEpoch(1);
+        assertEq(wheel.freeSpins(alice), 2);
+        vm.stopPrank();
+    }
+
+    // ------------------------------------------------------------------
+    // Spin miễn phí + quỹ
+    // ------------------------------------------------------------------
+
+    function test_SpinIsFreeAndConsumesGrant() public {
+        _qualifyAlice(0);
+        vm.startPrank(alice);
+        wheel.claimEpoch(0);
+        uint256 balBefore = token.balanceOf(alice);
+        wheel.spin();
+        assertEq(wheel.freeSpins(alice), 0);
+        assertGe(token.balanceOf(alice), balBefore); // không tốn phí; trúng thì tăng
+        vm.stopPrank();
+    }
+
+    function test_SpinWithoutGrantReverts() public {
+        vm.prank(alice);
+        vm.expectRevert(LuckyWheel.NoFreeSpin.selector);
+        wheel.spin();
+    }
+
+    function test_WheelExhaustedWhenPoolBelowMaxPrize() public {
+        // Wheel quỹ thiếu ngay từ đầu (5 < giải lớn nhất 10): cấp lượt vẫn được nhưng spin từ chối.
+        vm.startPrank(deployer);
+        LuckyWheel wheelLow = new LuckyWheel(token, vault, 10);
+        token.approve(address(wheelLow), 10 * ONE);
+        wheelLow.fund(5 * ONE);
+        vm.stopPrank();
+
+        _qualifyAlice(0);
+        vm.startPrank(alice);
+        wheelLow.claimEpoch(0);
+        assertFalse(wheelLow.canServe());
+        vm.expectRevert(LuckyWheel.WheelExhausted.selector);
+        wheelLow.spin();
+        vm.stopPrank();
+    }
+
+    function test_CanServeReflectsPool() public view {
+        assertTrue(wheel.canServe()); // pool 50 >= maxPrize 10
+    }
+
+    function test_PrizeBoundaryMapping() public view {
+        // totalWeight = 100: 0(50) 1(35) 2(12) 5(2) 10(1)
+        (uint256 i0,,,) = wheel.previewPrize(0);
+        (uint256 i49,,,) = wheel.previewPrize(49);
+        (uint256 i50,,,) = wheel.previewPrize(50);
+        (uint256 i84,,,) = wheel.previewPrize(84);
+        (uint256 i85,,,) = wheel.previewPrize(85);
+        (uint256 i96,,,) = wheel.previewPrize(96);
+        (uint256 i98,,,) = wheel.previewPrize(98);
+        (uint256 i99,,,) = wheel.previewPrize(99);
+        assertEq(i0, 0);
+        assertEq(i49, 0);
+        assertEq(i50, 1);
+        assertEq(i84, 1);
+        assertEq(i85, 2);
+        assertEq(i96, 2);
+        assertEq(i98, 3);
+        assertEq(i99, 4);
+        // Giải 0 kèm 10 điểm trang trí.
+        (, uint256 amt0, uint256 decor0,) = wheel.previewPrize(10);
+        assertEq(amt0, 0);
+        assertEq(decor0, 10);
+        // EV = 0,79 mUSDC/lượt theo bảng.
+        uint256 ev = (0 * 50 + 1 * 35 + 2 * 12 + 5 * 2 + 10 * 1); // 79
+        assertEq(ev, 79);
+    }
+
+    function test_CooldownBetweenSpins() public {
+        _qualifyAlice(0);
+        _qualifyAlice(1);
+        vm.startPrank(alice);
+        wheel.claimEpoch(0);
+        wheel.claimEpoch(1);
+        wheel.spin();
+        vm.expectRevert(abi.encodeWithSelector(LuckyWheel.CooldownActive.selector, block.timestamp + 10));
+        wheel.spin(); // cooldown 10s chưa hết
+        vm.warp(block.timestamp + 11);
+        wheel.spin(); // hết cooldown, quay lượt thứ hai
+        assertEq(wheel.freeSpins(alice), 0);
+        vm.stopPrank();
     }
 }

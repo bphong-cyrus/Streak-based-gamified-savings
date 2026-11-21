@@ -16,13 +16,13 @@
 
 | Bước | Lệnh | Kết quả |
 |---|---|---|
-| 1. Contract tests | `cd contracts && forge test` | **73/73 pass** (6 suite: unit + fuzz + invariant + security) |
+| 1. Contract tests | `cd contracts && forge test` | **82/82 pass** (6 suite: unit + fuzz + invariant + security) |
 | 2. Type check | `cd web && npx tsc --noEmit` | **0 lỗi** |
 | 3. Production build | `cd web && npm run build` | **Compiled successfully**, prerender 5/5 trang |
 | 4. E2E (CI config) | `cd web && CI=1 npx playwright test` | **10/10 pass** (6 test × desktop 1440×900 + mobile 390×844), 51.2s |
 
 ```
-Ran 6 test suites in 10.43s (46.16s CPU time): 73 tests passed, 0 failed, 0 skipped (73 total tests)
+Ran 6 test suites in 10.43s (46.16s CPU time): 82 tests passed, 0 failed, 0 skipped (73 total tests)
 ```
 
 Giám khảo có thể tự tái lập toàn bộ bằng 4 lệnh trên trên bất kỳ máy nào có

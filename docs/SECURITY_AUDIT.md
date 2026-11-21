@@ -33,6 +33,7 @@
 | SavingsGoal | Mục tiêu tiết kiệm dài hạn (tracking, không khóa tiền) | `src/SavingsGoal.sol` |
 | StreakNFT | Huy hiệu soulbound mốc 3/7/30 kỳ | `src/StreakNFT.sol` |
 | FaucetDrip | Vòi mUSDC onboard ví mới | `src/FaucetDrip.sol` |
+| LuckyWheel | Vòng quay may mắn + nhiệm vụ (mở rộng gameplay) | `src/LuckyWheel.sol` |
 
 ## 3. Findings
 
@@ -135,6 +136,19 @@
 **Trạng thái:** **Fixed / Verified** — quyết định sản phẩm chốt: **phí trên gốc = 0 vĩnh viễn** (gỡ hoàn toàn `withdrawFeeBps`/`emergencyPenaltyBps`/whale-discount khỏi source, không còn setter nào để bật lại); bỏ `whenNotPaused` ở hai hàm rút; phí lãi giữ trần `MAX_YIELD_FEE_BPS = 20%`. Test đối kháng: `test_withdrawAlwaysReturnsFullPrincipal`, `test_emergencyWithdrawAlwaysReturnsFullPrincipal`, `test_withdrawWorksWhilePaused`, `test_emergencyWithdrawWorksWhilePaused`, `test_setYieldFeeAboveCapReverts` — `forge test` pass trọn bộ.
 
 > Triển khai: đã redeploy Fuji bản mới chứa toàn bộ fix (deployBlock 61371331, kỳ 180 giây, deployer `0xe00EA…50734`); địa chỉ trong `deployments/43113.json` và `web/lib/config.ts` là bản mới.
+
+### F12 — LuckyWheel: entropy testnet + thiết kế chống farm — Low / Accepted
+
+**Vị trí:** `src/LuckyWheel.sol`.
+
+**Mô tả:** (1) Kết quả quay dùng `blockhash(block.number - 1)` — KHÔNG tuyên bố "công bằng có thể kiểm chứng";
+kết quả minh bạch, đối chiếu được trên Snowtrace; mainnet bắt buộc chuyển VRF (roadmap). (2) Quỹ giải do
+sponsor nạp — **ngườ chơi không trả phí quay, gốc tiết kiệm không vào quỹ giải**; quỹ cạn dưới giải lớn
+nhất thì `spin()` từ chối (web báo "chờ sponsor nạp thêm"). (3) Chống farm: lượt quy chỉ cấp khi kỳ đã
+chốt và đạt mục tiêu — gửi rồi rút trong kỳ làm tiến độ giảm → không đạt; tối đa 1 lượt/ví/kỳ.
+
+**Trạng thái:** **Accepted** cho testnet — có test: boundary bảng giải (EV 0,79 mUSDC/lượt), claim kỳ đạt,
+double-claim bị chặn, farm gửi-rút không đạt, quỹ thiếu thì `WheelExhausted`, cooldown.
 
 ## 4. Kiểm chứng tính toàn vẹn tiền (chạy thật trên Fuji)
 
