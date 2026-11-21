@@ -1,7 +1,10 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import { useEffect, useState } from "react";
 import { useAccount, useConnect } from "wagmi";
+import { LanguagePicker } from "@/components/LanguagePicker";
+import { describeConnectError } from "@/components/ConnectButton";
 import { CozyApp } from "@/components/cozy/CozyApp";
 import { useCozyTheme } from "@/components/cozy/useThemeLanding";
 import { buildMockData } from "@/lib/mockData";
@@ -35,14 +38,15 @@ function useGlobalErrorTrap() {
 }
 
 function GlobalErrorBadge({ err, onClose }: { err: string; onClose: () => void }) {
+  const { t: translate } = useLanguage();
   const [open, setOpen] = useState(false);
   return (
     <div className="fixed bottom-3 left-3 z-[60] max-w-md">
       {open ? (
         <div className="rounded-xl border border-danger/50 bg-surface p-3 shadow-card">
           <div className="flex items-center justify-between gap-2">
-            <strong className="font-cozy text-sm text-danger">Lỗi phát hiện (gửi kèm ảnh này khi báo bug)</strong>
-            <button className="text-xs font-bold text-ink-soft" onClick={onClose}>Đóng</button>
+            <strong className="font-cozy text-sm text-danger">{translate("Lỗi phát hiện (gửi kèm ảnh này khi báo bug)")}</strong>
+            <button className="text-xs font-bold text-ink-soft" onClick={onClose}>{translate("Đóng")}</button>
           </div>
           <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] text-ink">{err}</pre>
         </div>
@@ -51,7 +55,7 @@ function GlobalErrorBadge({ err, onClose }: { err: string; onClose: () => void }
           className="rounded-full border border-danger/50 bg-danger/10 px-3 py-1.5 text-xs font-bold text-danger shadow-card"
           onClick={() => setOpen(true)}
         >
-          ⚠ Có lỗi — bấm xem chi tiết
+          {translate("⚠ Có lỗi — bấm xem chi tiết")}
         </button>
       )}
     </div>
@@ -61,17 +65,18 @@ function GlobalErrorBadge({ err, onClose }: { err: string; onClose: () => void }
 /** Màn chọn khi chưa kết nối ví: tách bạch rõ "dữ liệu mẫu" và "ví thật"
  *  để ngườ mới không đọc nhầm số demo thành tài sản của mình. */
 function LandingGate({ onTryDemo }: { onTryDemo: () => void }) {
+  const { t: translate } = useLanguage();
   const { connect, connectors, isPending } = useConnect();
   const [err, setErr] = useState<string | null>(null);
   return (
-    <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
+    <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-20 text-center">
+      <div className="absolute end-4 top-4"><LanguagePicker /></div>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/logo.png" alt="Savient" className="h-20 w-20 rounded-2xl shadow-card" draggable={false} />
       <h1 className="mt-4 font-cozy text-4xl font-extrabold text-ink">Savient</h1>
       <p className="mt-1 text-sm font-bold tracking-wide text-ink-soft">Saving · Convenient · Consistent</p>
       <p className="mt-3 max-w-sm text-sm font-semibold text-ink-soft">
-        Tiết kiệm gamified trên Avalanche Fuji — gửi đủ mỗi kỳ, nhà 3D mọc tầng, streak càng dài thưởng càng lớn.
-        Rút gốc luôn đủ 100%.
+        {translate("Tiết kiệm gamified trên Avalanche Fuji — gửi đủ mỗi kỳ, nhà 3D mọc tầng, streak càng dài thưởng càng lớn. Rút gốc luôn đủ 100%.")}
       </p>
       <div className="mt-6 flex w-full max-w-xs flex-col gap-3">
         <button
@@ -79,7 +84,7 @@ function LandingGate({ onTryDemo }: { onTryDemo: () => void }) {
           className="btn-primary w-full text-lg active:translate-y-[2px]"
           onClick={onTryDemo}
         >
-          Xem bản thử (dữ liệu mẫu)
+          {translate("Xem bản thử (dữ liệu mẫu)")}
         </button>
         <button
           data-testid="connect-cta"
@@ -87,19 +92,20 @@ function LandingGate({ onTryDemo }: { onTryDemo: () => void }) {
           disabled={isPending}
           onClick={() => {
             setErr(null);
-            try {
-              connect({ connector: connectors[0] });
-            } catch {
+            const connector = connectors[0];
+            if (!connector) {
               setErr("Không tìm thấy ví — hãy cài Core hoặc MetaMask rồi tải lại trang.");
+              return;
             }
+            connect({ connector }, { onError: (error) => setErr(describeConnectError(error)) });
           }}
         >
-          {isPending ? "Đang mở ví…" : "Kết nối ví Avalanche Fuji"}
+          {isPending ? translate("Đang mở ví…") : translate("Kết nối ví Avalanche Fuji")}
         </button>
       </div>
-      {err && <p className="mt-3 text-xs font-bold text-danger">{err}</p>}
+      {err && <p role="alert" className="mt-3 max-w-sm text-xs font-bold text-danger">{translate(err)}</p>}
       <p className="mt-4 text-[11px] font-semibold text-ink-muted">
-        Bản thử = số liệu mô phỏng, không phải số dư thật · Mạng Fuji (testnet) — không dùng tiền thật.
+        {translate("Bản thử = số liệu mô phỏng, không phải số dư thật · Mạng Fuji (testnet) — không dùng tiền thật.")}
       </p>
     </div>
   );

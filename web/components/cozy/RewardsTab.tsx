@@ -1,9 +1,9 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import { useAccount, useReadContracts } from "wagmi";
 import { contracts } from "@/lib/config";
 import { streakNFTAbi, dailyCheckInAbi, yieldDistributorAbi } from "@/lib/abis";
-import { fmt } from "@/lib/format";
 import { TxFeedback, useTx } from "@/components/useTx";
 import { FeatureCard, Stat } from "@/components/cozy/panel";
 import { LuckyWheelCard } from "@/components/cozy/LuckyWheelCard";
@@ -33,6 +33,7 @@ const TIERS = [
 ];
 
 function BadgesCard({ data }: { data: VaultData }) {
+  const { t: translate } = useLanguage();
   const tx = useTx();
   const { address } = useAccount();
   const streak = data.account?.streak ?? 0n;
@@ -62,7 +63,7 @@ function BadgesCard({ data }: { data: VaultData }) {
   const canMint = eligible > 0n && !owned(eligibleIndex);
 
   return (
-    <FeatureCard icon="trophy" title="Huy hiệu streak" desc="NFT ghi lại cột mốc chuỗi kỳ của bạn — vĩnh viễn trên chuỗi">
+    <FeatureCard icon="trophy" title={translate("Huy hiệu streak")} desc={translate("NFT ghi lại cột mốc chuỗi kỳ của bạn — vĩnh viễn trên chuỗi")}>
       <div className="space-y-3">
         {TIERS.map((t, i) => {
           const has = owned(i);
@@ -88,15 +89,15 @@ function BadgesCard({ data }: { data: VaultData }) {
                 <Icon name={t.icon} size={26} />
               </span>
               <div className="flex-1">
-                <div className="font-cozy text-base font-extrabold text-ink">{t.label}</div>
-                <div className="text-xs font-semibold text-ink-soft">{t.desc}</div>
+                <div className="font-cozy text-base font-extrabold text-ink">{translate(t.label)}</div>
+                <div className="text-xs font-semibold text-ink-soft">{translate(t.desc)}</div>
               </div>
               <span
                 className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-extrabold uppercase ${
                   has ? "bg-cta text-white" : canUnlock ? "bg-terracotta text-white" : "bg-border text-ink-soft"
                 }`}
               >
-                {loading ? "…" : has ? "Đã sở hữu" : canUnlock ? "Có thể nhận" : weeksLeft === 0 ? "Đã mở khóa" : `còn ${weeksLeft} kỳ`}
+                {loading ? "…" : has ? translate("Đã sở hữu") : canUnlock ? translate("Có thể nhận") : weeksLeft === 0 ? translate("Đã mở khóa") : translate("còn {0} kỳ", [weeksLeft])}
               </span>
             </div>
           );
@@ -104,11 +105,11 @@ function BadgesCard({ data }: { data: VaultData }) {
       </div>
       {address && canMint && (
         <button className="btn-primary mt-4 w-full" disabled={tx.step !== null} onClick={mint}>
-          Nhận huy hiệu {eligible.toString()} kỳ ngay
+          {translate("Nhận huy hiệu {0} kỳ ngay", [eligible.toString()])}
         </button>
       )}
       <p className="mt-2 text-[11px] font-semibold text-ink-soft">
-        Streak hiện tại: {streak.toString()} kỳ · Huy hiệu mint theo tiêu chuẩn ERC-1155, đối chiếu được trên Snowtrace.
+        {translate("Streak hiện tại: {0} kỳ · Huy hiệu mint theo tiêu chuẩn ERC-1155, đối chiếu được trên Snowtrace.", [streak.toString()])}
       </p>
       <TxFeedback state={tx} />
     </FeatureCard>
@@ -116,6 +117,7 @@ function BadgesCard({ data }: { data: VaultData }) {
 }
 
 function CheckInCard() {
+  const { t: translate, formatAmount: fmt } = useLanguage();
   const tx = useTx();
   const { address } = useAccount();
   const isDemo = isDemoMode();
@@ -148,18 +150,18 @@ function CheckInCard() {
   }
 
   return (
-    <FeatureCard icon="calendar" title="Điểm danh mỗi ngày" desc="Thưởng mUSDC thử nghiệm mỗi ngày — chuỗi càng dài thưởng càng lớn">
+    <FeatureCard icon="calendar" title={translate("Điểm danh mỗi ngày")} desc={translate("Thưởng mUSDC thử nghiệm mỗi ngày — chuỗi càng dài thưởng càng lớn")}>
       <div className="grid grid-cols-3 gap-2">
-        <Stat label="Chuỗi ngày" value={loading ? undefined : `${streak.toString()}`} tone="text-terracotta" />
-        <Stat label="Thưởng hôm nay" value={loading ? undefined : `${fmt(reward)} mUSDC`} tone="text-cta" />
-        <Stat label="Pool còn" value={loading ? undefined : `${fmt(pool)} mUSDC`} />
+        <Stat label={translate("Chuỗi ngày")} value={loading ? undefined : `${streak.toString()}`} tone="text-terracotta" />
+        <Stat label={translate("Thưởng hôm nay")} value={loading ? undefined : `${fmt(reward)} mUSDC`} tone="text-cta" />
+        <Stat label={translate("Pool còn")} value={loading ? undefined : `${fmt(pool)} mUSDC`} />
       </div>
       <button
         className="btn-primary mt-4 w-full"
         disabled={tx.step !== null || !address || !canCheckIn || isDemo}
         onClick={doCheckIn}
       >
-        {isDemo ? "Điểm danh trong bản thử" : address ? (canCheckIn ? "Điểm danh ngay" : "Đã điểm danh hôm nay") : "Kết nối ví để điểm danh"}
+        {isDemo ? translate("Điểm danh trong bản thử") : address ? (canCheckIn ? translate("Điểm danh ngay") : translate("Đã điểm danh hôm nay")) : translate("Kết nối ví để điểm danh")}
       </button>
       <TxFeedback state={tx} />
     </FeatureCard>
@@ -167,6 +169,7 @@ function CheckInCard() {
 }
 
 function YieldCard({ data }: { data: VaultData }) {
+  const { t: translate, formatAmount: fmt } = useLanguage();
   const claim = useTx();
   const finalize = useTx();
   const { claimable, claimed, canFinalize, nextEpochToFinalize, rollover, currentBudget } = data;
@@ -179,34 +182,34 @@ function YieldCard({ data }: { data: VaultData }) {
   async function finalizeEpoch() {
     if (nextEpochToFinalize === undefined) return;
     await finalize.run("Chốt kỳ", [
-      { label: `Đang chốt kỳ #${nextEpochToFinalize}…`, call: { address: contracts.distributor, abi: yieldDistributorAbi, functionName: "finalizeEpoch", args: [nextEpochToFinalize] } },
+      { label: "Đang chốt kỳ #{0}…", labelValues: [String(nextEpochToFinalize)], call: { address: contracts.distributor, abi: yieldDistributorAbi, functionName: "finalizeEpoch", args: [nextEpochToFinalize] } },
     ]);
   }
 
   const busy = claim.step !== null || finalize.step !== null;
 
   return (
-    <FeatureCard icon="chart" title="Lãi tiết kiệm" desc="Ngân sách thưởng do sponsor nạp (chưa phải lãi lending) — chia theo gốc và streak, đối chiếu được on-chain">
+    <FeatureCard icon="chart" title={translate("Lãi tiết kiệm")} desc={translate("Ngân sách thưởng do sponsor nạp (chưa phải lãi lending) — chia theo gốc và streak, đối chiếu được on-chain")}>
       {isDemoMode() && (
         <p data-testid="demo-notice" className="mb-2 rounded-lg border border-dashed border-cta/50 bg-cta/5 px-2 py-1 text-center text-[11px] font-bold text-ink-soft" role="note">
-          Bản thử — số liệu mô phỏng, không phải thưởng thật.
+          {translate("Bản thử — số liệu mô phỏng, không phải thưởng thật.")}
         </p>
       )}
       <div className="grid grid-cols-3 gap-2">
-        <Stat label="Chờ nhận" value={`${fmt(claimable)} mUSDC`} tone="text-cta" />
-        <Stat label="Đã nhận" value={`${fmt(claimed)} mUSDC`} />
-        <Stat label="Ngân sách kỳ này" value={`${fmt(currentBudget)} mUSDC`} />
+        <Stat label={translate("Chờ nhận")} value={`${fmt(claimable)} mUSDC`} tone="text-cta" />
+        <Stat label={translate("Đã nhận")} value={`${fmt(claimed)} mUSDC`} />
+        <Stat label={translate("Ngân sách kỳ này")} value={`${fmt(currentBudget)} mUSDC`} />
       </div>
       <button className="btn-primary mt-4 w-full" disabled={busy || !claimable || claimable === 0n} onClick={claimYield}>
-        Nhận lãi về ví
+        {translate("Nhận lãi về ví")}
       </button>
       <TxFeedback state={claim} />
       <div className="mt-4 border-t border-dashed border-border pt-4">
         <p className="text-xs font-semibold text-ink-soft">
-          Chốt kỳ là hành động công khai — ai gọi cũng được{rollover !== undefined && rollover > 0n ? ` · Rollover chờ chia: ${fmt(rollover)} mUSDC` : ""}.
+          {translate("Chốt kỳ là hành động công khai — ai gọi cũng được")}{rollover !== undefined && rollover > 0n ? translate(" · Rollover chờ chia: {0} mUSDC", [fmt(rollover)]) : ""}.
         </p>
         <button className="btn-secondary mt-2 w-full" disabled={busy || !canFinalize} onClick={finalizeEpoch}>
-          {canFinalize ? `Chốt kỳ #${nextEpochToFinalize}` : "Chưa đến hạn chốt kỳ"}
+          {canFinalize ? translate("Chốt kỳ #{0}", [nextEpochToFinalize]) : translate("Chưa đến hạn chốt kỳ")}
         </button>
         <TxFeedback state={finalize} />
       </div>

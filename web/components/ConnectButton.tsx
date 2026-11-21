@@ -1,12 +1,12 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import { useEffect, useState } from "react";
-import { useAccount, useConnect, useDisconnect, useSwitchChain, useChainId } from "wagmi";
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from "wagmi";
 import { targetChainId, fuji } from "@/lib/config";
 
-/** Giải mã lỗi kết nối ví thành thông báo tiếng Việt gọn gàng —
- *  tuyệt đối không để ngườ dùng bấm nút mà không có phản hồi gì. */
-function describeConnectError(e: unknown): string {
+/** Identify the wallet message so it can be displayed in the selected language. */
+export function describeConnectError(e: unknown): string {
   const name = (e as { name?: string })?.name ?? "";
   const msg = (e as { message?: string })?.message ?? "";
   if (
@@ -16,15 +16,15 @@ function describeConnectError(e: unknown): string {
   ) {
     return "Bạn đã từ chối (hoặc đang mở một yêu cầu kết nối khác) trong ví. Kiểm tra popup MetaMask rồi bấm lại.";
   }
-  if (name.includes("ConnectorNotFoundError") || /connector not found/i.test(msg)) {
+  if (/ConnectorNotFoundError|ProviderNotFoundError/.test(name) || /connector not found|provider not found/i.test(msg)) {
     return "Chưa phát hiện ví trong trình duyệt. Cài MetaMask (hoặc mở khóa ví) rồi tải lại trang.";
   }
-  return `Không kết nối được ví${msg ? `: ${msg.slice(0, 120)}` : "."}`;
+  return "Không kết nối được ví. Kiểm tra ví rồi thử lại.";
 }
 
 export function ConnectButton() {
-  const { address, isConnected } = useAccount();
-  const chainId = useChainId();
+  const { t: translate } = useLanguage();
+  const { address, chainId, isConnected } = useAccount();
   const { connect, connectors, isPending } = useConnect();
   const { disconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
@@ -56,17 +56,17 @@ export function ConnectButton() {
             );
           }}
         >
-          {isPending ? "Đang kết nối…" : "Kết nối ví"}
+          {isPending ? translate("Đang kết nối…") : translate("Kết nối ví")}
         </button>
         {notice && (
           <div
             role="alert"
-            className="absolute right-0 top-full z-50 mt-2 w-72 rounded-xl border border-danger/40 bg-surface p-3 text-xs font-semibold leading-relaxed text-danger shadow-card"
+            className="absolute end-0 top-full z-50 mt-2 w-72 rounded-xl border border-danger/40 bg-surface p-3 text-xs font-semibold leading-relaxed text-danger shadow-card"
           >
-            {notice}
+            {translate(notice)}
             <div className="mt-2 flex gap-3">
               <button className="font-bold text-ink underline" onClick={() => setNotice(null)}>
-                Đóng
+                {translate("Đóng")}
               </button>
               {!globalThis.window?.ethereum && (
                 <a
@@ -75,7 +75,7 @@ export function ConnectButton() {
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Cài MetaMask
+                  {translate("Cài MetaMask")}
                 </a>
               )}
             </div>
@@ -85,12 +85,12 @@ export function ConnectButton() {
     );
   }
 
-  const wrongChain = chainId !== targetChainId;
+  const wrongChain = chainId !== undefined && chainId !== targetChainId;
 
   if (wrongChain) {
     return (
       <button className="btn-primary !h-9 !px-3.5 !py-1.5 text-sm" onClick={() => switchChain({ chainId: targetChainId })}>
-        Chuyển {fuji.name}
+        {translate("Chuyển {0}", [fuji.name])}
       </button>
     );
   }
@@ -112,7 +112,7 @@ export function ConnectButton() {
           disconnect();
         }}
       >
-        {confirming ? "Chắc chắn ngắt?" : "Ngắt"}
+        {confirming ? translate("Chắc chắn ngắt?") : translate("Ngắt")}
       </button>
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import { useEffect, useState } from "react";
 import { Icon, type IconName } from "@/components/cozy/icons";
 
@@ -24,6 +25,7 @@ const STEPS: Array<{ icon: IconName; title: string; desc: string }> = [
 ];
 
 export function Onboarding() {
+  const { t: translate } = useLanguage();
   const [step, setStep] = useState<number | null>(null);
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export function Onboarding() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Hướng dẫn sử dụng Savient"
+        aria-label={translate("Hướng dẫn sử dụng Savient")}
         className="w-full max-w-md rounded-t-2xl border border-border bg-surface p-5 pb-8 shadow-card md:rounded-2xl md:pb-6"
         onClick={(e) => e.stopPropagation()}
         style={{ animation: "bannerPop 0.4s var(--ease-spring) both" }}
@@ -55,11 +57,11 @@ export function Onboarding() {
             <Icon name={s.icon} size={30} />
           </span>
           <div>
-            <div className="text-[10px] font-extrabold uppercase tracking-wide text-ink-muted">Bước {step + 1}/{STEPS.length}</div>
-            <h3 className="font-cozy text-xl font-extrabold text-ink">{s.title}</h3>
+            <div className="text-[10px] font-extrabold uppercase tracking-wide text-ink-muted">{translate("Bước {0}/{1}", [step + 1, STEPS.length])}</div>
+            <h3 className="font-cozy text-xl font-extrabold text-ink">{translate(s.title)}</h3>
           </div>
         </div>
-        <p className="mt-3 text-sm font-semibold text-ink-soft">{s.desc}</p>
+        <p className="mt-3 text-sm font-semibold text-ink-soft">{translate(s.desc)}</p>
         <div className="mt-4 flex items-center justify-between">
           <div className="flex gap-1.5">
             {STEPS.map((_, i) => (
@@ -71,7 +73,7 @@ export function Onboarding() {
           </div>
           <div className="flex gap-2">
             <button className="btn-secondary !px-3 !py-1.5 text-xs" onClick={done}>
-              Bỏ qua
+              {translate("Bỏ qua")}
             </button>
             <button
               className="btn-primary !px-4 !py-1.5 text-sm"
@@ -80,7 +82,7 @@ export function Onboarding() {
                 else setStep(step + 1);
               }}
             >
-              {last ? "Bắt đầu" : "Tiếp"}
+              {last ? translate("Bắt đầu") : translate("Tiếp")}
             </button>
           </div>
         </div>

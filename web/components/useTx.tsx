@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import { useCallback, useState } from "react";
 import { useWriteContract, useSwitchChain } from "wagmi";
 import { waitForTransactionReceipt, getAccount } from "@wagmi/core";
@@ -38,8 +39,10 @@ function withWalletTimeout<T>(p: Promise<T>): Promise<T> {
 
 export interface TxState {
   step: string | null;
+  stepValues?: string[];
   hash: string | null;
   error: string | null;
+  errorLabel?: string;
   /** Thông báo mô phỏng khi đang ở chế độ demo (không phải lỗi). */
   info?: string | null;
   /** Vị trí bước hiện tại / tổng số bước (1-based) cho tx stepper. */
@@ -51,6 +54,7 @@ export interface TxState {
 
 export interface TxLogEntry {
   label: string;
+  labelValues?: string[];
   hash: string;
   at: number;
   address: string;
@@ -142,7 +146,7 @@ export function useTx() {
   const [state, setState] = useState<TxState>({ step: null, hash: null, error: null });
 
   const run = useCallback(
-    async (label: string, calls: Array<{ label: string; call: Parameters<typeof writeContractAsync>[0] }>) => {
+    async (label: string, calls: Array<{ label: string; labelValues?: string[]; call: Parameters<typeof writeContractAsync>[0] }>) => {
       setState({ step: null, hash: null, error: null });
       if (isDemoMode()) {
         setState({ step: null, hash: null, error: null, info: "Chế độ demo — giao dịch chỉ mô phỏng. Kết nối ví để thực hiện thật." });
@@ -163,7 +167,7 @@ export function useTx() {
         let lastHash: string | null = null;
         for (let i = 0; i < calls.length; i++) {
           const c = calls[i];
-          setState((s) => ({ ...s, step: c.label, stepIndex: i + 1, stepTotal: calls.length }));
+          setState((s) => ({ ...s, step: c.label, stepValues: c.labelValues, stepIndex: i + 1, stepTotal: calls.length }));
           const hash = await withWalletTimeout(writeContractAsync(c.call));
           lastHash = hash;
           setState((s) => ({ ...s, hash }));
@@ -175,7 +179,7 @@ export function useTx() {
             retryDelay: 2_000,
           });
           const acc = getAccount(wagmiConfig);
-          pushTxLog({ label: c.label, hash, at: Date.now(), address: acc.address ?? "", chainId: acc.chainId ?? 0 }, acc.address ?? "", acc.chainId ?? 0);
+          pushTxLog({ label: c.label, labelValues: c.labelValues, hash, at: Date.now(), address: acc.address ?? "", chainId: acc.chainId ?? 0 }, acc.address ?? "", acc.chainId ?? 0);
         }
         setState({ step: null, hash: lastHash, error: null, done: true, info: null });
         sfx.success();
@@ -183,7 +187,7 @@ export function useTx() {
       } catch (e) {
         sfx.error();
         const err = e as BaseError;
-        setState({ step: null, hash: null, error: `${label}: ${decodeError(err)}` });
+        setState({ step: null, hash: null, error: decodeError(err), errorLabel: label });
         return false;
       }
     },
@@ -198,14 +202,15 @@ export function useTx() {
 /** Stepper trạng thái giao dịch: Approve (bước 1/n) -> ... -> Success kèm link Snowtrace.
  *  Thẻ thành công ĐƯỢC GIỮ cho đến khi ngườ dùng đóng — ngườ dùng kịp chụp/đối chiếu hash. */
 export function TxFeedback({ state, onDismiss }: { state: TxState; onDismiss?: () => void }) {
+  const { t: translate } = useLanguage();
   if (state.done && state.hash && !state.step && !state.error) {
     return (
       <div role="status" aria-live="polite" className="mt-3 rounded-xl border border-cta/40 bg-cta/10 px-3 py-2.5 text-sm">
         <div className="flex items-center justify-between gap-2">
-          <span className="font-cozy font-extrabold text-cta">✓ Giao dịch thành công</span>
+          <span className="font-cozy font-extrabold text-cta">{translate("✓ Giao dịch thành công")}</span>
           {onDismiss && (
             <button className="text-xs font-bold text-ink-soft hover:text-ink" onClick={onDismiss}>
-              Đóng
+              {translate("Đóng")}
             </button>
           )}
         </div>
@@ -215,7 +220,7 @@ export function TxFeedback({ state, onDismiss }: { state: TxState; onDismiss?: (
           target="_blank"
           rel="noopener noreferrer"
         >
-          Xem trên Snowtrace: {state.hash}
+          {translate("Xem trên Snowtrace: {0}", [state.hash])}
         </a>
       </div>
     );
@@ -223,7 +228,7 @@ export function TxFeedback({ state, onDismiss }: { state: TxState; onDismiss?: (
   if (state.info && !state.step && !state.error) {
     return (
       <div role="status" aria-live="polite" className="mt-3 rounded-xl border border-border bg-surface px-3 py-2 text-sm font-semibold text-ink-soft">
-        {state.info}
+        {translate(state.info)}
       </div>
     );
   }
@@ -236,7 +241,7 @@ export function TxFeedback({ state, onDismiss }: { state: TxState; onDismiss?: (
         state.error ? "border-danger/40 bg-danger/10 text-danger" : "border-cta/40 bg-cta/10 text-ink"
       }`}
     >
-      {state.error ?? (
+      {state.error ? (state.errorLabel ? `${translate(state.errorLabel)}: ${translate(state.error)}` : translate(state.error)) : (
         <div className="flex items-center gap-2.5">
           <span className="flex flex-col items-center gap-0.5">
             <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-cta border-t-transparent" />
@@ -244,10 +249,10 @@ export function TxFeedback({ state, onDismiss }: { state: TxState; onDismiss?: (
           <div>
             {state.stepTotal && state.stepTotal > 1 ? (
               <div className="font-cozy text-xs font-extrabold uppercase tracking-wide text-cta">
-                Bước {state.stepIndex}/{state.stepTotal}
+                {translate("Bước {0}/{1}", [state.stepIndex, state.stepTotal])}
               </div>
             ) : null}
-            <div className="font-semibold">{state.step}…</div>
+            <div className="font-semibold">{state.step && translate(state.step, state.stepValues)}</div>
           </div>
         </div>
       )}
@@ -258,7 +263,7 @@ export function TxFeedback({ state, onDismiss }: { state: TxState; onDismiss?: (
           target="_blank"
           rel="noopener noreferrer"
         >
-          Xem giao dịch: {state.hash}
+          {translate("Xem giao dịch: {0}", [state.hash])}
         </a>
       )}
     </div>

@@ -1,5 +1,7 @@
 "use client";
 
+import type { Translate } from "@/lib/languages";
+import { useLanguage } from "@/components/LanguageProvider";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useAccount, useReadContracts } from "wagmi";
 import { Building } from "@/components/cozy/Building";
@@ -9,7 +11,6 @@ import { TxFeedback, useTx } from "@/components/useTx";
 import { useTokenAllowance, withTokenApprove } from "@/components/cozy/panel";
 import { contracts } from "@/lib/config";
 import { streakVaultAbi } from "@/lib/abis";
-import { fmt } from "@/lib/format";
 import { sfx } from "@/lib/sound";
 import type { VaultData } from "@/lib/useVaultData";
 
@@ -37,23 +38,25 @@ function SectionTitle({ children, action }: { children: ReactNode; action?: Reac
 }
 
 function LoadingState() {
+  const { t: translate } = useLanguage();
   return (
     <div className="card p-6 text-center">
       <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-border border-t-cta" />
-      <p className="mt-3 font-semibold text-ink-soft">Đang tải dữ liệu tòa nhà…</p>
+      <p className="mt-3 font-semibold text-ink-soft">{translate("Đang tải dữ liệu tòa nhà…")}</p>
     </div>
   );
 }
 
 function ErrorState({ onRetry }: { onRetry?: () => void }) {
+  const { t: translate } = useLanguage();
   return (
     <div className="card p-6 text-center">
       <Icon name="flag" size={40} className="mx-auto text-ink-muted" />
-      <h2 className="mt-2 font-cozy text-xl font-bold text-ink">Không đọc được dữ liệu</h2>
-      <p className="mt-1 text-sm font-semibold text-ink-soft">RPC Fuji có thể đang bận. Thử lại sau vài giây nhé.</p>
+      <h2 className="mt-2 font-cozy text-xl font-bold text-ink">{translate("Không đọc được dữ liệu")}</h2>
+      <p className="mt-1 text-sm font-semibold text-ink-soft">{translate("RPC Fuji có thể đang bận. Thử lại sau vài giây nhé.")}</p>
       {onRetry && (
         <button className="btn-primary mt-4" onClick={onRetry}>
-          Thử lại
+          {translate("Thử lại")}
         </button>
       )}
     </div>
@@ -61,11 +64,12 @@ function ErrorState({ onRetry }: { onRetry?: () => void }) {
 }
 
 function NotStartedState({ countdown }: { countdown: string }) {
+  const { t: translate } = useLanguage();
   return (
     <div className="card p-6 text-center">
       <Icon name="clock" size={40} className="mx-auto text-ink-muted" />
-      <h2 className="mt-2 font-cozy text-xl font-bold text-ink">Chưa đến giờ mở kỳ đầu tiên</h2>
-      <p className="mt-1 text-sm font-semibold text-ink-soft">Tòa nhà khởi công sau {countdown}. Quay lại sớm nhé!</p>
+      <h2 className="mt-2 font-cozy text-xl font-bold text-ink">{translate("Chưa đến giờ mở kỳ đầu tiên")}</h2>
+      <p className="mt-1 text-sm font-semibold text-ink-soft">{translate("Tòa nhà khởi công sau {0}. Quay lại sớm nhé!", [translateCountdown(countdown, translate)])}</p>
     </div>
   );
 }
@@ -125,6 +129,7 @@ function SceneSkyOverlay({ night }: { night: boolean }) {
 
 /** Heatmap 12 kỳ gần nhất: xanh = đạt, hồng = lỡ, nhấp nháy xanh dương = kỳ đang diễn ra. */
 function StreakHeatmap({ data }: { data: VaultData }) {
+  const { t: translate, formatAmount: fmt } = useLanguage();
   const { address } = useAccount();
   const current = data.account?.currentEpoch;
   const started = data.hasStarted;
@@ -151,11 +156,11 @@ function StreakHeatmap({ data }: { data: VaultData }) {
 
   return (
     <div className="card p-4">
-      <SectionTitle action={<span className="rounded-full bg-surface-sunken px-2.5 py-0.5 font-cozy text-xs font-extrabold text-ink-soft">{qualified}/{epochs.length || HEAT_WEEKS} đạt</span>}>
-        <Icon name="flame" size={19} className="inline text-terracotta" /> Lịch sử {HEAT_WEEKS} kỳ gần nhất
+      <SectionTitle action={<span className="rounded-full bg-surface-sunken px-2.5 py-0.5 font-cozy text-xs font-extrabold text-ink-soft">{translate("{0}/{1} đạt", [qualified, epochs.length || HEAT_WEEKS])}</span>}>
+        <Icon name="flame" size={19} className="inline text-terracotta" />{" "}{translate("Lịch sử {0} kỳ gần nhất", [HEAT_WEEKS])}
       </SectionTitle>
       {!address ? (
-        <p className="text-sm font-semibold text-ink-soft">Kết nối ví để xem lịch sử streak của bạn.</p>
+        <p className="text-sm font-semibold text-ink-soft">{translate("Kết nối ví để xem lịch sử streak của bạn.")}</p>
       ) : (
         <>
           {/* Cuộn ngang trên mobile — 12 cột không bị bóp nhỏ dưới 375px */}
@@ -185,18 +190,16 @@ function StreakHeatmap({ data }: { data: VaultData }) {
                     className={`h-12 w-full rounded-lg ${cls} ${isCurrent ? "ring-2 ring-streak-current/60" : ""}`}
                     title={
                       s
-                        ? `Kỳ #${e.toString()}: ${
-                            s.settled
-                              ? s.qualified
-                                ? "đạt"
-                                : "lỡ"
-                              : isCurrent
-                                ? "đang diễn ra"
-                                : participated
-                                  ? "đã gửi — chờ chốt kỳ"
-                                  : "chưa tham gia"
-                          } · ${fmt(s.progress)}/${fmt(s.target)} mUSDC`
-                        : `Kỳ #${e.toString()}`
+                        ? translate("Kỳ #{0}: {1} · {2}/{3} mUSDC", [
+                            e,
+                            translate(s.settled
+                              ? s.qualified ? "đạt" : "lỡ"
+                              : isCurrent ? "đang diễn ra"
+                              : participated ? "đã gửi — chờ chốt kỳ" : "chưa tham gia"),
+                            fmt(s.progress),
+                            fmt(s.target),
+                          ])
+                        : translate("Kỳ #{0}", [e])
                     }
                   />
                   <span className="text-[10px] font-bold text-ink-muted">{e.toString()}</span>
@@ -206,11 +209,11 @@ function StreakHeatmap({ data }: { data: VaultData }) {
             </div>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-ink-soft">
-            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-cta" /> Đạt</span>
-            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-streak-missed" /> Lỡ</span>
-            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-terracotta/60" /> Chờ chốt</span>
-            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 animate-pulse rounded-sm bg-streak-current" /> Kỳ này</span>
-            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-surface-sunken ring-1 ring-border" /> Chưa tham gia</span>
+            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-cta" />{" "}{translate("Đạt")}</span>
+            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-streak-missed" />{" "}{translate("Lỡ")}</span>
+            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-terracotta/60" />{" "}{translate("Chờ chốt")}</span>
+            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 animate-pulse rounded-sm bg-streak-current" />{" "}{translate("Kỳ này")}</span>
+            <span className="flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm bg-surface-sunken ring-1 ring-border" />{" "}{translate("Chưa tham gia")}</span>
           </div>
         </>
       )}
@@ -219,6 +222,7 @@ function StreakHeatmap({ data }: { data: VaultData }) {
 }
 
 export function HomeTab({ data, night, building, celebrateKey, onDepositStart, onDemoDeposit, onDemoSettle, demoStaged, isDemo }: Props) {
+  const { t: translate, formatAmount: fmt } = useLanguage();
   const [sheetMode, setSheetMode] = useState<"deposit" | "withdraw" | null>(null);
   const [showParty, setShowParty] = useState(false);
   const [zoom, setZoom] = useState<number | null>(null);
@@ -278,12 +282,11 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
             className="rounded-2xl border border-dashed border-cta/50 bg-cta/5 p-3 text-center text-xs font-bold text-ink-soft"
             role="note"
           >
-            Bản thử — số liệu mô phỏng, <span className="text-ink">không phải số dư thật</span>. Kết nối ví để
-            giao dịch on-chain.
+            {translate("Bản thử — số liệu mô phỏng,")}{" "}<span className="text-ink">{translate("không phải số dư thật")}</span>{translate(". Kết nối ví để giao dịch on-chain.")}
           </div>
         )}
         <div className="card p-5">
-          <div className="text-xs font-bold uppercase tracking-wide text-ink-muted">Gốc đã gửi</div>
+          <div className="text-xs font-bold uppercase tracking-wide text-ink-muted">{translate("Gốc đã gửi")}</div>
           <div className="mt-1 flex items-baseline gap-2">
             <span className="font-cozy text-[44px] font-extrabold leading-none tabular-nums text-ink md:text-[52px]">
               {fmt(account?.principal)}
@@ -294,12 +297,12 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
           <div className="my-4 h-px bg-border" />
 
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-bold uppercase tracking-wide text-ink-muted">Tiến độ kỳ này</span>
+            <span className="text-xs font-bold uppercase tracking-wide text-ink-muted">{translate("Tiến độ kỳ này")}</span>
             <span className="font-cozy text-sm font-bold tabular-nums text-ink">
               {fmt(progress)} / {fmt(target)} mUSDC · {pct}%
             </span>
           </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-sunken" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tiến độ mục tiêu kỳ này">
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-sunken" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={translate("Tiến độ mục tiêu kỳ này")}>
             <div
               className={`h-full rounded-full transition-all duration-700 ${goalDone ? "bg-cta" : "bg-terracotta"}`}
               style={{ width: `${pct}%` }}
@@ -308,11 +311,11 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
             {goalDone ? (
-              <span className="font-semibold text-cta">Đã đủ mục tiêu · Chờ chốt kỳ</span>
+              <span className="font-semibold text-cta">{translate("Đã đủ mục tiêu · Chờ chốt kỳ")}</span>
             ) : target > 0n ? (
-              <span className="font-semibold text-ink-soft">Còn {fmt(remaining)} mUSDC để đạt mục tiêu</span>
+              <span className="font-semibold text-ink-soft">{translate("Còn {0} mUSDC để đạt mục tiêu", [fmt(remaining)])}</span>
             ) : (
-              <span className="font-semibold text-ink-soft">Chưa đặt mục tiêu kỳ này</span>
+              <span className="font-semibold text-ink-soft">{translate("Chưa đặt mục tiêu kỳ này")}</span>
             )}
             <span className={`flex items-center gap-1 font-cozy text-sm font-bold tabular-nums ${urgent ? "text-danger" : "text-ink-soft"}`}>
               <Icon name="clock" size={14} />
@@ -332,7 +335,7 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
                     disabled={building}
                     onClick={onDemoSettle}
                   >
-                    {building ? "Đang chốt kỳ…" : "Chốt kỳ (mô phỏng) — nhận tầng & thưởng"}
+                    {building ? translate("Đang chốt kỳ…") : translate("Chốt kỳ (mô phỏng) — nhận tầng & thưởng")}
                   </button>
                 ) : (
                   <button
@@ -341,17 +344,17 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
                     disabled={building}
                     onClick={onDemoDeposit}
                   >
-                    Mô phỏng gửi tiền
+                    {translate("Mô phỏng gửi tiền")}
                   </button>
                 )}
                 {demoStaged && !building && (
                   <p className="text-center text-xs font-semibold text-ink-soft">
-                    Đã gửi đủ mục tiêu · chờ chốt kỳ — giống hệt luồng thật: tầng chỉ mọc sau khi kỳ được chốt.
+                    {translate("Đã gửi đủ mục tiêu · chờ chốt kỳ — giống hệt luồng thật: tầng chỉ mọc sau khi kỳ được chốt.")}
                   </p>
                 )}
                 {(account?.principal ?? 0n) > 0n && (
                   <button className="btn-ghost w-full" disabled={building} onClick={() => setSheetMode("withdraw")}>
-                    Rút gốc
+                    {translate("Rút gốc")}
                   </button>
                 )}
               </>
@@ -361,11 +364,11 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
                   className="btn-primary w-full text-lg active:translate-y-[2px]"
                   onClick={() => setSheetMode("deposit")}
                 >
-                  {goalDone ? "Gửi thêm" : `Gửi ${fmt(remaining)} mUSDC đạt mục tiêu kỳ này`}
+                  {goalDone ? translate("Gửi thêm") : translate("Gửi {0} mUSDC đạt mục tiêu kỳ này", [fmt(remaining)])}
                 </button>
                 {(account?.principal ?? 0n) > 0n && (
                   <button className="btn-ghost w-full" onClick={() => setSheetMode("withdraw")}>
-                    Rút gốc
+                    {translate("Rút gốc")}
                   </button>
                 )}
               </>
@@ -379,9 +382,9 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
       <div className="space-y-3 lg:col-span-7">
         <div className={`relative overflow-hidden rounded-2xl border border-border p-3 shadow-card ${night ? "bg-[#1A2049]" : "bg-gradient-to-b from-[#B8E3F5] to-[#E8F6FC]"}`}>
           <div data-testid="floor-badge" className="absolute left-3 top-3 z-10 rounded-xl border border-border bg-surface/95 px-3 py-1.5 shadow-card backdrop-blur-sm">
-            <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">Nhà của bạn</div>
+            <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">{translate("Nhà của bạn")}</div>
             <div className="font-cozy text-lg font-extrabold tabular-nums text-ink">
-              {floors === 0 ? "Chưa có tầng tích lũy" : `${floors} tầng`}
+              {floors === 0 ? translate("Chưa có tầng tích lũy") : translate("{0} tầng", [floors])}
             </div>
           </div>
 
@@ -404,10 +407,10 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
             {showParty && !building && (
               <div className="pointer-events-none absolute inset-0 z-40 flex flex-col items-center justify-center">
                 <div className="rounded-2xl border border-border bg-surface px-5 py-2.5 text-center font-cozy text-lg font-extrabold text-ink shadow-card" style={{ animation: "bannerPop 0.5s var(--ease-spring) both" }}>
-                  KỲ ĐÃ ĐƯỢC CHỐT!
+                  {translate("KỲ ĐÃ ĐƯỢC CHỐT!")}
                 </div>
                 <div className="mt-3 rounded-full border border-cta/30 bg-cta/10 px-3 py-1 font-cozy text-xs font-extrabold text-cta" style={{ animation: "bannerPop 0.5s 0.2s var(--ease-spring) both" }}>
-                  +1 chuỗi · +1 tầng · +thưởng kỳ (mô phỏng)
+                  {translate("+1 chuỗi · +1 tầng · +thưởng kỳ (mô phỏng)")}
                 </div>
               </div>
             )}
@@ -419,19 +422,19 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
               className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-sunken text-lg font-extrabold text-ink transition hover:bg-border disabled:opacity-40"
               disabled={scale >= 2.2}
               onClick={() => setZoom(Math.min(2.2, scale + 0.15))}
-              aria-label="Phóng to"
+              aria-label={translate("Phóng to")}
             >+</button>
             <button
               className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-sunken text-lg font-extrabold text-ink transition hover:bg-border disabled:opacity-40"
               disabled={scale <= 0.4}
               onClick={() => setZoom(Math.max(0.4, scale - 0.15))}
-              aria-label="Thu nhỏ"
+              aria-label={translate("Thu nhỏ")}
             >−</button>
             <button
               className="h-9 px-2.5 text-xs font-extrabold text-ink transition hover:bg-surface-sunken"
               onClick={() => setZoom(null)}
-              aria-label="Vừa khung"
-            >Vừa khung</button>
+              aria-label={translate("Vừa khung")}
+            >{translate("Vừa khung")}</button>
           </div>
         </div>
       </div>
@@ -439,10 +442,10 @@ export function HomeTab({ data, night, building, celebrateKey, onDepositStart, o
       {/* Dải số liệu phụ + lịch sử */}
       <div className="space-y-4 lg:col-span-12">
         <div className="card flex flex-col divide-y divide-border md:flex-row md:divide-x md:divide-y-0">
-          <StatItem icon={<Icon name="chart" size={18} />} label="Lãi chờ nhận" value={`+${fmt(claimable)}`} sub="mUSDC" />
-          <StatItem icon={<Icon name="wallet" size={18} />} label="Số dư ví" value={fmt(tokenBalance, 2)} sub="mUSDC" />
-          <StatItem icon={<Icon name="flame" size={18} />} label="Chuỗi hiện tại" value={account?.streak.toString() ?? "—"} sub="kỳ liên tiếp" />
-          <StatItem icon={<Icon name="bank" size={18} />} label="Tổng thưởng được phân bổ" value={`+${fmt(interestTotal)}`} sub="mUSDC" />
+          <StatItem icon={<Icon name="chart" size={18} />} label={translate("Lãi chờ nhận")} value={`+${fmt(claimable)}`} sub="mUSDC" />
+          <StatItem icon={<Icon name="wallet" size={18} />} label={translate("Số dư ví")} value={fmt(tokenBalance, 2)} sub="mUSDC" />
+          <StatItem icon={<Icon name="flame" size={18} />} label={translate("Chuỗi hiện tại")} value={account?.streak.toString() ?? "—"} sub={translate("kỳ liên tiếp")} />
+          <StatItem icon={<Icon name="bank" size={18} />} label={translate("Tổng thưởng được phân bổ")} value={`+${fmt(interestTotal)}`} sub="mUSDC" />
         </div>
         <StreakHeatmap data={data} />
       </div>
@@ -472,27 +475,26 @@ function StatItem({ icon, label, value, sub }: { icon: ReactNode; label: string;
   );
 }
 
+function translateCountdown(countdown: string, translate: Translate): string {
+  const days = /^(\d+) ngày (.+)$/.exec(countdown);
+  return days ? translate("{0} ngày {1}", [days[1], days[2]]) : translate(countdown);
+}
+
 function parseCountdownSeconds(cd: string): number | undefined {
   if (!cd || cd === "—" || cd === "Hết hạn") return undefined;
   const parts = cd.split(/[: ]+/).filter(Boolean);
   let total = 0;
   for (let i = 0; i < parts.length; i++) {
-    const p = parts[i];
-    if (p.endsWith("ngày")) {
-      total += parseInt(p, 10) * 86400;
-    } else {
-      const n = parseInt(p, 10);
-      if (!Number.isNaN(n)) {
-        if (parts.length - i === 3) total += n * 3600;
-        else if (parts.length - i === 2) total += n * 60;
-        else total += n;
-      }
-    }
+    const n = Number(parts[i]);
+    if (Number.isNaN(n)) continue;
+    if (parts[i + 1] === "ngày") total += n * 86400;
+    else total += n * 60 ** (parts.length - i - 1);
   }
   return total;
 }
 
 function FaucetCard() {
+  const { t: translate } = useLanguage();
   const tx = useTx();
   async function drip() {
     const { faucetDripAbi } = await import("@/lib/abis");
@@ -504,13 +506,13 @@ function FaucetCard() {
   return (
     <div className="rounded-2xl border border-dashed border-cta/50 bg-cta/5 p-4">
       <div className="flex items-center gap-2 font-cozy text-lg font-extrabold text-ink">
-        <Icon name="droplet" size={22} className="text-cta" /> Chào mừng chủ nhân mới!
+        <Icon name="droplet" size={22} className="text-cta" />{" "}{translate("Chào mừng chủ nhân mới!")}
       </div>
       <p className="mt-1 text-sm font-semibold text-ink-soft">
-        Nhận <strong>5 mUSDC dùng thử</strong> gửi thẳng vào tòa nhà + mục tiêu kỳ đầu được đặt sẵn — bấm một nút là xong.
+        {translate("Nhận")}{" "}<strong>{translate("5 mUSDC dùng thử")}</strong>{" "}{translate("gửi thẳng vào tòa nhà + mục tiêu kỳ đầu được đặt sẵn — bấm một nút là xong.")}
       </p>
       <button className="btn-primary mt-3 w-full" disabled={tx.step !== null} onClick={drip}>
-        Nhận 5 mUSDC dùng thử & bắt đầu
+        {translate("Nhận 5 mUSDC dùng thử & bắt đầu")}
       </button>
       <TxFeedback state={tx} />
     </div>
@@ -518,6 +520,7 @@ function FaucetCard() {
 }
 
 function FreezeEpochButton() {
+  const { t: translate, formatAmount: fmt } = useLanguage();
   const tx = useTx();
   const allowance = useTokenAllowance(contracts.vault);
   const feeState = useReadContracts({
@@ -540,7 +543,7 @@ function FreezeEpochButton() {
   return (
     <div className="mt-2">
       <button className="btn-secondary w-full !py-2 text-sm" disabled={tx.step !== null} onClick={freeze}>
-        <Icon name="snow" size={15} className="inline -mt-0.5" /> Đóng băng kỳ này ({fmt(fee)} mUSDC) — giữ chuỗi an toàn
+        <Icon name="snow" size={15} className="inline -mt-0.5" />{" "}{translate("Đóng băng kỳ này ({0} mUSDC) — giữ chuỗi an toàn", [fmt(fee)])}
       </button>
       <TxFeedback state={tx} />
     </div>

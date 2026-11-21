@@ -1,7 +1,9 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import { useEffect, useState } from "react";
-import { useAccount, useChainId } from "wagmi";
+import { useAccount } from "wagmi";
+import { LanguagePicker } from "@/components/LanguagePicker";
 import { ConnectButton } from "@/components/ConnectButton";
 import { HomeTab } from "@/components/cozy/HomeTab";
 import { GoalsTab } from "@/components/cozy/GoalsTab";
@@ -19,14 +21,15 @@ type TabKey = "home" | "goals" | "rewards" | "me";
 
 /** Nút chuyển sáng/tối nhanh ở header, kế bên nút kết nối ví. */
 function ThemeToggle({ night, onToggle }: { night: boolean; onToggle: () => void }) {
+  const { t: translate } = useLanguage();
   return (
     <button
       onClick={() => {
         sfx.click();
         onToggle();
       }}
-      aria-label={night ? "Chuyển sang giao diện sáng" : "Chuyển sang giao diện tối"}
-      title={night ? "Giao diện tối — bấm để sáng" : "Giao diện sáng — bấm để tối"}
+      aria-label={night ? translate("Chuyển sang giao diện sáng") : translate("Chuyển sang giao diện tối")}
+      title={night ? translate("Giao diện tối — bấm để sáng") : translate("Giao diện sáng — bấm để tối")}
       className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-ink-soft shadow-card transition hover:bg-surface-sunken hover:text-ink active:translate-y-[1px]"
     >
       <Icon name={night ? "sun" : "moon"} size={17} />
@@ -51,6 +54,7 @@ interface CozyAppProps {
 }
 
 export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnected, onExitDemo }: CozyAppProps) {
+  const { t: translate } = useLanguage();
   const live = useVaultData({ enabled: !demoData });
   const [demoBoost, setDemoBoost] = useState(0);
   const [demoSim, setDemoSim] = useState<{ tokenSpent: bigint; principalAdded: bigint; staged: boolean }>({
@@ -84,11 +88,10 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
     return () => setDemoMode(false);
   }, [demoData]);
 
-  const chainId = useChainId();
-  const { isConnecting, isReconnecting } = useAccount();
+  const { chainId, isConnecting, isReconnecting } = useAccount();
   const [tab, setTab] = useState<TabKey>("home");
   const night = theme === "night";
-  const wrongChain = !demoData && chainId !== targetChainId;
+  const wrongChain = !demoData && chainId !== undefined && chainId !== targetChainId;
 
   useEffect(() => {
     const unlock = () => unlockAudio();
@@ -142,11 +145,12 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
       <div className="relative z-10 flex min-h-screen items-center justify-center px-6">
         <div className="card w-full max-w-sm p-6 text-center">
           <div className="mx-auto w-fit"><Icon name="flag" size={40} className="text-ink-muted" /></div>
-          <h2 className="mt-2 font-cozy text-xl font-bold text-ink">Bạn đang ở mạng khác</h2>
+          <h2 className="mt-2 font-cozy text-xl font-bold text-ink">{translate("Bạn đang ở mạng khác")}</h2>
           <p className="mt-1 text-sm font-semibold text-ink-soft">
-            Savient xây nhà trên Avalanche Fuji C-Chain (chain ID {targetChainId}).
+            {translate("Savient xây nhà trên Avalanche Fuji C-Chain (chain ID {0}).", [targetChainId])}
           </p>
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <LanguagePicker />
             <ConnectButton />
           </div>
         </div>
@@ -173,15 +177,15 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
             {demoData && (
               <span
                 data-testid="demo-badge"
-                className="hidden rounded-full border border-border bg-surface px-2.5 py-0.5 text-[11px] font-bold text-ink-soft sm:inline-block"
+                className="hidden shrink-0 rounded-full border border-border bg-surface px-2.5 py-0.5 text-[11px] font-bold text-ink-soft sm:inline-block"
               >
-                Bản thử
+                {translate("Bản thử")}
               </span>
             )}
           </div>
 
           {/* Desktop tabs */}
-          <nav className="hidden items-center gap-6 lg:flex" aria-label="Điều hướng chính">
+          <nav className="hidden items-center gap-3 lg:flex xl:gap-6" aria-label={translate("Điều hướng chính")}>
             {TABS.map((t) => {
               const active = tab === t.key;
               return (
@@ -194,7 +198,7 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
                   }`}
                 >
                   <Icon name={t.icon} size={18} />
-                  {t.label}
+                  {translate(t.label)}
                   <span
                     className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-cta transition-transform ${
                       active ? "scale-x-100" : "scale-x-0 group-hover:scale-x-50"
@@ -208,15 +212,16 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
           <div className="flex items-center gap-2">
             {connecting && !demoData && (
               <span className="hidden rounded-full border border-border bg-surface px-3 py-1 text-xs font-semibold text-ink-soft md:inline">
-                Đang kết nối…
+                {translate("Đang kết nối…")}
               </span>
             )}
             {demoData && demoForced && isConnected && (
               <button className="btn-secondary !h-9 !px-3 !py-1.5 text-xs" onClick={onExitDemo}>
-                Thoát bản thử
+                {translate("Thoát bản thử")}
               </button>
             )}
             <ThemeToggle night={night} onToggle={() => onThemeChange(night ? "day" : "night")} />
+            <LanguagePicker />
             <ConnectButton />
           </div>
         </div>
@@ -230,13 +235,14 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
             <img src={night ? "/logo.png" : "/logo-light.png"} alt="Savient" className="h-7 w-7 rounded-lg" draggable={false} />
             <span data-testid="brand" className="font-cozy text-xl font-extrabold text-ink">Savient</span>
             {demoData && (
-              <span data-testid="demo-badge" className="rounded-full border border-border bg-surface px-2 py-0.5 text-[10px] font-bold text-ink-soft">
-                Bản thử
+              <span data-testid="demo-badge" className="hidden rounded-full border border-border bg-surface px-2 py-0.5 min-[370px]:inline-block text-[10px] font-bold text-ink-soft">
+                {translate("Bản thử")}
               </span>
             )}
           </div>
           <div className="flex items-center gap-1.5">
             <ThemeToggle night={night} onToggle={() => onThemeChange(night ? "day" : "night")} />
+            <LanguagePicker />
             <ConnectButton />
           </div>
         </div>
@@ -267,20 +273,20 @@ export function CozyApp({ theme, onThemeChange, demoData, demoForced, isConnecte
       <Onboarding />
 
       {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 lg:hidden" aria-label={translate("Điều hướng chính")}>
         <div className="mx-auto max-w-app px-4 pb-4 pt-2">
-          <div className="flex justify-between rounded-2xl border border-border bg-surface/95 px-2 py-1.5 shadow-card backdrop-blur-md">
+          <div className="grid grid-cols-4 gap-1 rounded-2xl border border-border bg-surface/95 px-2 py-1.5 shadow-card backdrop-blur-md">
             {TABS.map((t) => (
               <button
                 key={t.key}
-                className={`flex min-h-[52px] min-w-[56px] flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1 transition ${
+                className={`flex min-h-[52px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-2 py-1 transition ${
                   tab === t.key ? "bg-cta text-white shadow-button" : "text-ink-soft hover:bg-surface-sunken"
                 }`}
                 onClick={() => switchTab(t.key)}
                 aria-current={tab === t.key ? "page" : undefined}
               >
                 <Icon name={t.icon} size={20} />
-                <span className="text-[10px] font-bold">{t.label}</span>
+                <span className="text-[10px] font-bold">{translate(t.label)}</span>
               </button>
             ))}
           </div>

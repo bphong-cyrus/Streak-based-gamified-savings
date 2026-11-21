@@ -1,10 +1,11 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { useDisconnect } from "wagmi";
 import { contracts } from "@/lib/config";
-import { fmt, shortAddr } from "@/lib/format";
+import { shortAddr } from "@/lib/format";
 import { IdentityAvatar, useIdentityIndex, pickIdentity, IDENTITIES } from "@/lib/identity";
 import { isDemoMode } from "@/lib/demo";
 import { resetOnboarding } from "@/components/cozy/Onboarding";
@@ -36,6 +37,7 @@ interface Props {
 }
 
 export function MeTab({ data, theme, onThemeChange }: Props) {
+  const { t: translate, formatAmount: fmt } = useLanguage();
   const { disconnect } = useDisconnect();
   // 2 bước xác nhận khi ngắt kết nối (chống bấm nhầm).
   const [confirming, setConfirming] = useState(false);
@@ -64,8 +66,8 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
               <PetThumb3D variant={currentIdentity.key} />
             </div>
             <div className="flex-1">
-              <h3 className="font-cozy text-xl font-extrabold text-ink">{currentIdentity.name}</h3>
-              <p className="text-sm font-semibold text-ink-soft">{currentIdentity.vi}</p>
+              <h3 className="font-cozy text-xl font-extrabold text-ink">{translate(currentIdentity.name)}</h3>
+              <p className="text-sm font-semibold text-ink-soft">{translate(currentIdentity.vi)}</p>
               {!isDemo && address && (
                 <p className="mt-0.5 font-mono text-xs font-semibold text-ink-muted">{shortAddr(address)}</p>
               )}
@@ -83,23 +85,23 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
                   disconnect();
                 }}
               >
-                {confirming ? "Chắc chắn ngắt?" : "Ngắt"}
+                {confirming ? translate("Chắc chắn ngắt?") : translate("Ngắt")}
               </button>
             )}
           </div>
           <div className="mt-4 flex items-center gap-4 border-t border-border pt-3">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">Chuỗi hiện tại</div>
-              <div className="font-cozy text-lg font-extrabold tabular-nums text-ink">{account?.streak.toString() ?? 0} kỳ</div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">{translate("Chuỗi hiện tại")}</div>
+              <div className="font-cozy text-lg font-extrabold tabular-nums text-ink">{translate("{0} kỳ", [account?.streak.toString() ?? 0])}</div>
             </div>
             <div className="h-8 w-px bg-border" />
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">Đã nhận lãi</div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">{translate("Đã nhận lãi")}</div>
               <div className="font-cozy text-lg font-extrabold tabular-nums text-cta">+{fmt(claimed)} mUSDC</div>
             </div>
             <div className="h-8 w-px bg-border" />
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">Số dư ví</div>
+              <div className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">{translate("Số dư ví")}</div>
               <div className="font-cozy text-lg font-extrabold tabular-nums text-ink">{fmt(tokenBalance, 2)} mUSDC</div>
             </div>
           </div>
@@ -108,14 +110,14 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
         {/* Xem trước nhân vật 3D */}
         <div className="card overflow-hidden p-4">
           <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
-            <Icon name="cat" size={18} className="text-ink-soft" /> Nhân vật 3D của bạn
+            <Icon name="cat" size={18} className="text-ink-soft" />{" "}{translate("Nhân vật 3D của bạn")}
           </h4>
           <div className="mt-2 h-44 w-full">
             <Guard
               fallback={
                 <img
                   src={`/identities/${currentIdentity.key}.svg`}
-                  alt={currentIdentity.name}
+                  alt={translate(currentIdentity.name)}
                   className="mx-auto h-40 object-contain"
                   draggable={false}
                 />
@@ -125,16 +127,16 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
             </Guard>
           </div>
           <p className="text-center text-xs font-semibold text-ink-soft">
-            {currentIdentity.name} · {currentIdentity.vi} — xoay chậm để ngắm từ mọi góc.
+            {translate("{0} · {1} — xoay chậm để ngắm từ mọi góc.", [translate(currentIdentity.name), translate(currentIdentity.vi)])}
           </p>
         </div>
 
         {/* Chọn nhân vật */}
         <div className="card p-4">
           <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
-            <Icon name="cat" size={18} className="text-ink-soft" /> Chọn nhân vật
+            <Icon name="cat" size={18} className="text-ink-soft" />{" "}{translate("Chọn nhân vật")}
           </h4>
-          <p className="text-xs font-semibold text-ink-soft">Chạm vào nhân vật để chọn làm avatar — lưu trên trình duyệt của bạn.</p>
+          <p className="text-xs font-semibold text-ink-soft">{translate("Chạm vào nhân vật để chọn làm avatar — lưu trên trình duyệt của bạn.")}</p>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {IDENTITIES.map((id, i) => {
               const mine = i === currentIdx;
@@ -149,9 +151,9 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
                   <div className="mx-auto h-20 w-full">
                     <PetThumb3D variant={id.key} />
                   </div>
-                  <div className="mt-1 truncate text-[10px] font-bold text-ink">{id.name}</div>
-                  <div className="truncate text-[9px] font-semibold text-ink-soft">{id.vi}</div>
-                  {mine && <div className="mt-0.5 text-[9px] font-extrabold text-cta">Đang dùng</div>}
+                  <div className="mt-1 truncate text-[10px] font-bold text-ink">{translate(id.name)}</div>
+                  <div className="truncate text-[9px] font-semibold text-ink-soft">{translate(id.vi)}</div>
+                  {mine && <div className="mt-0.5 text-[9px] font-extrabold text-cta">{translate("Đang dùng")}</div>}
                 </button>
               );
             })}
@@ -165,9 +167,9 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
 
         <div className="card p-4">
           <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
-            <Icon name="book" size={18} className="text-ink-soft" /> Hướng dẫn
+            <Icon name="book" size={18} className="text-ink-soft" />{" "}{translate("Hướng dẫn")}
           </h4>
-          <p className="mt-1 text-xs font-semibold text-ink-soft">Bạn có thể xem lại bài hướng dẫn 3 bước bất cứ lúc nào.</p>
+          <p className="mt-1 text-xs font-semibold text-ink-soft">{translate("Bạn có thể xem lại bài hướng dẫn 3 bước bất cứ lúc nào.")}</p>
           <button
             className="btn-secondary mt-3 w-full"
             onClick={() => {
@@ -175,14 +177,14 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
               window.location.reload();
             }}
           >
-            Xem lại hướng dẫn
+            {translate("Xem lại hướng dẫn")}
           </button>
         </div>
 
         {/* Giao diện */}
         <div className="card p-4">
           <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
-            <Icon name="sun" size={18} className="text-ink-soft" /> Giao diện
+            <Icon name="sun" size={18} className="text-ink-soft" />{" "}{translate("Giao diện")}
           </h4>
           <div className="mt-3 grid grid-cols-2 gap-3">
             <button
@@ -192,7 +194,7 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
               onClick={() => onThemeChange("day")}
             >
               <span className="inline-flex items-center gap-1.5">
-                <Icon name="sun" size={16} /> Ban ngày
+                <Icon name="sun" size={16} />{" "}{translate("Ban ngày")}
               </span>
             </button>
             <button
@@ -202,17 +204,17 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
               onClick={() => onThemeChange("night")}
             >
               <span className="inline-flex items-center gap-1.5">
-                <Icon name="moon" size={16} /> Ban đêm
+                <Icon name="moon" size={16} />{" "}{translate("Ban đêm")}
               </span>
             </button>
           </div>
-          <p className="mt-3 text-xs font-semibold text-ink-soft">Mặc định theo giờ máy bạn. Cửa sổ tòa nhà sẽ sáng đèn ấm vào ban đêm.</p>
+          <p className="mt-3 text-xs font-semibold text-ink-soft">{translate("Mặc định theo giờ máy bạn. Cửa sổ tòa nhà sẽ sáng đèn ấm vào ban đêm.")}</p>
         </div>
 
         {/* Âm thanh */}
         <div className="card p-4">
           <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
-            <Icon name="volume" size={18} className="text-ink-soft" /> Âm thanh
+            <Icon name="volume" size={18} className="text-ink-soft" />{" "}{translate("Âm thanh")}
           </h4>
           <button
             className={`mt-3 w-full rounded-xl border py-3 font-cozy font-bold transition active:translate-y-[1px] ${
@@ -227,7 +229,7 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
           >
             <span className="inline-flex items-center gap-1.5">
               <Icon name="volume" size={16} className={muted ? "opacity-40" : undefined} />
-              {muted ? "Đang tắt âm thanh" : "Đang bật âm thanh"}
+              {muted ? translate("Đang tắt âm thanh") : translate("Đang bật âm thanh")}
             </span>
           </button>
         </div>
@@ -239,21 +241,22 @@ export function MeTab({ data, theme, onThemeChange }: Props) {
 
 /** Địa chỉ contract trên Fuji — bằng chứng nhanh cho giám khảo. */
 function OnChainInfoCard() {
+  const { t: translate } = useLanguage();
   return (
   <div className="card p-4">
     <h4 className="flex items-center gap-1.5 font-cozy font-bold text-ink">
-      <Icon name="bank" size={18} className="text-ink-soft" /> Thông tin trên chuỗi (Fuji Testnet)
+      <Icon name="bank" size={18} className="text-ink-soft" />{" "}{translate("Thông tin trên chuỗi (Fuji Testnet)")}
     </h4>
     <dl className="mt-3 space-y-2 text-xs font-semibold text-ink-soft">
       {(
         [
-          ["Vault (gốc & streak)", contracts.vault],
-          ["Distributor (thưởng)", contracts.distributor],
-          ["DailyCheckIn (điểm danh)", contracts.dailyCheckIn],
-          ["SavingsGoal (mục tiêu)", contracts.goal],
-          ["StreakNFT (huy hiệu)", contracts.nft],
-          ["FaucetDrip (vòi mới)", contracts.faucetDrip],
-          ["LuckyWheel (vòng quay)", contracts.luckyWheel],
+          [translate("Vault (gốc & streak)"), contracts.vault],
+          [translate("Distributor (thưởng)"), contracts.distributor],
+          [translate("DailyCheckIn (điểm danh)"), contracts.dailyCheckIn],
+          [translate("SavingsGoal (mục tiêu)"), contracts.goal],
+          [translate("StreakNFT (huy hiệu)"), contracts.nft],
+          [translate("FaucetDrip (vòi mới)"), contracts.faucetDrip],
+          [translate("LuckyWheel (vòng quay)"), contracts.luckyWheel],
           ["Token mUSDC", contracts.token],
         ] as const
       ).map(([label, addr]) => (
@@ -261,13 +264,14 @@ function OnChainInfoCard() {
       ))}
     </dl>
     <p className="mt-3 text-[11px] font-semibold text-ink-soft">
-      Mọi giao dịch trong app đều kèm link Snowtrace để đối chiếu — không server nào giữ tiền ngườ dùng.
+      {translate("Mọi giao dịch trong app đều kèm link Snowtrace để đối chiếu — không server nào giữ tiền ngườ dùng.")}
     </p>
   </div>
   );
 }
 
 function ContractRow({ label, addr }: { label: string; addr: string }) {
+  const { t: translate } = useLanguage();
   const [copied, setCopied] = useState(false);
   const url = `https://testnet.snowtrace.io/address/${addr}`;
   return (
@@ -284,10 +288,10 @@ function ContractRow({ label, addr }: { label: string; addr: string }) {
             setCopied(true);
             setTimeout(() => setCopied(false), 1500);
           }}
-          title="Sao chép địa chỉ"
-          aria-label={`Sao chép địa chỉ ${label}`}
+          title={translate("Sao chép địa chỉ")}
+          aria-label={translate("Sao chép địa chỉ {0}", [label])}
         >
-          {copied ? "Đã copy" : "Copy"}
+          {copied ? translate("Đã copy") : "Copy"}
         </button>
       </dd>
     </div>

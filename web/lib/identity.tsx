@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import { useEffect, useState } from "react";
 
 /**
@@ -67,12 +68,13 @@ export function IdentityAvatar({
 }) {
   const chosen = useIdentityIndex(address);
   const idx = index ?? chosen;
+  const { t: translate } = useLanguage();
   const id = IDENTITIES[idx];
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={`/identities/${id.key}.svg`}
-      alt={id.name}
+      alt={translate(id.name)}
       className={`inline-block shrink-0 rounded-full border-2 border-cocoa-700/50 bg-cream-50 object-cover shadow-chunkySm ${className}`}
       style={{ objectPosition: "50% 28%" }}
       draggable={false}
@@ -92,12 +94,13 @@ export function IdentityFull({
 }) {
   const chosen = useIdentityIndex(address);
   const idx = index ?? chosen;
+  const { t: translate } = useLanguage();
   const id = IDENTITIES[idx];
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={`/identities/${id.key}.svg`}
-      alt={id.name}
+      alt={translate(id.name)}
       className={`inline-block shrink-0 object-contain ${className}`}
       draggable={false}
     />

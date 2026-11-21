@@ -1,5 +1,6 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import { useEffect, useState } from "react";
 import { useAccount, useChainId } from "wagmi";
 import { explorerTx } from "@/lib/config";
@@ -8,6 +9,7 @@ import { FeatureCard } from "@/components/cozy/panel";
 import { shortAddr } from "@/lib/format";
 
 export function RecentTxPanel() {
+  const { t: translate } = useLanguage();
   const { address } = useAccount();
   const chainId = useChainId();
   const [log, setLog] = useState<TxLogEntry[]>([]);
@@ -22,11 +24,11 @@ export function RecentTxPanel() {
   if (log.length === 0) return null;
 
   return (
-    <FeatureCard icon="refresh" title="Giao dịch gần đây" desc="Mỗi dòng kiểm chứng được trên Snowtrace · lịch sử chỉ lưu trên thiết bị này, theo từng ví">
+    <FeatureCard icon="refresh" title={translate("Giao dịch gần đây")} desc={translate("Mỗi dòng kiểm chứng được trên Snowtrace · lịch sử chỉ lưu trên thiết bị này, theo từng ví")}>
       <ul className="space-y-1.5">
         {log.map((e) => (
           <li key={e.hash} className="flex items-center justify-between gap-2 rounded-xl border border-border bg-surface px-3 py-1.5 text-sm">
-            <span className="min-w-0 flex-1 truncate font-semibold text-ink">{e.label}</span>
+            <span className="min-w-0 flex-1 truncate font-semibold text-ink">{translate(e.label, e.labelValues)}</span>
             <a
               className="shrink-0 font-mono text-[11px] font-bold text-cta underline"
               href={explorerTx(e.hash)}
@@ -45,7 +47,7 @@ export function RecentTxPanel() {
           window.dispatchEvent(new Event("cozy-txlog"));
         }}
       >
-        Xoá nhật ký
+        {translate("Xoá nhật ký")}
       </button>
     </FeatureCard>
   );

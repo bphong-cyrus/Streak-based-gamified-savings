@@ -1,12 +1,12 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAccount, useReadContracts, useWriteContract } from "wagmi";
 import { waitForTransactionReceipt } from "@wagmi/core";
 import { decodeEventLog, BaseError } from "viem";
 import { wagmiConfig, contracts, fuji, explorerTx } from "@/lib/config";
 import { luckyWheelAbi, streakVaultAbi } from "@/lib/abis";
-import { fmt } from "@/lib/format";
 import { FeatureCard } from "@/components/cozy/panel";
 import { Icon } from "@/components/cozy/icons";
 import { sfx } from "@/lib/sound";
@@ -30,6 +30,7 @@ type Phase = "idle" | "sending" | "confirming" | "revealing" | "done";
 
 /** Vẽ vòng quay SVG 5 ô; kim chỉ trên đỉnh, nhọn hướng xuống. */
 function WheelSVG({ prizes, rotation }: { prizes: typeof FALLBACK; rotation: number }) {
+  const { t: translate, formatAmount: fmt } = useLanguage();
   const n = prizes.length;
   const R = 88;
   const C = 100;
@@ -56,7 +57,7 @@ function WheelSVG({ prizes, rotation }: { prizes: typeof FALLBACK; rotation: num
               fill={SEG_TEXT[i % SEG_TEXT.length]}
               transform={`rotate(${i * seg + seg / 2} 100 100)`}
             >
-              {p.amount === 0n ? "+10đ" : fmt(p.amount)}
+              {p.amount === 0n ? translate("+10đ") : fmt(p.amount)}
             </text>
           </g>
         ))}
@@ -83,6 +84,7 @@ function useCountdown(target: bigint | undefined): number {
 }
 
 export function LuckyWheelCard({ currentEpoch }: { currentEpoch?: bigint }) {
+  const { t: translate, formatAmount: fmt } = useLanguage();
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
   const demo = isDemoMode();
@@ -207,23 +209,23 @@ export function LuckyWheelCard({ currentEpoch }: { currentEpoch?: bigint }) {
   return (
     <FeatureCard
       icon="gift"
-      title="Vòng quay may mắn"
-      desc={`Mỗi kỳ đạt mở khóa 1 lượt quay do quỹ tài trợ chi trả — không tốn mUSDC · quỹ hiện có ${demo ? "—" : fmt(pool)} mUSDC`}
+      title={translate("Vòng quay may mắn")}
+      desc={translate("Mỗi kỳ đạt mở khóa 1 lượt quay do quỹ tài trợ chi trả — không tốn mUSDC · quỹ hiện có {0} mUSDC", [demo ? "—" : fmt(pool)])}
     >
       <div className="flex flex-col items-center gap-3">
         <WheelSVG prizes={prizes} rotation={rotation} />
 
         {demo ? (
           <p className="rounded-lg border border-dashed border-cta/50 bg-cta/5 px-3 py-1.5 text-center text-[11px] font-bold text-ink-soft">
-            Bản thử — kết nối ví Fuji: kỳ nào đạt mục tiêu và được chốt sẽ nhận 1 lượt quay miễn phí.
+            {translate("Bản thử — kết nối ví Fuji: kỳ nào đạt mục tiêu và được chốt sẽ nhận 1 lượt quay miễn phí.")}
           </p>
         ) : !address ? (
-          <p className="text-xs font-semibold text-ink-soft">Kết nối ví để nhận lượt quay từ kỳ đạt.</p>
+          <p className="text-xs font-semibold text-ink-soft">{translate("Kết nối ví để nhận lượt quay từ kỳ đạt.")}</p>
         ) : (
           <>
             {!canServe && (
               <p className="w-full rounded-xl border border-warning/50 bg-warning/10 px-3 py-2 text-center text-xs font-extrabold text-warning">
-                Quỹ giải tạm thiếu (còn {fmt(pool)} mUSDC) — vòng quay dừng cho tới khi sponsor nạp thêm.
+                {translate("Quỹ giải tạm thiếu (còn {0} mUSDC) — vòng quay dừng cho tới khi sponsor nạp thêm.", [fmt(pool)])}
               </p>
             )}
             <button
@@ -234,23 +236,23 @@ export function LuckyWheelCard({ currentEpoch }: { currentEpoch?: bigint }) {
             >
               {busy
                 ? phase === "confirming"
-                  ? "Đang chờ chuỗi…"
-                  : "Đang quay…"
+                  ? translate("Đang chờ chuỗi…")
+                  : translate("Đang quay…")
                 : cdLeft > 0
-                  ? `Quay lại sau ${cdLeft}s`
+                  ? translate("Quay lại sau {0}s", [cdLeft])
                   : freeSpins > 0n
-                    ? `Quay miễn phí · còn ${freeSpins.toString()} lượt`
-                    : "Hết lượt — đạt kỳ tới để nhận thêm"}
+                    ? translate("Quay miễn phí · còn {0} lượt", [freeSpins.toString()])
+                    : translate("Hết lượt — đạt kỳ tới để nhận thêm")}
             </button>
             <p className="text-center text-[10px] font-semibold text-ink-muted">
-              Không tốn mUSDC; cần phí mạng Fuji (AVAX testnet) để ký giao dịch
-              {decor > 0n ? ` · Điểm trang trí của bạn: ${decor.toString()}` : ""}
+              {translate("Không tốn mUSDC; cần phí mạng Fuji (AVAX testnet) để ký giao dịch")}
+              {decor > 0n ? translate(" · Điểm trang trí của bạn: {0}", [decor.toString()]) : ""}
             </p>
 
             {claimableEpochs.length > 0 && (
               <div className="w-full rounded-xl border border-cta/30 bg-cta/5 p-2">
                 <p className="mb-1 px-1 text-[11px] font-extrabold uppercase tracking-wide text-cta">
-                  Kỳ đạt chờ nhận lượt ({claimableEpochs.length})
+                  {translate("Kỳ đạt chờ nhận lượt ({0})", [claimableEpochs.length])}
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {claimableEpochs.map((e) => (
@@ -260,7 +262,7 @@ export function LuckyWheelCard({ currentEpoch }: { currentEpoch?: bigint }) {
                       disabled={claimBusy}
                       onClick={() => claimEpoch(e)}
                     >
-                      +1 lượt · kỳ #{e.toString()}
+                      {translate("+1 lượt · kỳ #{0}", [e.toString()])}
                     </button>
                   ))}
                 </div>
@@ -272,20 +274,20 @@ export function LuckyWheelCard({ currentEpoch }: { currentEpoch?: bigint }) {
         {phase === "done" && resultIdx !== null && (
           <p role="status" className={`rounded-xl border px-3 py-1.5 text-sm font-extrabold ${prizes[resultIdx].amount > 0n ? "border-cta/50 bg-cta/10 text-cta" : "border-border bg-surface text-ink-soft"}`}>
             {prizes[resultIdx].amount > 0n
-              ? `🎉 Trúng ${prizes[resultIdx].label}!`
+              ? translate("🎉 Trúng {0}!", [translate(prizes[resultIdx].label)])
               : prizes[resultIdx].decor > 0n
-                ? `✨ ${prizes[resultIdx].label}!`
-                : "💨 Chưa trúng — kỳ sau quay tiếp!"}
+                ? `✨ ${translate(prizes[resultIdx].label)}!`
+                : translate("💨 Chưa trúng — kỳ sau quay tiếp!")}
           </p>
         )}
-        {error && <p className="text-xs font-bold text-danger">{error}</p>}
+        {error && <p className="text-xs font-bold text-danger">{translate(error)}</p>}
         {hash && (
           <a className="font-mono text-[11px] font-bold text-cta underline" href={explorerTx(hash)} target="_blank" rel="noopener noreferrer">
-            Kết quả trên Snowtrace: {hash.slice(0, 10)}…{hash.slice(-6)}
+            {translate("Kết quả trên Snowtrace: {0}…{1}", [hash.slice(0, 10), hash.slice(-6)])}
           </a>
         )}
         <p className="text-center text-[10px] font-semibold text-ink-muted">
-          Giải trả ngay từ quỹ tài trợ · Kết quả chọn trên chuỗi, đối chiếu được trên Snowtrace.
+          {translate("Giải trả ngay từ quỹ tài trợ · Kết quả chọn trên chuỗi, đối chiếu được trên Snowtrace.")}
         </p>
       </div>
     </FeatureCard>

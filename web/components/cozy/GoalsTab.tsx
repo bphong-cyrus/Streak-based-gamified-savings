@@ -1,10 +1,11 @@
 "use client";
 
+import { useLanguage } from "@/components/LanguageProvider";
 import { useState } from "react";
 import { useAccount, useReadContracts } from "wagmi";
 import { contracts } from "@/lib/config";
 import { streakVaultAbi, yieldDistributorAbi, savingsGoalAbi } from "@/lib/abis";
-import { fmt, parseAmount } from "@/lib/format";
+import { normalizeDigits, parseAmount } from "@/lib/format";
 import { TxFeedback, useTx } from "@/components/useTx";
 import { FeatureCard, Stat, FieldLabel, ActionRow } from "@/components/cozy/panel";
 import { Icon } from "@/components/cozy/icons";
@@ -28,6 +29,7 @@ export function GoalsTab({ data }: { data: VaultData }) {
 }
 
 function ActiveGoalBanner({ data }: { data: VaultData }) {
+  const { t: translate, formatAmount: fmt } = useLanguage();
   const { account } = data;
   const target = account?.currentTarget ?? 0n;
   const progress = account?.currentProgress ?? 0n;
@@ -37,21 +39,22 @@ function ActiveGoalBanner({ data }: { data: VaultData }) {
     <div className="card p-4">
       <div className="flex items-center justify-between">
         <h3 className="flex items-center gap-1.5 font-cozy text-lg font-bold text-ink">
-          <Icon name="rocket" size={20} className="text-cta" /> Mục tiêu kỳ này
+          <Icon name="rocket" size={20} className="text-cta" />{" "}{translate("Mục tiêu kỳ này")}
         </h3>
         <span className="font-cozy text-sm font-extrabold tabular-nums text-ink">{pct}%</span>
       </div>
-      <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-sunken" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tiến độ mục tiêu kỳ này">
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-surface-sunken" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={translate("Tiến độ mục tiêu kỳ này")}>
         <div className="h-full rounded-full bg-cta transition-all duration-700" style={{ width: `${pct}%` }} />
       </div>
       <p className="mt-2 text-xs font-semibold text-ink-soft">
-        {fmt(progress)} / {fmt(target)} mUSDC · còn {fmt(target > progress ? target - progress : 0n)} mUSDC nữa
+        {translate("{0} / {1} mUSDC · còn {2} mUSDC nữa", [fmt(progress), fmt(target), fmt(target > progress ? target - progress : 0n)])}
       </p>
     </div>
   );
 }
 
 function WeeklyTargetCard({ data }: { data: VaultData }) {
+  const { t: translate, formatAmount: fmt } = useLanguage();
   const { account } = data;
   const { run, step, hash, error, info } = useTx();
   const [input, setInput] = useState("");
@@ -68,11 +71,11 @@ function WeeklyTargetCard({ data }: { data: VaultData }) {
   return (
     <div className="card p-4">
       <h3 className="flex items-center gap-1.5 font-cozy text-lg font-bold text-ink">
-        <Icon name="target" size={20} className="text-ink-soft" /> Mục tiêu mỗi kỳ
+        <Icon name="target" size={20} className="text-ink-soft" />{" "}{translate("Mục tiêu mỗi kỳ")}
       </h3>
       <p className="mt-0.5 text-xs font-semibold text-ink-soft">
-        {account?.activated ? "Thay đổi áp dụng từ kỳ kế tiếp." : "Lần đầu đặt có hiệu lực ngay kỳ này."} Hiện tại:{" "}
-        <span className="text-ink">{fmt(account?.currentTarget ?? 0n)} mUSDC/kỳ</span>
+        {account?.activated ? translate("Thay đổi áp dụng từ kỳ kế tiếp.") : translate("Lần đầu đặt có hiệu lực ngay kỳ này.")}{" "}{translate("Hiện tại:{0}", [" "])}
+        <span className="text-ink">{translate("{0} mUSDC/kỳ", [fmt(account?.currentTarget ?? 0n)])}</span>
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         {PRESETS.map((p) => (
@@ -89,15 +92,15 @@ function WeeklyTargetCard({ data }: { data: VaultData }) {
         <div className="relative mt-3 flex-1">
           <input
             className="input w-full pr-16"
-            inputMode="decimal"
-            placeholder="VD: 5"
+            inputMode="decimal" dir="ltr"
+            placeholder={translate("VD: {0}", [5])}
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-ink-muted">mUSDC</span>
         </div>
         <button className="btn-primary mt-3 shrink-0" disabled={step !== null || !parseAmount(input)} onClick={setTarget}>
-          Lưu
+          {translate("Lưu")}
         </button>
       </ActionRow>
       <TxFeedback state={{ step, hash, error, info }} />
@@ -106,6 +109,7 @@ function WeeklyTargetCard({ data }: { data: VaultData }) {
 }
 
 function SavingsGoalCard({ data }: { data: VaultData }) {
+  const { t: translate, formatAmount: fmt } = useLanguage();
   const tx = useTx();
   const { address } = useAccount();
   const currentEpoch = data.account?.currentEpoch ?? 0n;
@@ -137,21 +141,21 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
   const pct = g && g.targetAmount > 0n ? Math.min(100, Number((g.progress * 100n) / g.targetAmount)) : 0;
 
   return (
-    <FeatureCard icon="rocket" title="Mục tiêu dài hạn" desc="Cam kết một mốc gốc + hạn chót — ghi trực tiếp lên chuỗi">
+    <FeatureCard icon="rocket" title={translate("Mục tiêu dài hạn")} desc={translate("Cam kết một mốc gốc + hạn chót — ghi trực tiếp lên chuỗi")}>
       {g?.active ? (
         <div>
           <div className="flex items-center justify-between text-xs font-bold text-ink-soft">
-            <span>Gốc hiện tại / mục tiêu</span>
+            <span>{translate("Gốc hiện tại / mục tiêu")}</span>
             <span className="font-cozy text-sm tabular-nums text-ink">
               {fmt(g.progress)} / {fmt(g.targetAmount)} mUSDC · {pct}%
             </span>
           </div>
-          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-sunken" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Tiến độ mục tiêu tiết kiệm">
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-sunken" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label={translate("Tiến độ mục tiêu tiết kiệm")}>
             <div className={`h-full rounded-full transition-all duration-700 ${g.reached ? "bg-cta" : "bg-terracotta"}`} style={{ width: `${pct}%` }} />
           </div>
           <div className="mt-2 flex items-center justify-between gap-2 text-xs font-semibold text-ink-soft">
             <span>
-              Hạn: trước kỳ #{g.deadlineEpoch.toString()} · {g.reached ? "Đã đạt — chiến tích on-chain!" : "Còn cố lên!"}
+              {translate("Hạn: trước kỳ #{0} ·", [g.deadlineEpoch.toString()])}{" "}{g.reached ? translate("Đã đạt — chiến tích on-chain!") : translate("Còn cố lên!")}
             </span>
             {!g.reached && g.progress >= g.targetAmount && (
               <button className="btn-primary shrink-0 !px-3 !py-1.5 text-xs" disabled={tx.step !== null} onClick={() =>
@@ -159,7 +163,7 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
                   { label: "Đang ghi nhận GoalReached…", call: { address: contracts.goal, abi: savingsGoalAbi, functionName: "checkReached", args: [] } },
                 ])
               }>
-                Ghi nhận
+                {translate("Ghi nhận")}
               </button>
             )}
           </div>
@@ -172,13 +176,13 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
               ])
             }
           >
-            Huỷ mục tiêu này
+            {translate("Huỷ mục tiêu này")}
           </button>
         </div>
       ) : (
         <div className="space-y-3">
           <div>
-            <FieldLabel>Mốc gốc muốn đạt (mUSDC)</FieldLabel>
+            <FieldLabel>{translate("Mốc gốc muốn đạt (mUSDC)")}</FieldLabel>
             <div className="mt-1 flex flex-wrap gap-2">
               {PRESETS.map((p) => (
                 <button
@@ -191,16 +195,16 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
               ))}
             </div>
             <ActionRow>
-              <input className="input mt-2 flex-1" inputMode="decimal" placeholder="VD: 50" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <input className="input mt-2 flex-1" inputMode="decimal" placeholder={translate("VD: {0}", [50])} value={amount} onChange={(e) => setAmount(e.target.value)} />
             </ActionRow>
           </div>
           <div>
-            <FieldLabel>Hạn chót — chọn theo số kỳ (đang ở kỳ #{currentEpoch.toString()})</FieldLabel>
+            <FieldLabel>{translate("Hạn chót — chọn theo số kỳ (đang ở kỳ #{0})", [currentEpoch.toString()])}</FieldLabel>
             <div className="mt-1 flex flex-wrap gap-2">
               {[
-                { n: 3, label: "3 kỳ" },
-                { n: 7, label: "7 kỳ" },
-                { n: 30, label: "30 kỳ" },
+                { n: 3, label: translate("3 kỳ") },
+                { n: 7, label: translate("7 kỳ") },
+                { n: 30, label: translate("30 kỳ") },
               ].map(({ n, label }) => {
                 const selected = deadline === String(n);
                 return (
@@ -220,23 +224,23 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
             <ActionRow>
               <input
                 className="input mt-2 flex-1"
-                inputMode="numeric"
-                placeholder="Hoặc nhập số kỳ…"
-                aria-label="Số kỳ làm hạn chót"
+                inputMode="numeric" dir="ltr"
+                placeholder={translate("Hoặc nhập số kỳ…")}
+                aria-label={translate("Số kỳ làm hạn chót")}
                 value={deadline}
-                onChange={(e) => setDeadline(e.target.value.replace(/[^0-9]/g, ""))}
+                onChange={(e) => setDeadline(normalizeDigits(e.target.value).replace(/[^0-9]/g, ""))}
               />
               <button
                 className="btn-primary mt-2 shrink-0"
                 disabled={tx.step !== null || !parseAmount(amount) || !deadline || BigInt(deadline) <= 0n || currentEpoch + BigInt(deadline) <= currentEpoch}
                 onClick={setGoal}
               >
-                Cam kết
+                {translate("Cam kết")}
               </button>
             </ActionRow>
             {deadline && BigInt(deadline) > 0n && (
               <p className="mt-1 text-[11px] font-semibold text-ink-soft">
-                Tương ứng kỳ #{(currentEpoch + BigInt(deadline)).toString()} — ghi trực tiếp lên chuỗi khi bấm Cam kết.
+                {translate("Tương ứng kỳ #{0} — ghi trực tiếp lên chuỗi khi bấm Cam kết.", [(currentEpoch + BigInt(deadline)).toString()])}
               </p>
             )}
           </div>
@@ -248,6 +252,7 @@ function SavingsGoalCard({ data }: { data: VaultData }) {
 }
 
 function RewardMechanismCard({ data }: { data: VaultData }) {
+  const { t: translate, formatAmount: fmt } = useLanguage();
   const { currentBudget, rollover } = data;
   const state = useReadContracts({
     contracts: [
@@ -262,17 +267,17 @@ function RewardMechanismCard({ data }: { data: VaultData }) {
   const byStreak = baseRatio !== undefined ? 100 - byPrincipal : 0;
 
   return (
-    <FeatureCard icon="bolt" title="Cơ chế chia thưởng" desc="Tham số đọc trực tiếp từ YieldDistributor trên Fuji" collapsible defaultOpen={false}>
+    <FeatureCard icon="bolt" title={translate("Cơ chế chia thưởng")} desc={translate("Tham số đọc trực tiếp từ YieldDistributor trên Fuji")} collapsible defaultOpen={false}>
       <div className="grid grid-cols-2 gap-3">
-        <Stat label="Chia theo gốc" value={baseRatio !== undefined ? `${byPrincipal}%` : undefined} tone="text-cta" />
+        <Stat label={translate("Chia theo gốc")} value={baseRatio !== undefined ? `${byPrincipal}%` : undefined} tone="text-cta" />
         <Stat label="Chia theo streak" value={baseRatio !== undefined ? `${byStreak}%` : undefined} tone="text-terracotta" />
       </div>
       <div className="mt-3 grid grid-cols-2 gap-3">
-        <Stat label="Ngân sách kỳ này" value={`${fmt(currentBudget)} mUSDC`} />
-        <Stat label="Rollover chờ chia" value={`${fmt(rollover)} mUSDC`} />
+        <Stat label={translate("Ngân sách kỳ này")} value={`${fmt(currentBudget)} mUSDC`} />
+        <Stat label={translate("Rollover chờ chia")} value={`${fmt(rollover)} mUSDC`} />
       </div>
       <p className="mt-3 text-xs font-semibold text-ink-soft">
-        Mỗi kỳ chốt, ngân sách yield (trừ phí {Number(feeBps) / 100}%) chia cho những ví giữ streak: một phần theo tỷ trọng gốc, phần còn lại theo trọng số streak — gửi càng đều, phần chia càng lớn.
+        {translate("Mỗi kỳ chốt, ngân sách yield (trừ phí {0}%) chia cho những ví giữ streak: một phần theo tỷ trọng gốc, phần còn lại theo trọng số streak — gửi càng đều, phần chia càng lớn.", [Number(feeBps) / 100])}
       </p>
     </FeatureCard>
   );
