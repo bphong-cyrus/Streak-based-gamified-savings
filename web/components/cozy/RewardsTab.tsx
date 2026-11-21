@@ -6,6 +6,7 @@ import { streakNFTAbi, dailyCheckInAbi, yieldDistributorAbi } from "@/lib/abis";
 import { fmt } from "@/lib/format";
 import { TxFeedback, useTx } from "@/components/useTx";
 import { FeatureCard, Stat } from "@/components/cozy/panel";
+import { LuckyWheelCard } from "@/components/cozy/LuckyWheelCard";
 import { Icon } from "@/components/cozy/icons";
 import { isDemoMode } from "@/lib/demo";
 import type { VaultData } from "@/lib/useVaultData";
@@ -15,6 +16,7 @@ export function RewardsTab({ data }: { data: VaultData }) {
     <div className="space-y-4 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
       <div className="space-y-4">
         <YieldCard data={data} />
+      <LuckyWheelCard />
         <CheckInCard />
       </div>
       <div className="space-y-4">

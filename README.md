@@ -36,6 +36,7 @@ Mọi trạng thái (gốc, tiến độ, streak, phần thưởng, lịch sử 
 | **Bảo vệ streak (tùy chọn)** | Freeze kỳ hiện tại, mua bảo hiểm, hồi sinh streak trong cửa sổ cho phép — trả phí dịch vụ, không ảnh hưởng luật reset |
 | **Onboarding** | `FaucetDrip`: 1 giao dịch nhận 5 mUSDC thử nghiệm + mục tiêu đầu tự đặt |
 | **Điểm danh & NFT** | Thưởng mUSDC thử nghiệm mỗi ngày; huy hiệu ERC-1155 tại mốc streak 3 / 7 / 30 kỳ |
+| **Vòng quay may mắn** | Nhiệm vụ/gameplay: quay 1 mUSDC/lượt, 6 giải (0–25 mUSDC) trả ngay từ pool sponsor, cooldown 60 giây, kết quả minh bạch qua event |
 | **Mục tiêu dài hạn** | Cam kết mốc gốc + hạn theo số kỳ (3/7/30), ghi nhận đạt on-chain |
 | **Minh bạch** | Màn chọn rõ "Bản thử / Kết nối ví", thẻ giao dịch giữ link Snowtrace, nhật ký theo từng ví (lưu trên thiết bị), chế độ thử 2 bước trung thực (gửi → chờ chốt kỳ → nhận tầng) |
 
@@ -103,7 +104,7 @@ không đọc env để tránh lệch deployment.
 ### Kiểm thử
 
 ```bash
-cd contracts && forge test       # 73 tests: unit + fuzz + invariant + security
+cd contracts && forge test       # 81 tests: unit + fuzz + invariant + security (kể cả LuckyWheel)
 cd web && npx tsc --noEmit       # typecheck sạch
 cd web && npm run build          # production build
 cd web && npx playwright test    # E2E 6 kịch bản × desktop 1440×900 + mobile 390×844
@@ -136,6 +137,7 @@ Deployment hiện tại: **deployBlock 61371331**, kỳ 180 giây, deployer `0xe
 | `SavingsGoal` | Mục tiêu gốc dài hạn | `0x6a29Bc0FDafeB58c6160864439b5465f07d4BEb0` |
 | `StreakNFT` | Huy hiệu ERC-1155 (mốc 3/7/30 kỳ) | `0x81AAd1918466Eb736c5Aaa482cd9FA055169d989` |
 | `FaucetDrip` | Onboard ví mới | `0xA140DF43E89A32487C52c0c90ba8de398c20AC01` |
+| `LuckyWheel` | Vòng quay may mắn — quay 1 mUSDC, giải từ pool sponsor (entropy blockhash, testnet) | `0x5944318513AF718F0eD4b4799a8ea78f3E0B94cf` |
 
 ### Bằng chứng giao dịch thật (2 ví · kỳ 12–13 · 20/11/2026)
 

@@ -18,6 +18,7 @@ const CONTRACTS = [
   ["SavingsGoal", "savingsGoalAbi"],
   ["StreakNFT", "streakNFTAbi"],
   ["FaucetDrip", "faucetDripAbi"],
+  ["LuckyWheel", "luckyWheelAbi"],
 ];
 
 let out = "// AUTO-GENERATED bởi contracts/script/export-abi.mjs — KHÔNG sửa tay.\n";

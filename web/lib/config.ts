@@ -50,6 +50,7 @@ const FUJI_CORE = {
   goal: "0x6a29Bc0FDafeB58c6160864439b5465f07d4BEb0",
   nft: "0x81AAd1918466Eb736c5Aaa482cd9FA055169d989",
   faucetDrip: "0xA140DF43E89A32487C52c0c90ba8de398c20AC01",
+  luckyWheel: "0x5944318513AF718F0eD4b4799a8ea78f3E0B94cf",
 } as const;
 
 function addr(_env: string | undefined, fallbackAddr: string): `0x${string}` {
@@ -69,6 +70,7 @@ export const contracts = {
   goal: addr(process.env.NEXT_PUBLIC_GOAL_ADDRESS, FUJI_CORE.goal),
   nft: addr(process.env.NEXT_PUBLIC_NFT_ADDRESS, FUJI_CORE.nft),
   faucetDrip: addr(process.env.NEXT_PUBLIC_FAUCET_ADDRESS, FUJI_CORE.faucetDrip),
+  luckyWheel: FUJI_CORE.luckyWheel,
 };
 
 export function explorerTx(hash: string) {

@@ -235,6 +235,7 @@ function OnChainInfoCard() {
           ["SavingsGoal (mục tiêu)", contracts.goal],
           ["StreakNFT (huy hiệu)", contracts.nft],
           ["FaucetDrip (vòi mới)", contracts.faucetDrip],
+          ["LuckyWheel (vòng quay)", contracts.luckyWheel],
           ["Token mUSDC", contracts.token],
         ] as const
       ).map(([label, addr]) => (
