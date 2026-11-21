@@ -285,9 +285,7 @@ export function LuckyWheelCard({ currentEpoch }: { currentEpoch?: bigint }) {
           </a>
         )}
         <p className="text-center text-[10px] font-semibold text-ink-muted">
-          Bảng giải: +10 điểm 50% · 1 mUSDC 35% · 2 mUSDC 12% · 5 mUSDC 2% · 10 mUSDC 1% — giá trị trung
-          bình 0,79 mUSDC/lượt, quỹ 50 mUSDC ≈ 63 lượt theo kỳ vọng. Kết quả chọn on-chain (entropy blockhash,
-          testnet) — minh bạch, đối chiếu được trên Snowtrace; VRF dành cho mainnet.
+          Giải trả ngay từ quỹ tài trợ · Kết quả chọn trên chuỗi, đối chiếu được trên Snowtrace.
         </p>
       </div>
     </FeatureCard>
